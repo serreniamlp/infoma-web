@@ -15,32 +15,60 @@
 
         <!-- Filter and Search -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <form method="GET" action="{{ route('provider.bookings.index') }}" class="flex flex-col md:flex-row gap-4">
-                <div class="flex-1">
-                    <input type="text" name="search" value="{{ request('search') }}"
-                           placeholder="Cari booking..."
-                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+            <form method="GET" action="{{ route('provider.bookings.index') }}">
+                <!-- Baris 1: Search, Status, Tipe -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="md:col-span-1">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Cari</label>
+                        <input type="text" name="search" value="{{ $search ?? '' }}"
+                            placeholder="Kode booking, nama user, item..."
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+                        <select name="status" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="">Semua Status</option>
+                            <option value="pending"   {{ $status === 'pending'    ? 'selected' : '' }}>Pending</option>
+                            <option value="approved"  {{ $status === 'approved'   ? 'selected' : '' }}>Disetujui</option>
+                            <option value="rejected"  {{ $status === 'rejected'   ? 'selected' : '' }}>Ditolak</option>
+                            <option value="completed" {{ $status === 'completed'  ? 'selected' : '' }}>Selesai</option>
+                            <option value="cancelled" {{ $status === 'cancelled'  ? 'selected' : '' }}>Dibatalkan</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Tipe</label>
+                        <select name="type" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                            <option value="">Semua Tipe</option>
+                            <option value="residence" {{ $type === 'residence' ? 'selected' : '' }}>Residence</option>
+                            <option value="activity"  {{ $type === 'activity'  ? 'selected' : '' }}>Kegiatan</option>
+                        </select>
+                    </div>
                 </div>
-                <div>
-                    <select name="status" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">Semua Status</option>
-                        <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
-                        <option value="approved" {{ request('status') === 'approved' ? 'selected' : '' }}>Disetujui</option>
-                        <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Ditolak</option>
-                        <option value="completed" {{ request('status') === 'completed' ? 'selected' : '' }}>Selesai</option>
-                        <option value="cancelled" {{ request('status') === 'cancelled' ? 'selected' : '' }}>Dibatalkan</option>
-                    </select>
+                <!-- Baris 2: Filter Tanggal + Tombol -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Dari Tanggal</label>
+                        <input type="date" name="date_from" value="{{ $dateFrom ?? '' }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Sampai Tanggal</label>
+                        <input type="date" name="date_to" value="{{ $dateTo ?? '' }}"
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="submit"
+                                class="flex-1 bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-search"></i> Cari
+                        </button>
+                        @if(request()->hasAny(['search', 'status', 'type', 'date_from', 'date_to']))
+                        <a href="{{ route('provider.bookings.index') }}"
+                        class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                            <i class="fas fa-times"></i> Reset
+                        </a>
+                        @endif
+                    </div>
                 </div>
-                <div>
-                    <select name="type" class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">Semua Tipe</option>
-                        <option value="residence" {{ request('type') === 'residence' ? 'selected' : '' }}>Residence</option>
-                        <option value="activity" {{ request('type') === 'activity' ? 'selected' : '' }}>Kegiatan</option>
-                    </select>
-                </div>
-                <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition-colors">
-                    <i class="fas fa-search mr-2"></i>Cari
-                </button>
             </form>
         </div>
 
