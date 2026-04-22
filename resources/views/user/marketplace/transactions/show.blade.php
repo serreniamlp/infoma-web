@@ -76,7 +76,7 @@
                                 <div class="grid grid-cols-2 gap-4 text-sm">
                                     <div>
                                         <span class="text-gray-500">Kategori:</span>
-                                        <span class="font-medium ml-2">{{ $transaction->product->category }}</span>
+                                        <span class="font-medium ml-2">{{ $transaction->product->category->name ?? '-' }}</span>
                                     </div>
                                     <div>
                                         <span class="text-gray-500">Harga Satuan:</span>

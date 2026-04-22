@@ -151,7 +151,7 @@
                     @if($product->is_available)
                     @auth
                     @if($product->seller_id !== auth()->id())
-                    <a href="{{ route('marketplace.transactions.create', $product) }}"
+                    <a href="{{ route('user.marketplace.transactions.create', $product) }}"
                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg inline-flex items-center justify-center mb-2">
                         <i class="fas fa-shopping-cart mr-2"></i> Beli Sekarang
                     </a>

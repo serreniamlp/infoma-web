@@ -88,12 +88,17 @@ class MarketplaceTransactionController extends Controller
 
         $data = $request->only(['status', 'seller_notes']);
 
-        if ($request->status === 'cancelled') {
+        if ($request->status === 'confirmed') {
+            $transaction->product->decrement('stock_quantity', $transaction->quantity);
+
+        } elseif ($request->status === 'cancelled') {
             $data['cancellation_reason'] = $request->cancellation_reason;
             $data['cancelled_at'] = now();
 
-            // Restore product stock
-            $transaction->product->increment('stock_quantity', $transaction->quantity);
+            if ($transaction->status === 'confirmed' || $transaction->status === 'in_progress') {
+                $transaction->product->increment('stock_quantity', $transaction->quantity);
+            }
+
         } elseif ($request->status === 'completed') {
             $data['completed_at'] = now();
         }

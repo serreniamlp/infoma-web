@@ -3,9 +3,12 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\ProductCategory;
+use App\Models\MarketplaceProduct;
 use App\Models\MarketplaceTransaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class MarketplaceTransactionController extends Controller
 {
@@ -67,6 +70,67 @@ class MarketplaceTransactionController extends Controller
         return view('user.marketplace.transactions.show', compact('transaction'));
     }
 
+    public function create(MarketplaceProduct $product)
+    {
+        if ($product->seller_id === Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat membeli produk sendiri!');
+        }
+
+        if (!$product->is_available) {
+            return redirect()->back()->with('error', 'Produk tidak tersedia!');
+        }
+
+        return view('marketplace.transactions.create', compact('product'));
+    }
+
+    public function store(Request $request, MarketplaceProduct $product)
+    {
+        if ($product->seller_id === Auth::id()) {
+            return redirect()->back()->with('error', 'Anda tidak dapat membeli produk sendiri!');
+        }
+
+        if (!$product->is_available) {
+            return redirect()->back()->with('error', 'Produk tidak tersedia!');
+        }
+
+        $request->validate([
+            'quantity' => 'required|integer|min:1|max:' . $product->stock_quantity,
+            'buyer_name' => 'required|string|max:255',
+            'buyer_phone' => 'required|string|max:20',
+            'buyer_address' => 'required|string',
+            'pickup_method' => 'required|in:pickup,delivery,meetup',
+            'pickup_address' => 'nullable|string',
+            'pickup_notes' => 'nullable|string',
+            'payment_method' => 'required|string|max:100',
+        ]);
+
+        $totalAmount = $product->price * $request->quantity;
+
+        $transaction = MarketplaceTransaction::create([
+            'buyer_id' => Auth::id(),
+            'seller_id' => $product->seller_id,
+            'product_id' => $product->id,
+            'quantity' => $request->quantity,
+            'unit_price' => $product->price,
+            'total_amount' => $totalAmount,
+            'buyer_name' => $request->buyer_name,
+            'buyer_phone' => $request->buyer_phone,
+            'buyer_address' => $request->buyer_address,
+            'pickup_method' => $request->pickup_method,
+            'pickup_address' => $request->pickup_address,
+            'pickup_notes' => $request->pickup_notes,
+            'payment_method' => $request->payment_method,
+            'status' => 'pending',
+            'payment_status' => 'pending',
+        ]);
+
+        // Update product stock
+        // $product->decrement('stock_quantity', $request->quantity);
+
+        return redirect()->route('user.marketplace.transactions.show', $transaction)
+            ->with('success', 'Transaksi berhasil dibuat! Silakan lakukan pembayaran.');
+    }
+
     /**
      * Upload payment proof for transaction.
      */
@@ -83,7 +147,7 @@ class MarketplaceTransactionController extends Controller
 
         // Delete old payment proof
         if ($transaction->payment_proof) {
-            \Storage::disk('public')->delete($transaction->payment_proof);
+            Storage::disk('public')->delete($transaction->payment_proof);
         }
 
         $path = $request->file('payment_proof')->store('marketplace/payment-proofs', 'public');
@@ -171,7 +235,7 @@ class MarketplaceTransactionController extends Controller
         ]);
 
         // Restore product stock
-        $transaction->product->increment('stock_quantity', $transaction->quantity);
+        // $transaction->product->increment('stock_quantity', $transaction->quantity);
 
         return redirect()->back()->with('success', 'Transaksi berhasil dibatalkan!');
     }

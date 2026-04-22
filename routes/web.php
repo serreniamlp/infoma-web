@@ -20,7 +20,7 @@ use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\MarketplaceTransactionController as UserMarketplaceTransactionController;
 use App\Http\Controllers\MarketplaceController;
-use App\Http\Controllers\MarketplaceTransactionController;
+
 
 // Public Routes
 Route::get('/', [HomeController::class, 'index'])->name('home');
@@ -81,6 +81,8 @@ Route::middleware('auth')->group(function () {
         // User Marketplace Transactions
         Route::prefix('marketplace')->name('marketplace.')->group(function () {
             Route::prefix('transactions')->name('transactions.')->group(function () {
+                Route::get('/create/{product}', [UserMarketplaceTransactionController::class, 'create'])->name('create');
+                Route::post('/store/{product}', [UserMarketplaceTransactionController::class, 'store'])->name('store');
                 Route::get('/', [UserMarketplaceTransactionController::class, 'index'])->name('index');
                 Route::get('/{transaction}', [UserMarketplaceTransactionController::class, 'show'])->name('show');
                 Route::post('/{transaction}/upload-payment-proof', [UserMarketplaceTransactionController::class, 'uploadPaymentProof'])->name('upload-payment-proof');
@@ -97,8 +99,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/{product}/bookmark', [MarketplaceController::class, 'toggleBookmark'])->name('bookmark');
 
         // Transaction Routes (create and store - available to all authenticated users)
-        Route::get('/transactions/create/{product}', [MarketplaceTransactionController::class, 'create'])->name('transactions.create');
-        Route::post('/transactions/{product}', [MarketplaceTransactionController::class, 'store'])->name('transactions.store');
+        // Route::get('/transactions/create/{product}', [MarketplaceTransactionController::class, 'create'])->name('transactions.create');
+        // Route::post('/transactions/{product}', [MarketplaceTransactionController::class, 'store'])->name('transactions.store');
     });
 
     // Provider routes
