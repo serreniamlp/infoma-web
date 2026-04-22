@@ -21,7 +21,7 @@ class BookingManagementController extends Controller
 
     public function index(Request $request)
     {
-        $status = $request->get('status', 'all');
+        $status = $request->get('status', '');
         $search = $request->get('search');
         $type = $request->get('type');
 
@@ -30,7 +30,7 @@ class BookingManagementController extends Controller
         })->with(['user', 'bookable', 'transaction']);
 
         // Status filter
-        if ($status !== 'all') {
+        if (!empty($status)) {
             $query->where('status', $status);
         }
 
@@ -47,20 +47,33 @@ class BookingManagementController extends Controller
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('booking_code', 'like', "%{$search}%")
-                  ->orWhereHas('user', function ($userQuery) use ($search) {
-                      $userQuery->where('name', 'like', "%{$search}%")
-                               ->orWhere('email', 'like', "%{$search}%");
-                  })
-                  ->orWhereHas('bookable', function ($bookableQuery) use ($search) {
-                      $bookableQuery->where('name', 'like', "%{$search}%");
-                  });
+                ->orWhereHas('user', function ($userQuery) use ($search) {
+                    $userQuery->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%");
+                })
+                ->orWhereHas('bookable', function ($bookableQuery) use ($search) {
+                    $bookableQuery->where('name', 'like', "%{$search}%");
+                });
             });
+        }
+
+        // Date filter
+        $dateFrom = $request->get('date_from');
+        $dateTo   = $request->get('date_to');
+
+        if ($dateFrom) {
+            $query->whereDate('created_at', '>=', $dateFrom);
+        }
+
+        if ($dateTo) {
+            $query->whereDate('created_at', '<=', $dateTo);
         }
 
         $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('provider.bookings.index', compact('bookings', 'status', 'search', 'type'));
+        return view('provider.bookings.index', compact('bookings', 'status', 'search', 'type', 'dateFrom', 'dateTo'));
     }
+    
 
     public function show(Booking $booking)
     {
