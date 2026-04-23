@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Tambah Residence - Infoma')
+@section('title', 'Edit Residence - Infoma')
 
 @push('styles')
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -13,12 +13,13 @@
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Header -->
         <div class="mb-8">
-            <h1 class="text-3xl font-bold text-gray-900">Tambah Residence</h1>
-            <p class="text-gray-600 mt-2">Buat residence baru untuk ditawarkan kepada mahasiswa</p>
+            <h1 class="text-3xl font-bold text-gray-900">Edit Residence</h1>
+            <p class="text-gray-600 mt-2">Ubah informasi residence "{{ $residence->name }}"</p>
         </div>
 
-        <form method="POST" action="{{ route('provider.residences.store') }}" enctype="multipart/form-data" class="space-y-6">
+        <form method="POST" action="{{ route('provider.residence.residences.update', $residence) }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
+            @method('PUT')
 
             <!-- Basic Information -->
             <div class="bg-white rounded-lg shadow-sm p-6">
@@ -30,7 +31,7 @@
                             Nama Residence <span class="text-red-500">*</span>
                         </label>
                         <input type="text" name="name" id="name" required
-                               value="{{ old('name') }}"
+                               value="{{ old('name', $residence->name) }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('name') border-red-500 @enderror"
                                placeholder="Nama residence">
                         @error('name')
@@ -44,7 +45,7 @@
                         </label>
                         <textarea name="description" id="description" rows="4" required
                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('description') border-red-500 @enderror"
-                                  placeholder="Deskripsikan residence Anda...">{{ old('description') }}</textarea>
+                                  placeholder="Deskripsikan residence Anda...">{{ old('description', $residence->description) }}</textarea>
                         @error('description')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                         @enderror
@@ -59,7 +60,7 @@
                             <option value="">Pilih Kategori</option>
                             @foreach($categories as $category)
                                 @if($category->type === 'residence')
-                                    <option value="{{ $category->id }}" {{ old('category_id') == $category->id ? 'selected' : '' }}>
+                                    <option value="{{ $category->id }}" {{ old('category_id', $residence->category_id) == $category->id ? 'selected' : '' }}>
                                         {{ $category->name }}
                                     </option>
                                 @endif
@@ -77,8 +78,8 @@
                         <select name="rental_period" id="rental_period" required
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('rental_period') border-red-500 @enderror">
                             <option value="">Pilih Periode</option>
-                            <option value="monthly" {{ old('rental_period') === 'monthly' ? 'selected' : '' }}>Bulanan</option>
-                            <option value="yearly" {{ old('rental_period') === 'yearly' ? 'selected' : '' }}>Tahunan</option>
+                            <option value="monthly" {{ old('rental_period', $residence->rental_period) === 'monthly' ? 'selected' : '' }}>Bulanan</option>
+                            <option value="yearly" {{ old('rental_period', $residence->rental_period) === 'yearly' ? 'selected' : '' }}>Tahunan</option>
                         </select>
                         @error('rental_period')
                             <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -97,7 +98,7 @@
                     </label>
                     <textarea name="address" id="address" rows="3" required
                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('address') border-red-500 @enderror"
-                              placeholder="Alamat lengkap residence">{{ old('address') }}</textarea>
+                              placeholder="Alamat lengkap residence">{{ old('address', $residence->address) }}</textarea>
                     @error('address')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -123,12 +124,12 @@
                     <div class="coordinates-display">
                         <div class="form-group">
                             <label for="latitude">Latitude</label>
-                            <input type="number" name="latitude" id="latitude" step="any" value="{{ old('latitude') }}" class="@error('latitude') border-red-500 @enderror" placeholder="0.000000">
+                            <input type="number" name="latitude" id="latitude" step="any" value="{{ old('latitude', $residence->latitude) }}" class="@error('latitude') border-red-500 @enderror" placeholder="0.000000">
                             @error('latitude')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                         <div class="form-group">
                             <label for="longitude">Longitude</label>
-                            <input type="number" name="longitude" id="longitude" step="any" value="{{ old('longitude') }}" class="@error('longitude') border-red-500 @enderror" placeholder="0.000000">
+                            <input type="number" name="longitude" id="longitude" step="any" value="{{ old('longitude', $residence->longitude) }}" class="@error('longitude') border-red-500 @enderror" placeholder="0.000000">
                             @error('longitude')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                         </div>
                     </div>
@@ -153,7 +154,7 @@
                             Harga per Bulan <span class="text-red-500">*</span>
                         </label>
                         <input type="number" name="price_per_month" id="price_per_month" required min="0"
-                               value="{{ old('price_per_month') }}"
+                               value="{{ old('price_per_month', $residence->price_per_month) }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('price_per_month') border-red-500 @enderror"
                                placeholder="0">
                         @error('price_per_month')
@@ -166,7 +167,7 @@
                             Kapasitas <span class="text-red-500">*</span>
                         </label>
                         <input type="number" name="capacity" id="capacity" required min="1"
-                               value="{{ old('capacity') }}"
+                               value="{{ old('capacity', $residence->capacity) }}"
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('capacity') border-red-500 @enderror"
                                placeholder="1">
                         @error('capacity')
@@ -187,8 +188,8 @@
                             <select name="discount_type" id="discount_type"
                                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('discount_type') border-red-500 @enderror">
                                 <option value="">Tidak ada diskon</option>
-                                <option value="percentage" {{ old('discount_type') === 'percentage' ? 'selected' : '' }}>Persentase (%)</option>
-                                <option value="flat" {{ old('discount_type') === 'flat' ? 'selected' : '' }}>Nominal (Rp)</option>
+                                <option value="percentage" {{ old('discount_type', $residence->discount_type) === 'percentage' ? 'selected' : '' }}>Persentase (%)</option>
+                                <option value="flat" {{ old('discount_type', $residence->discount_type) === 'flat' ? 'selected' : '' }}>Nominal (Rp)</option>
                             </select>
                             @error('discount_type')
                                 <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
@@ -200,7 +201,7 @@
                                 Nilai Diskon
                             </label>
                             <input type="number" name="discount_value" id="discount_value" min="0"
-                                   value="{{ old('discount_value') }}"
+                                   value="{{ old('discount_value', $residence->discount_value) }}"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('discount_value') border-red-500 @enderror"
                                    placeholder="0">
                             @error('discount_value')
@@ -222,12 +223,13 @@
                             'Kasur', 'Bantal', 'Selimut', 'Dapur', 'Kulkas', 'Mesin Cuci',
                             'Parkir Motor', 'Parkir Mobil', 'Security 24 Jam', 'CCTV'
                         ];
+                        $currentFacilities = old('facilities', $residence->facilities ?? []);
                     @endphp
 
                     @foreach($commonFacilities as $facility)
                     <label class="flex items-center">
                         <input type="checkbox" name="facilities[]" value="{{ $facility }}"
-                               {{ in_array($facility, old('facilities', [])) ? 'checked' : '' }}
+                               {{ in_array($facility, $currentFacilities) ? 'checked' : '' }}
                                class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                         <span class="ml-2 text-sm text-gray-700">{{ $facility }}</span>
                     </label>
@@ -245,17 +247,46 @@
                 </div>
             </div>
 
-            <!-- Images -->
+            <!-- Current Images -->
+            @if($residence->images && count($residence->images) > 0)
             <div class="bg-white rounded-lg shadow-sm p-6">
-                <h2 class="text-lg font-semibold text-gray-900 mb-4">Gambar</h2>
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">Gambar Saat Ini</h2>
+
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    @foreach($residence->images as $index => $image)
+                    <div class="relative">
+                        <img src="{{ asset('storage/' . $image) }}"
+                             alt="{{ $residence->name }}"
+                             class="w-full h-32 object-cover rounded-lg">
+                        <button type="button" onclick="removeImage({{ $index }})"
+                                class="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    @endforeach
+                </div>
+
+                <input type="hidden" name="existing_images" id="existing_images" value="{{ json_encode($residence->images) }}">
+            </div>
+            @endif
+
+            <!-- New Images -->
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <h2 class="text-lg font-semibold text-gray-900 mb-4">
+                    @if($residence->images && count($residence->images) > 0)
+                        Tambah Gambar Baru
+                    @else
+                        Upload Gambar
+                    @endif
+                </h2>
 
                 <div>
                     <label for="images" class="block text-sm font-medium text-gray-700 mb-2">
-                        Upload Gambar <span class="text-red-500">*</span>
+                        Upload Gambar
                     </label>
-                    <input type="file" name="images[]" id="images" multiple accept="image/*" required
+                    <input type="file" name="images[]" id="images" multiple accept="image/*"
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('images.*') border-red-500 @enderror">
-                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG (Max: 5MB per file, minimal 1 gambar)</p>
+                    <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG (Max: 5MB per file)</p>
                     @error('images.*')
                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                     @enderror
@@ -268,7 +299,7 @@
 
                 <div class="flex items-center">
                     <input type="checkbox" name="is_active" id="is_active" value="1"
-                           {{ old('is_active', true) ? 'checked' : '' }}
+                           {{ old('is_active', $residence->is_active) ? 'checked' : '' }}
                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                     <label for="is_active" class="ml-2 text-sm text-gray-700">
                         Aktifkan residence ini
@@ -278,13 +309,13 @@
 
             <!-- Submit Button -->
             <div class="flex justify-end space-x-4">
-                <a href="{{ route('provider.residences.index') }}"
+                <a href="{{ route('provider.residence.residences.show', $residence) }}"
                    class="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 font-medium transition-colors">
                     Batal
                 </a>
                 <button type="submit"
                         class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-                    <i class="fas fa-save mr-2"></i>Simpan Residence
+                    <i class="fas fa-save mr-2"></i>Update Residence
                 </button>
             </div>
         </form>
@@ -296,6 +327,14 @@
 <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
 <script src="{{ asset('js/leaflet-maps.js') }}"></script>
 <script>
+let existingImages = @json($residence->images ?? []);
+let imagesToRemove = [];
+
+function removeImage(index) {
+    imagesToRemove.push(index);
+    event.target.closest('.relative').style.display = 'none';
+}
+
 // File size validation
 document.getElementById('images').addEventListener('change', function() {
     const files = this.files;
@@ -307,11 +346,6 @@ document.getElementById('images').addEventListener('change', function() {
             this.value = '';
             return;
         }
-    }
-
-    if (files.length === 0) {
-        alert('Minimal upload 1 gambar.');
-        this.value = '';
     }
 });
 
@@ -332,6 +366,17 @@ document.getElementById('discount_type').addEventListener('change', function() {
         discountValue.placeholder = '0';
         label.textContent = 'Nilai Diskon';
         discountValue.value = '';
+    }
+});
+
+// Add hidden input for removed images
+document.querySelector('form').addEventListener('submit', function() {
+    if (imagesToRemove.length > 0) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'removed_images';
+        input.value = JSON.stringify(imagesToRemove);
+        this.appendChild(input);
     }
 });
 </script>

@@ -67,45 +67,62 @@
                             <!-- Role-based menu items -->
                             @if(auth()->user()->hasRole('admin'))
                                 <a href="{{ route('admin.dashboard') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-tachometer-alt mr-2"></i>Admin Dashboard
                                 </a>
-                            @elseif(auth()->user()->hasRole('provider'))
-                                <a href="{{ route('provider.dashboard') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-tachometer-alt mr-2"></i>Provider Dashboard
+                            @elseif(auth()->user()->hasRole('provider_residence'))
+                                <a href="{{ route('provider.residence.dashboard') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                                 </a>
-                                <a href="{{ route('provider.marketplace.create') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-plus mr-2"></i>Jual Produk
+                                <a href="{{ route('provider.residence.residences.index') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-building mr-2"></i>Hunian Saya
                                 </a>
-                                <a href="{{ route('provider.marketplace.my-products') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-box mr-2"></i>Produk Saya
+                                <a href="{{ route('provider.residence.residences.create') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-plus mr-2"></i>Tambah Hunian
                                 </a>
-                                <a href="{{ route('provider.marketplace.transactions.index') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-clipboard-list mr-2"></i>Kelola Transaksi
+                                <a href="{{ route('provider.residence.bookings.index') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-clipboard-list mr-2"></i>Kelola Booking
+                                </a>
+                            @elseif(auth()->user()->hasRole('provider_event'))
+                                <a href="{{ route('provider.event.dashboard') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                </a>
+                                <a href="{{ route('provider.event.activities.index') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-calendar-alt mr-2"></i>Event Saya
+                                </a>
+                                <a href="{{ route('provider.event.activities.create') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-plus mr-2"></i>Tambah Event
+                                </a>
+                                <a href="{{ route('provider.event.bookings.index') }}"
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-clipboard-list mr-2"></i>Kelola Booking
                                 </a>
                             @else
                                 <a href="{{ route('user.dashboard') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                                 </a>
                                 <a href="{{ route('user.history') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-history mr-2"></i>My History
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-history mr-2"></i>Riwayat
                                 </a>
                                 <a href="{{ route('user.bookings.index') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-bookmark mr-2"></i>Booking Saya
                                 </a>
                                 <a href="{{ route('user.bookmarks.index') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-heart mr-2"></i>Bookmark
                                 </a>
                                 <a href="{{ route('user.marketplace.transactions.index') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-shopping-cart mr-2"></i>Transaksi Marketplace
                                 </a>
                             @endif
@@ -181,45 +198,62 @@
                 <div class="border-t border-gray-200 pt-4">
                     @if(auth()->user()->hasRole('admin'))
                         <a href="{{ route('admin.dashboard') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i class="fas fa-tachometer-alt mr-2"></i>Admin Dashboard
                         </a>
-                    @elseif(auth()->user()->hasRole('provider'))
-                        <a href="{{ route('provider.dashboard') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                            <i class="fas fa-tachometer-alt mr-2"></i>Provider Dashboard
+                    @elseif(auth()->user()->hasRole('provider_residence'))
+                        <a href="{{ route('provider.residence.dashboard') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                         </a>
-                        <a href="{{ route('provider.marketplace.create') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                            <i class="fas fa-plus mr-2"></i>Jual Produk
+                        <a href="{{ route('provider.residence.residences.index') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-building mr-2"></i>Hunian Saya
                         </a>
-                        <a href="{{ route('provider.marketplace.my-products') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                            <i class="fas fa-box mr-2"></i>Produk Saya
+                        <a href="{{ route('provider.residence.residences.create') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-plus mr-2"></i>Tambah Hunian
                         </a>
-                        <a href="{{ route('provider.marketplace.transactions.index') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                            <i class="fas fa-clipboard-list mr-2"></i>Kelola Transaksi
+                        <a href="{{ route('provider.residence.bookings.index') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-clipboard-list mr-2"></i>Kelola Booking
+                        </a>
+                    @elseif(auth()->user()->hasRole('provider_event'))
+                        <a href="{{ route('provider.event.dashboard') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                        </a>
+                        <a href="{{ route('provider.event.activities.index') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-calendar-alt mr-2"></i>Event Saya
+                        </a>
+                        <a href="{{ route('provider.event.activities.create') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-plus mr-2"></i>Tambah Event
+                        </a>
+                        <a href="{{ route('provider.event.bookings.index') }}"
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-clipboard-list mr-2"></i>Kelola Booking
                         </a>
                     @else
                         <a href="{{ route('user.dashboard') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
                         </a>
                         <a href="{{ route('user.history') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                            <i class="fas fa-history mr-2"></i>My History
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                            <i class="fas fa-history mr-2"></i>Riwayat
                         </a>
                         <a href="{{ route('user.bookings.index') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i class="fas fa-bookmark mr-2"></i>Booking Saya
                         </a>
                         <a href="{{ route('user.bookmarks.index') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i class="fas fa-heart mr-2"></i>Bookmark
                         </a>
                         <a href="{{ route('user.marketplace.transactions.index') }}"
-                           class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                             <i class="fas fa-shopping-cart mr-2"></i>Transaksi Marketplace
                         </a>
                     @endif

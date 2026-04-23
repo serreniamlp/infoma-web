@@ -12,11 +12,11 @@
                 <p class="text-gray-600 mt-2">Detail kegiatan Anda</p>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="{{ route('provider.activities.edit', $activity) }}"
+                <a href="{{ route('provider.event.activities.edit', $activity) }}"
                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <i class="fas fa-edit mr-2"></i>Edit
                 </a>
-                <a href="{{ route('provider.activities.index') }}"
+                <a href="{{ route('provider.event.activities.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>Kembali
                 </a>
@@ -175,12 +175,12 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
 
                     <div class="space-y-3">
-                        <a href="{{ route('provider.activities.edit', $activity) }}"
+                        <a href="{{ route('provider.event.activities.edit', $activity) }}"
                            class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                             <i class="fas fa-edit mr-2"></i>Edit Kegiatan
                         </a>
 
-                        <form method="POST" action="{{ route('provider.activities.toggleStatus', $activity) }}" class="block">
+                        <form method="POST" action="{{ route('provider.event.activities.toggleStatus', $activity) }}" class="block">
                             @csrf
                             @method('PATCH')
                             <button type="submit"
@@ -190,7 +190,7 @@
                             </button>
                         </form>
 
-                        <a href="{{ route('provider.bookings.index', ['activity' => $activity->id]) }}"
+                        <a href="{{ route('provider.event.bookings.index', ['activity' => $activity->id]) }}"
                            class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                             <i class="fas fa-bookmark mr-2"></i>Lihat Booking
                         </a>

@@ -31,7 +31,7 @@ class ResidenceController extends Controller
         $residences = $query->orderBy('created_at', 'desc')->paginate(10);
         $categories = Category::where('type', 'residence')->get();
 
-        return view('provider.residences.index', compact('residences', 'categories'));
+        return view('provider_residence.residences.index', compact('residences', 'categories'));
     }
 
     public function show(Residence $residence)
@@ -40,14 +40,14 @@ class ResidenceController extends Controller
 
         $residence->load(['category', 'bookings.user', 'ratings.user']);
 
-        return view('provider.residences.show', compact('residence'));
+        return view('provider_residence.residences.show', compact('residence'));
     }
 
     public function create()
     {
         $categories = Category::where('type', 'residence')->get();
 
-        return view('provider.residences.create', compact('categories'));
+        return view('provider_residence.residences.create', compact('categories'));
     }
 
     public function store(StoreResidenceRequest $request)
@@ -79,7 +79,7 @@ class ResidenceController extends Controller
 
             $residence = Residence::create($data);
 
-            return redirect()->route('provider.residences.show', $residence)
+            return redirect()->route('provider.residence.residences.show', $residence)
                 ->with('success', 'Residence berhasil ditambahkan');
 
         } catch (\Exception $e) {
@@ -95,7 +95,7 @@ class ResidenceController extends Controller
 
         $categories = Category::where('type', 'residence')->get();
 
-        return view('provider.residences.edit', compact('residence', 'categories'));
+        return view('provider_residence.residences.edit', compact('residence', 'categories'));
     }
 
     public function update(UpdateResidenceRequest $request, Residence $residence)
@@ -131,7 +131,7 @@ class ResidenceController extends Controller
 
             $residence->update($data);
 
-            return redirect()->route('provider.residences.show', $residence)
+            return redirect()->route('provider.residence.residences.show', $residence)
                 ->with('success', 'Residence berhasil diupdate');
 
         } catch (\Exception $e) {
@@ -164,7 +164,7 @@ class ResidenceController extends Controller
 
             $residence->delete();
 
-            return redirect()->route('provider.residences.index')
+            return redirect()->route('provider.residence.residences.index')
                 ->with('success', 'Residence berhasil dihapus');
 
         } catch (\Exception $e) {

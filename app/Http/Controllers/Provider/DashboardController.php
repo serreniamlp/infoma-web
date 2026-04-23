@@ -88,7 +88,11 @@ class DashboardController extends Controller
             'approval_rate' => $totalBookings > 0 ? round((($approvedBookings) / $totalBookings) * 100, 1) : 0,
         ];
 
-        return view('provider.dashboard', compact('stats', 'recentBookings', 'recentItems'));
+        $viewName = auth()->user()->hasRole('provider_residence')
+            ? 'provider_residence.dashboard'
+            : 'provider_event.dashboard';
+
+        return view($viewName, compact('stats', 'recentBookings', 'recentItems'));  
     }
 
     public function getChartsData(Request $request)

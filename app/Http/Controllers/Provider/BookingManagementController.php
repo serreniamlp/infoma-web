@@ -71,7 +71,11 @@ class BookingManagementController extends Controller
 
         $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
 
-        return view('provider.bookings.index', compact('bookings', 'status', 'search', 'type', 'dateFrom', 'dateTo'));
+        $viewName = auth()->user()->hasRole('provider_residence')
+            ? 'provider_residence.bookings.index'
+            : 'provider_event.bookings.index';
+
+        return view($viewName, compact('bookings', 'status', 'search', 'type', 'dateFrom', 'dateTo'));
     }
     
 
@@ -84,7 +88,11 @@ class BookingManagementController extends Controller
 
         $booking->load(['user', 'bookable', 'transaction']);
 
-        return view('provider.bookings.show', compact('booking'));
+        $viewName = auth()->user()->hasRole('provider_residence')
+            ? 'provider_residence.bookings.show'
+            : 'provider_event.bookings.show';
+
+        return view($viewName, compact('booking'));
     }
 
     public function approve(Request $request, Booking $booking)

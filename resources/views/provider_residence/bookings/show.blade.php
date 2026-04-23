@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
                 <p class="text-gray-600 mt-2">Booking #{{ $booking->booking_code }}</p>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="{{ route('provider.bookings.index') }}"
+                <a href="{{ route('provider.residence.bookings.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>Kembali
                 </a>
@@ -42,7 +42,7 @@ use Illuminate\Support\Str;
 
                     @if($booking->status === 'pending')
                         <div class="flex space-x-3">
-                            <form method="POST" action="{{ route('provider.bookings.approve', $booking) }}" class="inline">
+                            <form method="POST" action="{{ route('provider.residence.bookings.approve', $booking) }}" class="inline">
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
@@ -228,18 +228,18 @@ use Illuminate\Support\Str;
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
 
                     <div class="space-y-3">
-                        <a href="{{ route('provider.bookings.index') }}"
+                        <a href="{{ route('provider.residence.bookings.index') }}"
                            class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                             <i class="fas fa-list mr-2"></i>Lihat Semua Booking
                         </a>
 
                         @if($booking->bookable_type === 'App\\Models\\Residence')
-                            <a href="{{ route('provider.residences.show', $booking->bookable) }}"
+                            <a href="{{ route('provider.residence.residences.show', $booking->bookable) }}"
                                class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                                 <i class="fas fa-building mr-2"></i>Lihat Residence
                             </a>
                         @else
-                            <a href="{{ route('provider.activities.show', $booking->bookable) }}"
+                            <a href="{{ route('provider.residence.activities.show', $booking->bookable) }}"
                                class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                                 <i class="fas fa-calendar-alt mr-2"></i>Lihat Kegiatan
                             </a>
@@ -256,7 +256,7 @@ use Illuminate\Support\Str;
     <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div class="mt-3">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Tolak Booking</h3>
-            <form method="POST" action="{{ route('provider.bookings.reject', $booking) }}">
+            <form method="POST" action="{{ route('provider.residence.bookings.reject', $booking) }}">
                 @csrf
                 @method('PATCH')
                 <div class="mb-4">
