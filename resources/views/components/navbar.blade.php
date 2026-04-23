@@ -125,6 +125,11 @@
                                 class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-shopping-cart mr-2"></i>Transaksi Marketplace
                                 </a>
+                                <a href="{{ route('user.marketplace.sell') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                    <i class="fas fa-store mr-2"></i>
+                                    {{ Auth::user()->isSeller() ? 'Produk Saya' : 'Mulai Berjualan' }}
+                                </a>
                             @endif
 
                             <div class="border-t border-gray-100"></div>

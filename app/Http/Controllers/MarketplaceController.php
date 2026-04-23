@@ -7,7 +7,6 @@ use App\Models\ProductCategory;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class MarketplaceController extends Controller
 {
@@ -17,34 +16,27 @@ class MarketplaceController extends Controller
             ->active()
             ->available();
 
-        // Search functionality
         if ($request->filled('search')) {
             $query->search($request->search);
         }
 
-        // Filter by category
         if ($request->filled('category')) {
             $query->where('category_id', $request->category);
         }
 
-        // Filter by condition
         if ($request->filled('condition')) {
             $query->byCondition($request->condition);
         }
 
-        // Filter by price range
         if ($request->filled('min_price') || $request->filled('max_price')) {
             $query->priceRange($request->min_price, $request->max_price);
         }
 
-        // Filter by location
         if ($request->filled('location')) {
             $query->byLocation($request->location);
         }
 
-        // Sort
         $sort = $request->get('sort', 'created_at');
-        $direction = $request->get('direction', 'desc');
 
         switch ($sort) {
             case 'price_asc':
@@ -63,7 +55,7 @@ class MarketplaceController extends Controller
                 $query->orderBy('created_at', 'desc');
         }
 
-        $products = $query->paginate(12);
+        $products   = $query->paginate(12);
         $categories = ProductCategory::active()->get();
 
         return view('marketplace.index', compact('products', 'categories'));
@@ -71,12 +63,9 @@ class MarketplaceController extends Controller
 
     public function show(MarketplaceProduct $product)
     {
-        // Increment views
         $product->incrementViews(Auth::id(), request()->ip());
-
         $product->load(['seller', 'category', 'ratings.user']);
 
-        // Get related products
         $relatedProducts = MarketplaceProduct::with(['seller', 'category'])
             ->where('category_id', $product->category_id)
             ->where('id', '!=', $product->id)
@@ -85,7 +74,6 @@ class MarketplaceController extends Controller
             ->limit(4)
             ->get();
 
-        // Check if user has bookmarked this product
         $isBookmarked = false;
         if (Auth::check()) {
             $isBookmarked = $product->isBookmarkedBy(Auth::id());
@@ -96,9 +84,10 @@ class MarketplaceController extends Controller
 
     public function create()
     {
-        // Check if user has provider role
-        if (!Auth::user()->hasRole('provider')) {
-            abort(403, 'Hanya provider yang dapat menjual produk');
+        // Cek apakah user sudah aktif sebagai seller
+        if (!Auth::user()->isSeller()) {
+            return redirect()->route('user.marketplace.sell')
+                ->with('error', 'Anda harus mengaktifkan akun penjual terlebih dahulu.');
         }
 
         $categories = ProductCategory::active()->get();
@@ -107,56 +96,52 @@ class MarketplaceController extends Controller
 
     public function store(Request $request)
     {
-        // Check if user has provider role
-        if (!Auth::user()->hasRole('provider')) {
-            abort(403, 'Hanya provider yang dapat menjual produk');
+        if (!Auth::user()->isSeller()) {
+            return redirect()->route('user.marketplace.sell')
+                ->with('error', 'Anda harus mengaktifkan akun penjual terlebih dahulu.');
         }
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:product_categories,id',
-            'condition' => 'required|in:new,like_new,good,fair,needs_repair',
-            'price' => 'required|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:1',
-            'location' => 'required|string|max:255',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'tags' => 'nullable|string',
+            'name'          => 'required|string|max:255',
+            'description'   => 'required|string',
+            'category_id'   => 'required|exists:product_categories,id',
+            'condition'     => 'required|in:new,like_new,good,fair,needs_repair',
+            'price'         => 'required|numeric|min:0',
+            'stock_quantity'=> 'required|integer|min:1',
+            'location'      => 'required|string|max:255',
+            'images.*'      => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'tags'          => 'nullable|string',
         ]);
 
-        $data = $request->all();
+        $data              = $request->all();
         $data['seller_id'] = Auth::id();
-        $data['status'] = 'active';
+        $data['status']    = 'active';
 
-        // Handle images
         if ($request->hasFile('images')) {
             $images = [];
             foreach ($request->file('images') as $image) {
-                $path = $image->store('marketplace/products', 'public');
-                $images[] = $path;
+                $images[] = $image->store('marketplace/products', 'public');
             }
             $data['images'] = $images;
         }
 
-        // Handle tags
         if ($request->filled('tags')) {
             $data['tags'] = array_map('trim', explode(',', $request->tags));
         }
 
         MarketplaceProduct::create($data);
 
-        return redirect()->route('provider.marketplace.my-products')
+        return redirect()->route('user.marketplace.sell.my-products')
             ->with('success', 'Produk berhasil ditambahkan!');
     }
 
     public function edit(MarketplaceProduct $product)
     {
-        // Check if user has provider role
-        if (!Auth::user()->hasRole('provider')) {
-            abort(403, 'Hanya provider yang dapat mengedit produk');
+        if (!Auth::user()->isSeller()) {
+            return redirect()->route('user.marketplace.sell')
+                ->with('error', 'Anda harus mengaktifkan akun penjual terlebih dahulu.');
         }
 
-        // Check if user owns this product
         if ($product->seller_id !== Auth::id()) {
             abort(403, 'Unauthorized');
         }
@@ -167,34 +152,31 @@ class MarketplaceController extends Controller
 
     public function update(Request $request, MarketplaceProduct $product)
     {
-        // Check if user has provider role
-        if (!Auth::user()->hasRole('provider')) {
-            abort(403, 'Hanya provider yang dapat mengupdate produk');
+        if (!Auth::user()->isSeller()) {
+            return redirect()->route('user.marketplace.sell')
+                ->with('error', 'Anda harus mengaktifkan akun penjual terlebih dahulu.');
         }
 
-        // Check if user owns this product
         if ($product->seller_id !== Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'category_id' => 'required|exists:product_categories,id',
-            'condition' => 'required|in:new,like_new,good,fair,needs_repair',
-            'price' => 'required|numeric|min:0',
-            'stock_quantity' => 'required|integer|min:0',
-            'location' => 'required|string|max:255',
-            'images.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'tags' => 'nullable|string',
-            'status' => 'required|in:draft,active,inactive',
+            'name'          => 'required|string|max:255',
+            'description'   => 'required|string',
+            'category_id'   => 'required|exists:product_categories,id',
+            'condition'     => 'required|in:new,like_new,good,fair,needs_repair',
+            'price'         => 'required|numeric|min:0',
+            'stock_quantity'=> 'required|integer|min:0',
+            'location'      => 'required|string|max:255',
+            'images.*'      => 'image|mimes:jpeg,png,jpg,gif|max:2048',
+            'tags'          => 'nullable|string',
+            'status'        => 'required|in:draft,active,inactive',
         ]);
 
         $data = $request->all();
 
-        // Handle images
         if ($request->hasFile('images')) {
-            // Delete old images
             if ($product->images) {
                 foreach ($product->images as $image) {
                     Storage::disk('public')->delete($image);
@@ -203,36 +185,31 @@ class MarketplaceController extends Controller
 
             $images = [];
             foreach ($request->file('images') as $image) {
-                $path = $image->store('marketplace/products', 'public');
-                $images[] = $path;
+                $images[] = $image->store('marketplace/products', 'public');
             }
             $data['images'] = $images;
         }
 
-        // Handle tags
         if ($request->filled('tags')) {
             $data['tags'] = array_map('trim', explode(',', $request->tags));
         }
 
         $product->update($data);
 
-        return redirect()->route('provider.marketplace.my-products')
+        return redirect()->route('user.marketplace.sell.my-products')
             ->with('success', 'Produk berhasil diperbarui!');
     }
 
     public function destroy(MarketplaceProduct $product)
     {
-        // Check if user has provider role
-        if (!Auth::user()->hasRole('provider')) {
-            abort(403, 'Hanya provider yang dapat menghapus produk');
+        if (!Auth::user()->isSeller()) {
+            abort(403, 'Unauthorized');
         }
 
-        // Check if user owns this product
         if ($product->seller_id !== Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
-        // Delete images
         if ($product->images) {
             foreach ($product->images as $image) {
                 Storage::disk('public')->delete($image);
@@ -241,15 +218,15 @@ class MarketplaceController extends Controller
 
         $product->delete();
 
-        return redirect()->route('provider.marketplace.my-products')
+        return redirect()->route('user.marketplace.sell.my-products')
             ->with('success', 'Produk berhasil dihapus!');
     }
 
     public function myProducts()
     {
-        // Check if user has provider role
-        if (!Auth::user()->hasRole('provider')) {
-            abort(403, 'Hanya provider yang dapat melihat produk mereka');
+        if (!Auth::user()->isSeller()) {
+            return redirect()->route('user.marketplace.sell')
+                ->with('error', 'Anda harus mengaktifkan akun penjual terlebih dahulu.');
         }
 
         $products = MarketplaceProduct::with(['category'])

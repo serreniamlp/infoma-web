@@ -102,12 +102,14 @@ Route::middleware('auth')->group(function () {
             });
 
             // FJB — Mahasiswa sebagai seller
+            Route::get('/sell', [\App\Http\Controllers\User\SellerController::class, 'index'])->name('sell');
+            Route::post('/sell/activate', [\App\Http\Controllers\User\SellerController::class, 'activate'])->name('sell.activate');
+            Route::get('/sell/my-products', [MarketplaceController::class, 'myProducts'])->name('sell.my-products');
             Route::get('/sell/create', [MarketplaceController::class, 'create'])->name('sell.create');
-            Route::post('/sell', [MarketplaceController::class, 'store'])->name('sell.store');
+            Route::post('/sell/store', [MarketplaceController::class, 'store'])->name('sell.store');
             Route::get('/sell/{product}/edit', [MarketplaceController::class, 'edit'])->name('sell.edit');
             Route::put('/sell/{product}', [MarketplaceController::class, 'update'])->name('sell.update');
             Route::delete('/sell/{product}', [MarketplaceController::class, 'destroy'])->name('sell.destroy');
-            Route::get('/sell/my-products', [MarketplaceController::class, 'myProducts'])->name('sell.my-products');
         });
     });
 

@@ -18,7 +18,7 @@
                     <h4><i class="fas fa-plus"></i> Jual Produk Baru</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('provider.marketplace.store') }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('user.marketplace.sell.store') }}" method="POST" enctype="multipart/form-data">
                         @csrf
 
                         <!-- Product Name -->
@@ -131,7 +131,7 @@
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ route('provider.marketplace.my-products') }}" class="btn btn-secondary me-md-2">Batal</a>
+                            <form action="{{ route('user.marketplace.sell.store') }}" method="GET" class="btn btn-secondary me-md-2">Batal</form>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-plus"></i> Tambah Produk
                             </button>

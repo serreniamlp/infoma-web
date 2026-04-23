@@ -19,7 +19,7 @@
                     <h4><i class="fas fa-edit"></i> Edit Produk</h4>
                 </div>
                 <div class="card-body">
-                    <form action="{{ route('provider.marketplace.update', $product) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('user.marketplace.sell.update', $product) }}" method="POST" enctype="multipart/form-data">
                         @csrf
                         @method('PUT')
 
@@ -168,7 +168,7 @@
                         </div>
 
                         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <a href="{{ route('provider.marketplace.my-products') }}" class="btn btn-secondary me-md-2">Batal</a>
+                            <a href="{{ route('user.marketplace.sell.my-products') }}" class="btn btn-secondary me-md-2">Batal</a>
                             <button type="submit" class="btn btn-primary">
                                 <i class="fas fa-save"></i> Simpan Perubahan
                             </button>
