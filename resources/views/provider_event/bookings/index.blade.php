@@ -15,7 +15,7 @@
 
         <!-- Filter and Search -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <form method="GET" action="{{ route('provider.bookings.index') }}">
+            <form method="GET" action="{{ route('provider.event.bookings.index') }}">
                 <!-- Baris 1: Search, Status, Tipe -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div class="md:col-span-1">
@@ -62,7 +62,7 @@
                             <i class="fas fa-search"></i> Cari
                         </button>
                         @if(request()->hasAny(['search', 'status', 'type', 'date_from', 'date_to']))
-                        <a href="{{ route('provider.bookings.index') }}"
+                        <a href="{{ route('provider.event.bookings.index') }}"
                         class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
                             <i class="fas fa-times"></i> Reset
                         </a>
@@ -154,12 +154,12 @@
                                 </td>
                                 <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                     <div class="flex items-center space-x-2">
-                                        <a href="{{ route('provider.bookings.show', $booking) }}"
+                                        <a href="{{ route('provider.event.bookings.show', $booking) }}"
                                            class="text-blue-600 hover:text-blue-900">
                                             <i class="fas fa-eye"></i>
                                         </a>
                                         @if($booking->status === 'pending')
-                                            <form method="POST" action="{{ route('provider.bookings.approve', $booking) }}" class="inline">
+                                            <form method="POST" action="{{ route('provider.event.bookings.approve', $booking) }}" class="inline">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" class="text-green-600 hover:text-green-900"

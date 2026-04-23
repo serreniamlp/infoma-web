@@ -39,7 +39,7 @@ class ActivityController extends Controller
         $activities = $query->orderBy('event_date', 'asc')->paginate(10);
         $categories = Category::where('type', 'activity')->get();
 
-        return view('provider.activities.index', compact('activities', 'categories'));
+        return view('provider_event.activities.index', compact('activities', 'categories'));
     }
 
     public function show(Activity $activity)
@@ -48,14 +48,14 @@ class ActivityController extends Controller
 
         $activity->load(['category', 'bookings.user', 'ratings.user']);
 
-        return view('provider.activities.show', compact('activity'));
+        return view('provider_event.activities.show', compact('activity'));
     }
 
     public function create()
     {
         $categories = Category::where('type', 'activity')->get();
 
-        return view('provider.activities.create', compact('categories'));
+        return view('provider_event.activities.create', compact('categories'));
     }
 
     public function store(StoreActivityRequest $request)
@@ -79,7 +79,7 @@ class ActivityController extends Controller
 
             $activity = Activity::create($data);
 
-            return redirect()->route('provider.activities.show', $activity)
+            return redirect()->route('provider_event.activities.show', $activity)
                 ->with('success', 'Activity berhasil ditambahkan');
 
         } catch (\Exception $e) {
@@ -95,7 +95,7 @@ class ActivityController extends Controller
 
         $categories = Category::where('type', 'activity')->get();
 
-        return view('provider.activities.edit', compact('activity', 'categories'));
+        return view('provider.event.activities.edit', compact('activity', 'categories'));
     }
 
     public function update(UpdateActivityRequest $request, Activity $activity)
@@ -123,7 +123,7 @@ class ActivityController extends Controller
 
             $activity->update($data);
 
-            return redirect()->route('provider.activities.show', $activity)
+            return redirect()->route('provider_event.activities.show', $activity)
                 ->with('success', 'Activity berhasil diupdate');
 
         } catch (\Exception $e) {
@@ -156,7 +156,7 @@ class ActivityController extends Controller
 
             $activity->delete();
 
-            return redirect()->route('provider.activities.index')
+            return redirect()->route('provider.event.activities.index')
                 ->with('success', 'Activity berhasil dihapus');
 
         } catch (\Exception $e) {

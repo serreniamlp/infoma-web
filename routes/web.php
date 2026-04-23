@@ -9,6 +9,9 @@ use App\Http\Controllers\User\ActivityController as UserActivityController;
 use App\Http\Controllers\User\BookingController as UserBookingController;
 use App\Http\Controllers\User\BookmarkController;
 use App\Http\Controllers\User\RatingController;
+use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\User\DashboardController as UserDashboardController;
+use App\Http\Controllers\User\MarketplaceTransactionController as UserMarketplaceTransactionController;
 use App\Http\Controllers\Provider\DashboardController as ProviderDashboardController;
 use App\Http\Controllers\Provider\ResidenceController as ProviderResidenceController;
 use App\Http\Controllers\Provider\ActivityController as ProviderActivityController;
@@ -16,17 +19,25 @@ use App\Http\Controllers\Provider\BookingManagementController;
 use App\Http\Controllers\Provider\MarketplaceTransactionController as ProviderMarketplaceTransactionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserManagementController;
-use App\Http\Controllers\User\ProfileController;
-use App\Http\Controllers\User\DashboardController as UserDashboardController;
-use App\Http\Controllers\User\MarketplaceTransactionController as UserMarketplaceTransactionController;
 use App\Http\Controllers\MarketplaceController;
 
-
+// ============================================================
 // Public Routes
+// ============================================================
 Route::get('/', [HomeController::class, 'index'])->name('home');
 Route::get('/search', [HomeController::class, 'search'])->name('search');
 
+// Public listing pages
+Route::get('/residences', [UserResidenceController::class, 'index'])->name('residences.index');
+Route::get('/residences/{residence}', [UserResidenceController::class, 'show'])->name('residences.show');
+Route::get('/activities', [UserActivityController::class, 'index'])->name('activities.index');
+Route::get('/activities/{activity}', [UserActivityController::class, 'show'])->name('activities.show');
+Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace.index');
+Route::get('/marketplace/{product}', [MarketplaceController::class, 'show'])->name('marketplace.show');
+
+// ============================================================
 // Authentication Routes
+// ============================================================
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginController::class, 'showLoginForm'])->name('login');
     Route::post('/login', [LoginController::class, 'login']);
@@ -36,26 +47,26 @@ Route::middleware('guest')->group(function () {
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
-// User Routes (Public - can view without login)
-Route::get('/residences', [UserResidenceController::class, 'index'])->name('residences.index');
-Route::get('/residences/{residence}', [UserResidenceController::class, 'show'])->name('residences.show');
-Route::get('/activities', [UserActivityController::class, 'index'])->name('activities.index');
-Route::get('/activities/{activity}', [UserActivityController::class, 'show'])->name('activities.show');
-
-// Marketplace Routes (Public - can view without login)
-Route::get('/marketplace', [MarketplaceController::class, 'index'])->name('marketplace.index');
-Route::get('/marketplace/{product}', [MarketplaceController::class, 'show'])->name('marketplace.show');
-
-// Authentication required routes
+// ============================================================
+// Authenticated Routes
+// ============================================================
 Route::middleware('auth')->group(function () {
 
-    // Profile (available to any authenticated user)
+    // Profile (semua user yang login bisa akses)
     Route::get('/profile', [ProfileController::class, 'show'])->name('user.profile.show');
 
-    // User specific routes
+    // Marketplace bookmark (semua user yang login bisa akses)
+    Route::prefix('marketplace')->name('marketplace.')->group(function () {
+        Route::get('/bookmarks', [MarketplaceController::class, 'bookmarks'])->name('bookmarks');
+        Route::post('/{product}/bookmark', [MarketplaceController::class, 'toggleBookmark'])->name('bookmark');
+    });
+
+    // --------------------------------------------------------
+    // Mahasiswa (role: user)
+    // --------------------------------------------------------
     Route::middleware('role:user')->prefix('user')->name('user.')->group(function () {
 
-        // Dashboard
+        // Dashboard & History
         Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
         Route::get('/history', [UserDashboardController::class, 'history'])->name('history');
 
@@ -78,7 +89,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/ratings', [RatingController::class, 'store'])->name('ratings.store');
         Route::delete('/ratings', [RatingController::class, 'destroy'])->name('ratings.destroy');
 
-        // User Marketplace Transactions
+        // Marketplace Transactions (sebagai buyer)
         Route::prefix('marketplace')->name('marketplace.')->group(function () {
             Route::prefix('transactions')->name('transactions.')->group(function () {
                 Route::get('/create/{product}', [UserMarketplaceTransactionController::class, 'create'])->name('create');
@@ -89,64 +100,62 @@ Route::middleware('auth')->group(function () {
                 Route::post('/{transaction}/rate', [UserMarketplaceTransactionController::class, 'rate'])->name('rate');
                 Route::patch('/{transaction}/cancel', [UserMarketplaceTransactionController::class, 'cancel'])->name('cancel');
             });
+
+            // FJB — Mahasiswa sebagai seller
+            Route::get('/sell/create', [MarketplaceController::class, 'create'])->name('sell.create');
+            Route::post('/sell', [MarketplaceController::class, 'store'])->name('sell.store');
+            Route::get('/sell/{product}/edit', [MarketplaceController::class, 'edit'])->name('sell.edit');
+            Route::put('/sell/{product}', [MarketplaceController::class, 'update'])->name('sell.update');
+            Route::delete('/sell/{product}', [MarketplaceController::class, 'destroy'])->name('sell.destroy');
+            Route::get('/sell/my-products', [MarketplaceController::class, 'myProducts'])->name('sell.my-products');
         });
     });
 
-    // Marketplace Routes (Authentication required)
-    Route::prefix('marketplace')->name('marketplace.')->group(function () {
-        // Public routes (available to all authenticated users)
-        Route::get('/bookmarks', [MarketplaceController::class, 'bookmarks'])->name('bookmarks');
-        Route::post('/{product}/bookmark', [MarketplaceController::class, 'toggleBookmark'])->name('bookmark');
-
-        // Transaction Routes (create and store - available to all authenticated users)
-        // Route::get('/transactions/create/{product}', [MarketplaceTransactionController::class, 'create'])->name('transactions.create');
-        // Route::post('/transactions/{product}', [MarketplaceTransactionController::class, 'store'])->name('transactions.store');
-    });
-
-    // Provider routes
-    Route::middleware('role:provider')->prefix('provider')->name('provider.')->group(function () {
+    // --------------------------------------------------------
+    // Provider Hunian (role: provider_residence)
+    // --------------------------------------------------------
+    Route::middleware('role:provider_residence')->prefix('provider/residence')->name('provider.residence.')->group(function () {
 
         // Dashboard
         Route::get('/dashboard', [ProviderDashboardController::class, 'index'])->name('dashboard');
         Route::get('/dashboard/charts-data', [ProviderDashboardController::class, 'getChartsData'])->name('dashboard.charts');
 
-        // Residences Management
+        // Kelola Hunian
         Route::resource('residences', ProviderResidenceController::class);
         Route::patch('/residences/{residence}/toggle-status', [ProviderResidenceController::class, 'toggleStatus'])
             ->name('residences.toggleStatus');
 
-        // Activities Management
-        Route::resource('activities', ProviderActivityController::class);
-        Route::patch('/activities/{activity}/toggle-status', [ProviderActivityController::class, 'toggleStatus'])
-            ->name('activities.toggleStatus');
-
-        // Booking Management
+        // Kelola Booking Hunian
         Route::get('/bookings', [BookingManagementController::class, 'index'])->name('bookings.index');
         Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
         Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
-
-        // Marketplace Product Management (Provider only)
-        Route::prefix('marketplace')->name('marketplace.')->group(function () {
-            Route::get('/create', [MarketplaceController::class, 'create'])->name('create');
-            Route::post('/', [MarketplaceController::class, 'store'])->name('store');
-            Route::get('/edit/{product}', [MarketplaceController::class, 'edit'])->name('edit');
-            Route::put('/{product}', [MarketplaceController::class, 'update'])->name('update');
-            Route::delete('/{product}', [MarketplaceController::class, 'destroy'])->name('destroy');
-            Route::get('/my-products', [MarketplaceController::class, 'myProducts'])->name('my-products');
-            
-            // Marketplace Transaction Management (Provider only)
-            Route::prefix('transactions')->name('transactions.')->group(function () {
-                Route::get('/', [ProviderMarketplaceTransactionController::class, 'index'])->name('index');
-                Route::get('/{transaction}', [ProviderMarketplaceTransactionController::class, 'show'])->name('show');
-                Route::put('/{transaction}/status', [ProviderMarketplaceTransactionController::class, 'updateStatus'])->name('update-status');
-                Route::post('/{transaction}/confirm-payment', [ProviderMarketplaceTransactionController::class, 'confirmPayment'])->name('confirm-payment');
-                Route::get('/statistics/data', [ProviderMarketplaceTransactionController::class, 'getStatistics'])->name('statistics');
-            });
-        });
     });
 
-    // Admin routes
+    // --------------------------------------------------------
+    // Provider Event (role: provider_event)
+    // --------------------------------------------------------
+    Route::middleware('role:provider_event')->prefix('provider/event')->name('provider.event.')->group(function () {
+
+        // Dashboard
+        Route::get('/dashboard', [ProviderDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard/charts-data', [ProviderDashboardController::class, 'getChartsData'])->name('dashboard.charts');
+
+        // Kelola Event
+        Route::resource('activities', ProviderActivityController::class);
+        Route::patch('/activities/{activity}/toggle-status', [ProviderActivityController::class, 'toggleStatus'])
+            ->name('activities.toggleStatus');
+
+        // Kelola Booking Event
+        Route::get('/bookings', [BookingManagementController::class, 'index'])->name('bookings.index');
+        Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
+        Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
+        Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
+    });
+
+    // --------------------------------------------------------
+    // Admin (role: admin)
+    // --------------------------------------------------------
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
 
         // Dashboard

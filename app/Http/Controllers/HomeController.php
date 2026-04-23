@@ -19,9 +19,11 @@ class HomeController extends Controller
             // Redirect based on user role
             if ($user->hasRole('admin')) {
                 return redirect()->route('admin.dashboard');
-            } elseif ($user->hasRole('provider')) {
-                return redirect()->route('provider.dashboard');
-            } elseif ($user->hasRole('user')) {
+            } elseif ($user->hasRole('provider_residence')) {
+                return redirect()->route('provider.residence.dashboard');
+            } elseif ($user->hasRole('provider_event')) {
+                return redirect()->route('provider.event.dashboard');
+            } else {
                 return redirect()->route('user.dashboard');
             }
         }

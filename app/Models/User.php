@@ -18,6 +18,11 @@ class User extends Authenticatable
         'phone',
         'address',
         'profile_picture',
+        'is_seller',
+    ];
+
+    protected $casts = [
+        'is_seller' => 'boolean',
     ];
 
     protected $hidden = [
@@ -68,6 +73,11 @@ class User extends Authenticatable
     public function hasAllRoles($roles)
     {
         return $this->roles()->whereIn('name', $roles)->count() === count($roles);
+    }
+
+    public function isSeller(): bool
+    {
+        return (bool) $this->is_seller;
     }
 
     // PROVIDER RELATIONSHIPS

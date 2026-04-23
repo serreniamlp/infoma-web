@@ -14,11 +14,11 @@
                 <p class="text-gray-600 mt-2">Detail residence Anda</p>
             </div>
             <div class="flex items-center space-x-4">
-                <a href="{{ route('provider.residences.edit', $residence) }}"
+                <a href="{{ route('provider.residence.residences.edit', $residence) }}"
                    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <i class="fas fa-edit mr-2"></i>Edit
                 </a>
-                <a href="{{ route('provider.residences.index') }}"
+                <a href="{{ route('provider.residence.residences.index') }}"
                    class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
                     <i class="fas fa-arrow-left mr-2"></i>Kembali
                 </a>
@@ -199,12 +199,12 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi Cepat</h3>
 
                     <div class="space-y-3">
-                        <a href="{{ route('provider.residences.edit', $residence) }}"
+                        <a href="{{ route('provider.residence.residences.edit', $residence) }}"
                            class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                             <i class="fas fa-edit mr-2"></i>Edit Residence
                         </a>
 
-                        <form method="POST" action="{{ route('provider.residences.toggleStatus', $residence) }}" class="block">
+                        <form method="POST" action="{{ route('provider.residence.residences.toggleStatus', $residence) }}" class="block">
                             @csrf
                             @method('PATCH')
                             <button type="submit"
@@ -214,7 +214,7 @@
                             </button>
                         </form>
 
-                        <a href="{{ route('provider.bookings.index', ['residence' => $residence->id]) }}"
+                        <a href="{{ route('provider.residence.bookings.index', ['residence' => $residence->id]) }}"
                            class="w-full bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                             <i class="fas fa-bookmark mr-2"></i>Lihat Booking
                         </a>

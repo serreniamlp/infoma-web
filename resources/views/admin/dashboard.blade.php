@@ -99,7 +99,7 @@
                 </div>
             </a>
 
-            <a href="{{ route('provider.residences.index') }}"
+            <a href="{{ route('provider.residence.residences.index') }}"
                class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200 group">
                 <div class="flex items-center">
                     <div class="bg-yellow-100 rounded-lg p-3 group-hover:bg-yellow-200 transition-colors">
@@ -112,7 +112,7 @@
                 </div>
             </a>
 
-            <a href="{{ route('provider.activities.index') }}"
+            <a href="{{ route('provider.event.activities.index') }}"
                class="bg-white rounded-lg shadow-sm p-6 hover:shadow-md transition-shadow duration-200 group">
                 <div class="flex items-center">
                     <div class="bg-purple-100 rounded-lg p-3 group-hover:bg-purple-200 transition-colors">

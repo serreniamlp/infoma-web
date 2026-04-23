@@ -25,40 +25,75 @@ class DatabaseSeeder extends Seeder
 
     private function createDemoUsers()
     {
-        // Admin user
-        $admin = User::factory()->create([
-            'name' => 'Admin User',
-            'email' => 'admin@infoma.com',
-            'phone' => '081234567890',
-            'address' => 'Jl. Admin No. 1, Jakarta',
-        ]);
-        $admin->roles()->attach(Role::where('name', 'admin')->first()->id);
+        // Admin
+        $admin = User::firstOrCreate(
+            ['email' => 'admin@infoma.com'],
+            [
+                'name'     => 'Admin User',
+                'password' => bcrypt('password'),
+                'phone'    => '081234567890',
+                'address'  => 'Jl. Admin No. 1, Jakarta',
+            ]
+        );
+        $admin->roles()->syncWithoutDetaching(
+            Role::where('name', 'admin')->first()->id
+        );
 
-        // Provider user
-        $provider = User::factory()->create([
-            'name' => 'Provider User',
-            'email' => 'provider@infoma.com',
-            'phone' => '081234567891',
-            'address' => 'Jl. Provider No. 2, Jakarta',
-        ]);
-        $provider->roles()->attach(Role::where('name', 'provider')->first()->id);
+        // Provider Hunian
+        $providerResidence = User::firstOrCreate(
+            ['email' => 'provider.hunian@infoma.com'],
+            [
+                'name'     => 'Provider Hunian',
+                'password' => bcrypt('password'),
+                'phone'    => '081234567891',
+                'address'  => 'Jl. Provider No. 2, Jakarta',
+            ]
+        );
+        $providerResidence->roles()->syncWithoutDetaching(
+            Role::where('name', 'provider_residence')->first()->id
+        );
 
-        // Regular user
-        $user = User::factory()->create([
-            'name' => 'Regular User',
-            'email' => 'user@infoma.com',
-            'phone' => '081234567892',
-            'address' => 'Jl. User No. 3, Jakarta',
-        ]);
-        $user->roles()->attach(Role::where('name', 'user')->first()->id);
+        // Provider Event
+        $providerEvent = User::firstOrCreate(
+            ['email' => 'provider.event@infoma.com'],
+            [
+                'name'     => 'Provider Event',
+                'password' => bcrypt('password'),
+                'phone'    => '081234567892',
+                'address'  => 'Jl. Provider No. 3, Jakarta',
+            ]
+        );
+        $providerEvent->roles()->syncWithoutDetaching(
+            Role::where('name', 'provider_event')->first()->id
+        );
 
-        // Test user (for development)
-        $testUser = User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-            'phone' => '081234567893',
-            'address' => 'Jl. Test No. 123, Jakarta',
-        ]);
-        $testUser->roles()->attach(Role::where('name', 'user')->first()->id);
+        // Mahasiswa
+        $user = User::firstOrCreate(
+            ['email' => 'user@infoma.com'],
+            [
+                'name'     => 'Regular User',
+                'password' => bcrypt('password'),
+                'phone'    => '081234567893',
+                'address'  => 'Jl. User No. 4, Jakarta',
+            ]
+        );
+        $user->roles()->syncWithoutDetaching(
+            Role::where('name', 'user')->first()->id
+        );
+
+        // Mahasiswa Seller
+        $seller = User::firstOrCreate(
+            ['email' => 'seller@infoma.com'],
+            [
+                'name'      => 'Mahasiswa Seller',
+                'password'  => bcrypt('password'),
+                'phone'     => '081234567894',
+                'address'   => 'Jl. Seller No. 5, Jakarta',
+                'is_seller' => true,
+            ]
+        );
+        $seller->roles()->syncWithoutDetaching(
+            Role::where('name', 'user')->first()->id
+        );
     }
 }

@@ -11,7 +11,7 @@
                 <h1 class="text-3xl font-bold text-gray-900">Kelola Kegiatan</h1>
                 <p class="text-gray-600 mt-2">Kelola semua kegiatan yang Anda selenggarakan</p>
             </div>
-            <a href="{{ route('provider.activities.create') }}"
+            <a href="{{ route('provider.event.activities.create') }}"
                class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                 <i class="fas fa-plus mr-2"></i>Tambah Kegiatan
             </a>
@@ -19,7 +19,7 @@
 
         <!-- Filter and Search -->
         <div class="bg-white rounded-lg shadow-sm p-6 mb-6">
-            <form method="GET" action="{{ route('provider.activities.index') }}" class="flex flex-col md:flex-row gap-4">
+            <form method="GET" action="{{ route('provider.event.activities.index') }}" class="flex flex-col md:flex-row gap-4">
                 <div class="flex-1">
                     <input type="text" name="search" value="{{ request('search') }}"
                            placeholder="Cari kegiatan..."
@@ -98,15 +98,15 @@
                                 </button>
                                 <div x-show="open" @click.away="open = false"
                                      class="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10">
-                                    <a href="{{ route('provider.activities.show', $activity) }}"
+                                    <a href="{{ route('provider.event.activities.show', $activity) }}"
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="fas fa-eye mr-2"></i>Lihat Detail
                                     </a>
-                                    <a href="{{ route('provider.activities.edit', $activity) }}"
+                                    <a href="{{ route('provider.event.activities.edit', $activity) }}"
                                        class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                         <i class="fas fa-edit mr-2"></i>Edit
                                     </a>
-                                    <form method="POST" action="{{ route('provider.activities.toggleStatus', $activity) }}" class="block">
+                                    <form method="POST" action="{{ route('provider.event.activities.toggleStatus', $activity) }}" class="block">
                                         @csrf
                                         @method('PATCH')
                                         <button type="submit"
@@ -115,7 +115,7 @@
                                             {{ $activity->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
                                         </button>
                                     </form>
-                                    <form method="POST" action="{{ route('provider.activities.destroy', $activity) }}"
+                                    <form method="POST" action="{{ route('provider.event.activities.destroy', $activity) }}"
                                           class="block" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kegiatan ini?')">
                                         @csrf
                                         @method('DELETE')
@@ -179,11 +179,11 @@
                                 @endif
                             </div>
                             <div class="flex items-center space-x-2">
-                                <a href="{{ route('provider.activities.edit', $activity) }}"
+                                <a href="{{ route('provider.event.activities.edit', $activity) }}"
                                    class="text-green-600 hover:text-green-700">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                <a href="{{ route('provider.activities.show', $activity) }}"
+                                <a href="{{ route('provider.event.activities.show', $activity) }}"
                                    class="text-blue-600 hover:text-blue-700">
                                     <i class="fas fa-eye"></i>
                                 </a>
@@ -215,7 +215,7 @@
                         Mulai dengan membuat kegiatan pertama Anda.
                     @endif
                 </p>
-                <a href="{{ route('provider.activities.create') }}"
+                <a href="{{ route('provider.event.activities.create') }}"
                    class="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg font-medium transition-colors">
                     <i class="fas fa-plus mr-2"></i>Tambah Kegiatan
                 </a>
