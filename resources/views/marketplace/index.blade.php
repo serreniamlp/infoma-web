@@ -99,11 +99,11 @@
                 @auth
                     @if(auth()->user()->hasRole('provider'))
                         <div class="space-x-4">
-                            <a href="{{ route('provider.marketplace.create') }}"
+                            <a href="{{ route('user.marketplace.sell.create') }}"
                                 class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-secondary transition-colors">
                                 <i class="fas fa-plus mr-2"></i> Jual Produk
                             </a>
-                            <a href="{{ route('provider.marketplace.my-products') }}"
+                            <a href="{{ route('user.marketplace.sell.my-products') }}"
                                 class="inline-flex items-center px-4 py-2 border border-primary text-primary rounded-md hover:bg-primary hover:text-white transition-colors">
                                 <i class="fas fa-box mr-2"></i> Produk Saya
                             </a>

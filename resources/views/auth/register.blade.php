@@ -56,11 +56,14 @@
                             <select id="role" name="role" required
                                 class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white appearance-none @error('role') border-red-500 @enderror">
                                 <option value="" disabled {{ old('role') ? '' : 'selected' }}>Pilih peran Anda</option>
-                                <option value="user" {{ old('role', 'user') == 'user' ? 'selected' : '' }}>
-                                    👨‍🎓 Mahasiswa - Cari tempat tinggal & kegiatan
+                                <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>
+                                    Mahasiswa
                                 </option>
-                                <option value="provider" {{ old('role') == 'provider' ? 'selected' : '' }}>
-                                    🏪 Penyedia - Sediakan tempat & kegiatan
+                                <option value="provider_residence" {{ old('role') == 'provider_residence' ? 'selected' : '' }}>
+                                    Provider Hunian (Pemilik Kost/Kontrakan)
+                                </option>
+                                <option value="provider_event" {{ old('role') == 'provider_event' ? 'selected' : '' }}>
+                                    Provider Event (Penyelenggara Kegiatan)
                                 </option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">

@@ -27,7 +27,7 @@
 
     <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
         <h1 class="text-3xl font-bold text-gray-900">Produk Saya</h1>
-        <a href="{{ route('provider.marketplace.create') }}"
+        <a href="{{ route('user.marketplace.sell.create') }}"
             class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200">
             <i class="fas fa-plus mr-2"></i> Tambah Produk
         </a>
@@ -73,7 +73,7 @@
                     <i class="fas fa-eye mr-2"></i> Lihat
                 </a>
                 <div class="grid grid-cols-2 gap-2">
-                    <a href="{{ route('provider.marketplace.edit', $product) }}"
+                    <a href="{{ route('user.marketplace.sell.edit', $product) }}"
                         class="inline-flex items-center justify-center px-4 py-2 border border-yellow-300 text-yellow-700 bg-yellow-50 hover:bg-yellow-100 font-medium rounded-lg text-sm transition duration-200">
                         <i class="fas fa-edit mr-2"></i> Edit
                     </a>
@@ -97,7 +97,7 @@
         <i class="fas fa-box text-6xl text-gray-400 mb-4"></i>
         <h2 class="text-2xl font-bold text-gray-900 mb-2">Belum ada produk</h2>
         <p class="text-gray-600 mb-6">Mulai jual produk Anda di marketplace</p>
-        <a href="{{ route('provider.marketplace.create') }}"
+        <a href="{{ route('user.marketplace.sell.create') }}"
             class="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition duration-200">
             <i class="fas fa-plus mr-2"></i> Tambah Produk Pertama
         </a>
