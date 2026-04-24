@@ -79,7 +79,7 @@ class ActivityController extends Controller
 
             $activity = Activity::create($data);
 
-            return redirect()->route('provider_event.activities.show', $activity)
+            return redirect()->route('provider.event.activities.show', $activity)
                 ->with('success', 'Activity berhasil ditambahkan');
 
         } catch (\Exception $e) {
@@ -95,7 +95,7 @@ class ActivityController extends Controller
 
         $categories = Category::where('type', 'activity')->get();
 
-        return view('provider.event.activities.edit', compact('activity', 'categories'));
+        return view('provider_event.activities.edit', compact('activity', 'categories'));
     }
 
     public function update(UpdateActivityRequest $request, Activity $activity)
@@ -123,7 +123,7 @@ class ActivityController extends Controller
 
             $activity->update($data);
 
-            return redirect()->route('provider_event.activities.show', $activity)
+            return redirect()->route('provider.event.activities.show', $activity)
                 ->with('success', 'Activity berhasil diupdate');
 
         } catch (\Exception $e) {

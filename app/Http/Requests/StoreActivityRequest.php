@@ -8,7 +8,8 @@ class StoreActivityRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->user()->hasRole('provider') || auth()->user()->hasRole('admin');
+        // BUG FIX: role 'provider' sudah dihapus, diganti 'provider_event'
+        return auth()->user()->hasRole('provider_event') || auth()->user()->hasRole('admin');
     }
 
     public function rules()
@@ -71,16 +72,3 @@ class StoreActivityRequest extends FormRequest
         ];
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -16,8 +16,11 @@ class DatabaseSeeder extends Seeder
         // Seed roles first
         $this->call(RoleSeeder::class);
 
-        // Seed product categories
+        // Seed product categories (marketplace)
         $this->call(ProductCategorySeeder::class);
+
+        // Seed activity categories (modul event)
+        $this->call(ActivityCategorySeeder::class);
 
         // Create demo users
         $this->createDemoUsers();

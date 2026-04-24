@@ -19,7 +19,8 @@ class ActivityPolicy
 
     public function create(User $user)
     {
-        return $user->hasRole('provider') || $user->hasRole('admin');
+        // BUG FIX: role 'provider' sudah dihapus, diganti 'provider_event'
+        return $user->hasRole('provider_event') || $user->hasRole('admin');
     }
 
     public function update(User $user, Activity $activity)
@@ -32,5 +33,3 @@ class ActivityPolicy
         return $user->hasRole('admin') || $activity->provider_id === $user->id;
     }
 }
-
-
