@@ -19,7 +19,7 @@ class ResidencePolicy
 
     public function create(User $user)
     {
-        return $user->hasRole('provider') || $user->hasRole('admin');
+        return $user->hasRole('provider_residence') || $user->hasRole('admin');
     }
 
     public function update(User $user, Residence $residence)
@@ -32,5 +32,3 @@ class ResidencePolicy
         return $user->hasRole('admin') || $residence->provider_id === $user->id;
     }
 }
-
-
