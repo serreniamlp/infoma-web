@@ -38,36 +38,52 @@
                             </a>
                             <a href="{{ route('provider.event.activities.index') }}"
                                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('provider.event.activities.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                                <i class="fas fa-calendar-alt mr-1"></i>Event Saya
+                                <i class="fas fa-calendar-alt mr-1"></i>Acara Saya
                             </a>
                             <a href="{{ route('provider.event.bookings.index') }}"
                                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('provider.event.bookings.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                                <i class="fas fa-clipboard-list mr-1"></i>Kelola Booking
+                                <i class="fas fa-clipboard-list mr-1"></i>Kelola Pendaftaran
                             </a>
 
+                    @else
+                        @if(auth()->check() && auth()->user()->isSeller() && request()->routeIs('user.marketplace.seller.*'))
+                            {{-- Navbar Seller --}}
+                            <a href="{{ route('user.marketplace.seller.home') }}"
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('user.marketplace.seller.home') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-home mr-1"></i>Beranda
+                            </a>
+                            <a href="{{ route('user.marketplace.seller.my-products') }}"
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('user.marketplace.seller.my-products') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-boxes mr-1"></i>Produk Saya
+                            </a>
+                            <a href="{{ route('user.marketplace.seller.orders') }}"
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('user.marketplace.seller.orders*') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-clipboard-list mr-1"></i>Kelola Pesanan
+                            </a>
                         @else
-                            {{-- Navbar Mahasiswa & Guest --}}
+                            {{-- Navbar Buyer / Guest --}}
                             <a href="{{ route('home') }}"
-                               class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('home') ? 'text-blue-600 bg-blue-50' : '' }}">
+                            class="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('home') ? 'text-blue-600 bg-blue-50' : '' }}">
                                 <i class="fas fa-home mr-1"></i>Beranda
                             </a>
                             <a href="{{ route('residences.index') }}"
-                               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('residences.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                                <i class="fas fa-building mr-1"></i>Residence
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('residences.*') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-building mr-1"></i>Hunian
                             </a>
                             <a href="{{ route('activities.index') }}"
-                               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('activities.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                                <i class="fas fa-calendar-alt mr-1"></i>Kegiatan
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('activities.*') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-calendar-alt mr-1"></i>Acara
                             </a>
                             <a href="{{ route('marketplace.index') }}"
-                               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('marketplace.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                                <i class="fas fa-store mr-1"></i>Marketplace
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('marketplace.*') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-store mr-1"></i>Barang
                             </a>
                             <a href="{{ route('search') }}"
-                               class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('search') ? 'text-blue-600 bg-blue-50' : '' }}">
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('search') ? 'text-blue-600 bg-blue-50' : '' }}">
                                 <i class="fas fa-search mr-1"></i>Cari
                             </a>
                         @endif
+                    @endif
 
                     @else
                         {{-- Guest --}}
@@ -77,15 +93,15 @@
                         </a>
                         <a href="{{ route('residences.index') }}"
                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('residences.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                            <i class="fas fa-building mr-1"></i>Residence
+                            <i class="fas fa-building mr-1"></i>Hunian
                         </a>
                         <a href="{{ route('activities.index') }}"
                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('activities.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                            <i class="fas fa-calendar-alt mr-1"></i>Kegiatan
+                            <i class="fas fa-calendar-alt mr-1"></i>Acara
                         </a>
                         <a href="{{ route('marketplace.index') }}"
                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('marketplace.*') ? 'text-blue-600 bg-blue-50' : '' }}">
-                            <i class="fas fa-store mr-1"></i>Marketplace
+                            <i class="fas fa-store mr-1"></i>Barang
                         </a>
                         <a href="{{ route('search') }}"
                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 {{ request()->routeIs('search') ? 'text-blue-600 bg-blue-50' : '' }}">
@@ -139,31 +155,45 @@
                                 </a>
 
                             @else
-                                <a href="{{ route('user.dashboard') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
-                                </a>
-                                <a href="{{ route('user.history') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-history mr-2"></i>Riwayat
-                                </a>
-                                <a href="{{ route('user.bookings.index') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-bookmark mr-2"></i>Booking Saya
-                                </a>
-                                <a href="{{ route('user.bookmarks.index') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-heart mr-2"></i>Bookmark
-                                </a>
-                                <a href="{{ route('user.marketplace.transactions.index') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-shopping-cart mr-2"></i>Transaksi Marketplace
-                                </a>
-                                <a href="{{ route('user.marketplace.sell') }}"
-                                   class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-store mr-2"></i>
-                                    {{ auth()->user()->isSeller() ? 'Produk Saya' : 'Mulai Berjualan' }}
-                                </a>
+                                @if(auth()->check() && auth()->user()->isSeller() && request()->routeIs('user.marketplace.seller.*'))
+                                    {{-- Dropdown Seller --}}
+                                    <a href="{{ route('user.marketplace.seller.home') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard Seller
+                                    </a>
+                                    <div class="border-t border-gray-100 my-1"></div>
+                                    <a href="{{ route('marketplace.index') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-arrow-left mr-2"></i>Kembali ke Buyer
+                                    </a>
+                                @else
+                                    {{-- Dropdown Buyer --}}
+                                    <a href="{{ route('user.dashboard') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-tachometer-alt mr-2"></i>Dashboard
+                                    </a>
+                                    <a href="{{ route('user.history') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-history mr-2"></i>Riwayat
+                                    </a>
+                                    <a href="{{ route('user.bookings.index') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-bookmark mr-2"></i>Booking Saya
+                                    </a>
+                                    <a href="{{ route('user.bookmarks.index') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-heart mr-2"></i>Bookmark
+                                    </a>
+                                    <a href="{{ route('user.marketplace.transactions.index') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-shopping-cart mr-2"></i>Transaksi Barang
+                                    </a>
+                                    <a href="{{ route('user.marketplace.sell') }}"
+                                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-store mr-2"></i>
+                                        {{ auth()->user()->isSeller() ? 'Mode Penjual' : 'Mulai Berjualan' }}
+                                    </a>
+                                @endif
                             @endif
 
                             <div class="border-t border-gray-100 my-1"></div>
@@ -235,11 +265,11 @@
                                 </a>
                                 <a href="{{ route('provider.event.activities.index') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                    <i class="fas fa-calendar-alt mr-2"></i>Event Saya
+                                    <i class="fas fa-calendar-alt mr-2"></i>Acara Saya
                                 </a>
                                 <a href="{{ route('provider.event.bookings.index') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                    <i class="fas fa-clipboard-list mr-2"></i>Kelola Booking
+                                    <i class="fas fa-clipboard-list mr-2"></i>Kelola Pendaftaran
                                 </a>
                                 <div class="border-t border-gray-200 my-2"></div>
                                 <a href="{{ route('provider.event.dashboard') }}"
@@ -254,15 +284,15 @@
                                 </a>
                                 <a href="{{ route('residences.index') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                    <i class="fas fa-building mr-2"></i>Residence
+                                    <i class="fas fa-building mr-2"></i>Hunian
                                 </a>
                                 <a href="{{ route('activities.index') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                    <i class="fas fa-calendar-alt mr-2"></i>Kegiatan
+                                    <i class="fas fa-calendar-alt mr-2"></i>Acara
                                 </a>
                                 <a href="{{ route('marketplace.index') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                    <i class="fas fa-store mr-2"></i>Marketplace
+                                    <i class="fas fa-store mr-2"></i>Barang
                                 </a>
                                 <a href="{{ route('search') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
@@ -279,7 +309,7 @@
                                 </a>
                                 <a href="{{ route('user.marketplace.transactions.index') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                    <i class="fas fa-shopping-cart mr-2"></i>Transaksi Marketplace
+                                    <i class="fas fa-shopping-cart mr-2"></i>Transaksi Barang
                                 </a>
                                 <a href="{{ route('user.marketplace.sell') }}"
                                    class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
@@ -308,15 +338,15 @@
                             </a>
                             <a href="{{ route('residences.index') }}"
                                class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                <i class="fas fa-building mr-2"></i>Residence
+                                <i class="fas fa-building mr-2"></i>Hunian
                             </a>
                             <a href="{{ route('activities.index') }}"
                                class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                <i class="fas fa-calendar-alt mr-2"></i>Kegiatan
+                                <i class="fas fa-calendar-alt mr-2"></i>Acara
                             </a>
                             <a href="{{ route('marketplace.index') }}"
                                class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
-                                <i class="fas fa-store mr-2"></i>Marketplace
+                                <i class="fas fa-store mr-2"></i>Barang
                             </a>
                             <a href="{{ route('search') }}"
                                class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">

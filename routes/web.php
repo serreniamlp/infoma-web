@@ -100,16 +100,26 @@ Route::middleware('auth')->group(function () {
                 Route::post('/{transaction}/rate', [UserMarketplaceTransactionController::class, 'rate'])->name('rate');
                 Route::patch('/{transaction}/cancel', [UserMarketplaceTransactionController::class, 'cancel'])->name('cancel');
             });
-
-            // FJB — Mahasiswa sebagai seller
+        
+            // FJB — Aktivasi seller
             Route::get('/sell', [\App\Http\Controllers\User\SellerController::class, 'index'])->name('sell');
             Route::post('/sell/activate', [\App\Http\Controllers\User\SellerController::class, 'activate'])->name('sell.activate');
-            Route::get('/sell/my-products', [MarketplaceController::class, 'myProducts'])->name('sell.my-products');
-            Route::get('/sell/create', [MarketplaceController::class, 'create'])->name('sell.create');
-            Route::post('/sell/store', [MarketplaceController::class, 'store'])->name('sell.store');
-            Route::get('/sell/{product}/edit', [MarketplaceController::class, 'edit'])->name('sell.edit');
-            Route::put('/sell/{product}', [MarketplaceController::class, 'update'])->name('sell.update');
-            Route::delete('/sell/{product}', [MarketplaceController::class, 'destroy'])->name('sell.destroy');
+
+            // FJB — Seller area
+            Route::prefix('seller')->name('seller.')->group(function () {
+                Route::get('/home', [\App\Http\Controllers\User\SellerController::class, 'home'])->name('home');
+                Route::get('/my-products', [MarketplaceController::class, 'myProducts'])->name('my-products');
+                Route::get('/create', [MarketplaceController::class, 'create'])->name('create');
+                Route::post('/store', [MarketplaceController::class, 'store'])->name('store');
+                Route::get('/{product}/edit', [MarketplaceController::class, 'edit'])->name('edit');
+                Route::put('/{product}', [MarketplaceController::class, 'update'])->name('update');
+                Route::delete('/{product}', [MarketplaceController::class, 'destroy'])->name('destroy');
+
+                // Kelola Pesanan
+                Route::get('/orders', [\App\Http\Controllers\User\SellerController::class, 'orders'])->name('orders');
+                Route::get('/orders/{transaction}', [\App\Http\Controllers\User\SellerController::class, 'orderShow'])->name('orders.show');
+                Route::patch('/orders/{transaction}/status', [\App\Http\Controllers\User\SellerController::class, 'updateOrderStatus'])->name('orders.updateStatus');
+            });
         });
     });
 

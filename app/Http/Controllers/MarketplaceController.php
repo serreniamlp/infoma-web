@@ -101,17 +101,23 @@ class MarketplaceController extends Controller
                 ->with('error', 'Anda harus mengaktifkan akun penjual terlebih dahulu.');
         }
 
-        $request->validate([
-            'name'          => 'required|string|max:255',
-            'description'   => 'required|string',
-            'category_id'   => 'required|exists:product_categories,id',
-            'condition'     => 'required|in:new,like_new,good,fair,needs_repair',
-            'price'         => 'required|numeric|min:0',
-            'stock_quantity'=> 'required|integer|min:1',
-            'location'      => 'required|string|max:255',
-            'images.*'      => 'image|mimes:jpeg,png,jpg,gif|max:2048',
-            'tags'          => 'nullable|string',
-        ]);
+    $rules = [
+        'name'          => 'required|string|max:255',
+        'description'   => 'required|string',
+        'category_id'   => 'required|exists:product_categories,id',
+        'condition'     => 'required|in:new,like_new,good,fair,needs_repair',
+        'price'         => 'required|numeric|min:0',
+        'stock_quantity'=> 'required|integer|min:1',
+        'location'      => 'required|string|max:255',
+        'tags'          => 'nullable|string',
+    ];
+
+    if ($request->hasFile('images')) {
+        $rules['images']   = 'array|max:5';
+        $rules['images.*'] = 'image|mimes:jpeg,png,jpg,gif,webp|max:2048';
+    }
+
+    $request->validate($rules);
 
         $data              = $request->all();
         $data['seller_id'] = Auth::id();
@@ -123,6 +129,8 @@ class MarketplaceController extends Controller
                 $images[] = $image->store('marketplace/products', 'public');
             }
             $data['images'] = $images;
+        } else {
+            $data['images'] = [];
         }
 
         if ($request->filled('tags')) {
@@ -131,7 +139,7 @@ class MarketplaceController extends Controller
 
         MarketplaceProduct::create($data);
 
-        return redirect()->route('user.marketplace.sell.my-products')
+        return redirect()->route('user.marketplace.seller.my-products')
             ->with('success', 'Produk berhasil ditambahkan!');
     }
 
@@ -196,7 +204,7 @@ class MarketplaceController extends Controller
 
         $product->update($data);
 
-        return redirect()->route('user.marketplace.sell.my-products')
+        return redirect()->route('user.marketplace.seller.my-products')
             ->with('success', 'Produk berhasil diperbarui!');
     }
 
@@ -218,7 +226,7 @@ class MarketplaceController extends Controller
 
         $product->delete();
 
-        return redirect()->route('user.marketplace.sell.my-products')
+        return redirect()->route('user.marketplace.seller.my-products')
             ->with('success', 'Produk berhasil dihapus!');
     }
 
