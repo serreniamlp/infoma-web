@@ -8,7 +8,7 @@ class StoreResidenceRequest extends FormRequest
 {
     public function authorize()
     {
-        return auth()->user()->hasRole('provider') || auth()->user()->hasRole('admin');
+        return auth()->user()->hasAnyRole(['provider_residence', 'provider_event', 'admin']);
     }
 
     public function rules()
@@ -89,4 +89,3 @@ class StoreResidenceRequest extends FormRequest
         }
     }
 }
-

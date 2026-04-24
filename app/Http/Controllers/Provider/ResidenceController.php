@@ -70,9 +70,12 @@ class ResidenceController extends Controller
             }
 
             // Handle facilities
-            if (isset($data['facilities'])) {
-                $data['facilities'] = array_values($data['facilities']);
+            $facilities = isset($data['facilities']) ? array_values($data['facilities']) : [];
+            if ($request->filled('custom_facilities')) {
+                $custom = array_filter(array_map('trim', explode(',', $request->input('custom_facilities'))));
+                $facilities = array_values(array_unique(array_merge($facilities, $custom)));
             }
+            $data['facilities'] = $facilities;
 
             // Set available_slots to capacity initially
             $data['available_slots'] = $data['capacity'];
@@ -81,7 +84,6 @@ class ResidenceController extends Controller
 
             return redirect()->route('provider.residence.residences.show', $residence)
                 ->with('success', 'Residence berhasil ditambahkan');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal menambahkan residence: ' . $e->getMessage())
@@ -109,31 +111,42 @@ class ResidenceController extends Controller
             $data['price'] = $request->input('price', $request->input('price_per_month'));
 
             // Handle image uploads
-            if ($request->hasFile('images')) {
-                // Delete old images
-                $oldImages = $residence->images ?? [];
-                foreach ($oldImages as $oldImage) {
-                    Storage::disk('public')->delete($oldImage);
-                }
+            $existingImages = $residence->images ?? [];
 
-                $images = [];
+            // Handle removed images
+            if ($request->filled('removed_images')) {
+                $removedIndexes = json_decode($request->input('removed_images'), true) ?? [];
+                foreach ($removedIndexes as $idx) {
+                    if (isset($existingImages[$idx])) {
+                        Storage::disk('public')->delete($existingImages[$idx]);
+                        unset($existingImages[$idx]);
+                    }
+                }
+                $existingImages = array_values($existingImages);
+            }
+
+            // Append new uploaded images
+            if ($request->hasFile('images')) {
                 foreach ($request->file('images') as $image) {
                     $path = $image->store('residences', 'public');
-                    $images[] = $path;
+                    $existingImages[] = $path;
                 }
-                $data['images'] = $images; // rely on $casts to store as JSON
             }
 
+            $data['images'] = array_values($existingImages);
+
             // Handle facilities
-            if (isset($data['facilities'])) {
-                $data['facilities'] = array_values($data['facilities']);
+            $facilities = isset($data['facilities']) ? array_values($data['facilities']) : [];
+            if ($request->filled('custom_facilities')) {
+                $custom = array_filter(array_map('trim', explode(',', $request->input('custom_facilities'))));
+                $facilities = array_values(array_unique(array_merge($facilities, $custom)));
             }
+            $data['facilities'] = $facilities;
 
             $residence->update($data);
 
             return redirect()->route('provider.residence.residences.show', $residence)
                 ->with('success', 'Residence berhasil diupdate');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal mengupdate residence: ' . $e->getMessage())
@@ -166,7 +179,6 @@ class ResidenceController extends Controller
 
             return redirect()->route('provider.residence.residences.index')
                 ->with('success', 'Residence berhasil dihapus');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal menghapus residence: ' . $e->getMessage());
@@ -187,4 +199,3 @@ class ResidenceController extends Controller
             ->with('success', "Residence berhasil {$status}");
     }
 }
-
