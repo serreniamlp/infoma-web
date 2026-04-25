@@ -7,6 +7,7 @@ use App\Models\MarketplaceTransaction;
 use App\Models\MarketplaceProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class SellerController extends Controller
 {
@@ -15,17 +16,30 @@ class SellerController extends Controller
      */
     public function index()
     {
-        if (Auth::user()->isSeller()) {
+        $user = Auth::user();
+
+        // Sudah aktif sebagai seller
+        if ($user->isSeller()) {
             return redirect()->route('user.marketplace.seller.home');
         }
 
-        return view('user.marketplace.become-seller');
+        // Sedang menunggu approval
+        if ($user->seller_status === 'pending') {
+            return view('user.marketplace.become-seller', ['status' => 'pending']);
+        }
+
+        // Ditolak
+        if ($user->seller_status === 'rejected') {
+            return view('user.marketplace.become-seller', ['status' => 'rejected']);
+        }
+
+        return view('user.marketplace.become-seller', ['status' => 'none']);
     }
 
     /**
-     * Aktivasi is_seller
+     * Submit pengajuan seller (upload KTP)
      */
-    public function activate()
+    public function activate(Request $request)
     {
         $user = Auth::user();
 
@@ -34,10 +48,27 @@ class SellerController extends Controller
                 ->with('info', 'Anda sudah terdaftar sebagai penjual.');
         }
 
-        $user->update(['is_seller' => true]);
+        if ($user->seller_status === 'pending') {
+            return redirect()->back()->with('info', 'Pengajuan Anda sedang ditinjau admin.');
+        }
 
-        return redirect()->route('user.marketplace.seller.home')
-            ->with('success', 'Selamat! Akun penjual Anda sudah aktif.');
+        $request->validate([
+            'seller_ktp' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+        ], [
+            'seller_ktp.required' => 'Foto KTP wajib diunggah.',
+            'seller_ktp.image'    => 'File harus berupa gambar.',
+            'seller_ktp.max'      => 'Ukuran foto maksimal 2MB.',
+        ]);
+
+        $ktpPath = $request->file('seller_ktp')->store('seller-ktp', 'public');
+
+        $user->update([
+            'seller_ktp'    => $ktpPath,
+            'seller_status' => 'pending',
+        ]);
+
+        return redirect()->route('user.marketplace.sell')
+            ->with('success', 'Pengajuan penjual berhasil dikirim! Tunggu konfirmasi admin.');
     }
 
     /**
@@ -53,12 +84,12 @@ class SellerController extends Controller
         $sellerId = Auth::id();
 
         $stats = [
-            'total_products'     => MarketplaceProduct::where('seller_id', $sellerId)->count(),
-            'active_products'    => MarketplaceProduct::where('seller_id', $sellerId)->where('status', 'active')->count(),
-            'total_orders'       => MarketplaceTransaction::where('seller_id', $sellerId)->count(),
-            'pending_orders'     => MarketplaceTransaction::where('seller_id', $sellerId)->where('status', 'pending')->count(),
-            'completed_orders'   => MarketplaceTransaction::where('seller_id', $sellerId)->where('status', 'completed')->count(),
-            'total_revenue'      => MarketplaceTransaction::where('seller_id', $sellerId)->where('status', 'completed')->sum('total_amount'),
+            'total_products'   => MarketplaceProduct::where('seller_id', $sellerId)->count(),
+            'active_products'  => MarketplaceProduct::where('seller_id', $sellerId)->where('status', 'active')->count(),
+            'total_orders'     => MarketplaceTransaction::where('seller_id', $sellerId)->count(),
+            'pending_orders'   => MarketplaceTransaction::where('seller_id', $sellerId)->where('status', 'pending')->count(),
+            'completed_orders' => MarketplaceTransaction::where('seller_id', $sellerId)->where('status', 'completed')->count(),
+            'total_revenue'    => MarketplaceTransaction::where('seller_id', $sellerId)->where('status', 'completed')->sum('total_amount'),
         ];
 
         $recentOrders = MarketplaceTransaction::with(['product', 'buyer'])
@@ -152,15 +183,12 @@ class SellerController extends Controller
 
         if ($request->status === 'confirmed') {
             $transaction->product->decrement('stock_quantity', $transaction->quantity);
-
         } elseif ($request->status === 'cancelled') {
             $data['cancellation_reason'] = $request->cancellation_reason;
             $data['cancelled_at']        = now();
-
             if (in_array($transaction->status, ['confirmed', 'in_progress'])) {
                 $transaction->product->increment('stock_quantity', $transaction->quantity);
             }
-
         } elseif ($request->status === 'completed') {
             $data['completed_at'] = now();
         }
