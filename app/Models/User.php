@@ -19,10 +19,17 @@ class User extends Authenticatable
         'address',
         'profile_picture',
         'is_seller',
+        'seller_status',
+        'seller_ktp',
+        'seller_rejection_reason',
+        'provider_status',
+        'provider_rejection_reason',
+        'is_active',
     ];
 
     protected $casts = [
         'is_seller' => 'boolean',
+        'is_active' => 'boolean',
     ];
 
     protected $hidden = [
@@ -80,6 +87,31 @@ class User extends Authenticatable
         return (bool) $this->is_seller;
     }
 
+    public function isActive(): bool
+    {
+        return (bool) ($this->is_active ?? true);
+    }
+
+    public function isPendingSeller(): bool
+    {
+        return $this->seller_status === 'pending';
+    }
+
+    public function isApprovedSeller(): bool
+    {
+        return $this->seller_status === 'approved';
+    }
+
+    public function isPendingProvider(): bool
+    {
+        return $this->provider_status === 'pending';
+    }
+
+    public function isApprovedProvider(): bool
+    {
+        return $this->provider_status === 'approved';
+    }
+
     // PROVIDER RELATIONSHIPS
     public function providedResidences()
     {
@@ -112,3 +144,6 @@ class User extends Authenticatable
         return $this->hasMany(MarketplaceTransaction::class, 'buyer_id');
     }
 }
+
+// APPROVAL HELPERS - ditambahkan untuk admin panel
+// (diinjeksi di atas closing brace terakhir)

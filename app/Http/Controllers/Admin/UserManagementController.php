@@ -5,11 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Role;
-use App\Models\UserActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\Rule;
 
 class UserManagementController extends Controller
 {
@@ -17,218 +15,128 @@ class UserManagementController extends Controller
     {
         $query = User::with('roles');
 
-        // Filters
-        if ($request->filled('role')) {
-            $query->whereHas('roles', function ($q) use ($request) {
-                $q->where('name', $request->role);
-            });
-        }
-
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('name', 'LIKE', "%{$search}%")
-                  ->orWhere('email', 'LIKE', "%{$search}%")
-                  ->orWhere('phone', 'LIKE', "%{$search}%");
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%")
+                  ->orWhere('phone', 'like', "%{$search}%");
             });
         }
 
-        $users = $query->orderBy('created_at', 'desc')->paginate(20);
-        $roles = Role::all();
+        // FIX: filter role pakai role baru
+        if ($request->filled('role')) {
+            $role = $request->role;
+            if ($role === 'seller') {
+                $query->where('is_seller', true);
+            } elseif ($role === 'pending_seller') {
+                $query->where('seller_status', 'pending');
+            } elseif ($role === 'pending_provider') {
+                $query->where('provider_status', 'pending');
+            } else {
+                $query->whereHas('roles', fn($q) => $q->where('name', $role));
+            }
+        }
 
-        return view('admin.users.index', compact('users', 'roles'));
+        if ($request->filled('status')) {
+            $query->where('is_active', $request->status === 'active');
+        }
+
+        $users = $query->orderBy('created_at', 'desc')->paginate(15)->withQueryString();
+
+        // Hitung badge masing-masing tab
+        $counts = [
+            'all'              => User::count(),
+            'user'             => User::whereHas('roles', fn($q) => $q->where('name', 'user'))->count(),
+            'provider_residence' => User::whereHas('roles', fn($q) => $q->where('name', 'provider_residence'))->count(),
+            'provider_event'   => User::whereHas('roles', fn($q) => $q->where('name', 'provider_event'))->count(),
+            'seller'           => User::where('is_seller', true)->count(),
+            'pending_seller'   => User::where('seller_status', 'pending')->count(),
+            'pending_provider' => User::where('provider_status', 'pending')->count(),
+        ];
+
+        return view('admin.users.index', compact('users', 'counts'));
     }
 
     public function show(User $user)
     {
-        $user->load(['roles', 'bookings.bookable', 'providedResidences', 'providedActivities']);
-
-        // Get user activities
-        $activities = UserActivity::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->limit(50)
-            ->get();
-
-        return view('admin.users.show', compact('user', 'activities'));
-    }
-
-    public function create()
-    {
-        $roles = Role::all();
-
-        return view('admin.users.create', compact('roles'));
-    }
-
-    public function store(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|max:255|unique:users',
-            'password' => 'required|string|min:8|confirmed',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string',
-            'role_id' => 'required|exists:roles,id',
-            'profile_picture' => 'nullable|image|max:2048'
-        ]);
-
-        try {
-            $userData = $request->except(['password', 'password_confirmation', 'role_id', 'profile_picture']);
-            $userData['password'] = Hash::make($request->password);
-            $userData['email_verified_at'] = now();
-
-            if ($request->hasFile('profile_picture')) {
-                $userData['profile_picture'] = $request->file('profile_picture')
-                    ->store('profiles', 'public');
-            }
-
-            $user = User::create($userData);
-
-            // Assign role
-            $user->roles()->attach($request->role_id);
-
-            return redirect()->route('admin.users.show', $user)
-                ->with('success', 'User berhasil ditambahkan');
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal menambahkan user: ' . $e->getMessage())
-                ->withInput();
-        }
-    }
-
-    public function edit(User $user)
-    {
         $user->load('roles');
-        $roles = Role::all();
-
-        return view('admin.users.edit', compact('user', 'roles'));
-    }
-
-    public function update(Request $request, User $user)
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'password' => 'nullable|string|min:8|confirmed',
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string',
-            'role_id' => 'required|exists:roles,id',
-            'profile_picture' => 'nullable|image|max:2048'
-        ]);
-
-        try {
-            $userData = $request->except(['password', 'password_confirmation', 'role_id', 'profile_picture']);
-
-            if ($request->filled('password')) {
-                $userData['password'] = Hash::make($request->password);
-            }
-
-            if ($request->hasFile('profile_picture')) {
-                // Delete old profile picture
-                if ($user->profile_picture) {
-                    Storage::disk('public')->delete($user->profile_picture);
-                }
-
-                $userData['profile_picture'] = $request->file('profile_picture')
-                    ->store('profiles', 'public');
-            }
-
-            $user->update($userData);
-
-            // Update role
-            $user->roles()->sync([$request->role_id]);
-
-            return redirect()->route('admin.users.show', $user)
-                ->with('success', 'User berhasil diupdate');
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal mengupdate user: ' . $e->getMessage())
-                ->withInput();
-        }
-    }
-
-    public function destroy(User $user)
-    {
-        // Prevent deleting admin users
-        if ($user->hasRole('admin')) {
-            return redirect()->back()
-                ->with('error', 'Tidak dapat menghapus user admin');
-        }
-
-        // Check if user has active bookings
-        $activeBookings = $user->bookings()
-            ->whereIn('status', ['pending', 'approved'])
-            ->count();
-
-        if ($activeBookings > 0) {
-            return redirect()->back()
-                ->with('error', 'Tidak dapat menghapus user dengan booking aktif');
-        }
-
-        try {
-            // Delete profile picture
-            if ($user->profile_picture) {
-                Storage::disk('public')->delete($user->profile_picture);
-            }
-
-            $user->delete();
-
-            return redirect()->route('admin.users.index')
-                ->with('success', 'User berhasil dihapus');
-
-        } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal menghapus user: ' . $e->getMessage());
-        }
-    }
-
-    public function activities(User $user)
-    {
-        $activities = UserActivity::where('user_id', $user->id)
-            ->orderBy('created_at', 'desc')
-            ->paginate(50);
-
-        return view('admin.users.activities', compact('user', 'activities'));
+        return view('admin.users.show', compact('user'));
     }
 
     public function toggleStatus(User $user)
     {
-        // Prevent disabling admin users
-        if ($user->hasRole('admin')) {
-            return redirect()->back()
-                ->with('error', 'Tidak dapat menonaktifkan user admin');
-        }
-
-        // Toggle user status (you might need to add is_active field to users table)
-        $user->update([
-            'is_active' => !($user->is_active ?? true)
-        ]);
+        $user->update(['is_active' => !$user->is_active]);
 
         $status = $user->is_active ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->back()->with('success', "Akun {$user->name} berhasil {$status}.");
+    }
 
-        return redirect()->back()
-            ->with('success', "User berhasil {$status}");
+    // --- APPROVAL SELLER ---
+
+    public function approveSeller(User $user)
+    {
+        if ($user->seller_status !== 'pending') {
+            return redirect()->back()->with('error', 'Tidak ada pengajuan seller yang perlu disetujui.');
+        }
+
+        $user->update([
+            'seller_status' => 'approved',
+            'is_seller'     => true,
+        ]);
+
+        return redirect()->back()->with('success', "Pengajuan seller {$user->name} berhasil disetujui.");
+    }
+
+    public function rejectSeller(Request $request, User $user)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $user->update([
+            'seller_status'            => 'rejected',
+            'is_seller'                => false,
+            'seller_rejection_reason'  => $request->rejection_reason,
+        ]);
+
+        return redirect()->back()->with('success', "Pengajuan seller {$user->name} ditolak.");
+    }
+
+    // --- APPROVAL PROVIDER ---
+
+    public function approveProvider(User $user)
+    {
+        if ($user->provider_status !== 'pending') {
+            return redirect()->back()->with('error', 'Tidak ada pengajuan provider yang perlu disetujui.');
+        }
+
+        $user->update(['provider_status' => 'approved']);
+
+        return redirect()->back()->with('success', "Pengajuan provider {$user->name} berhasil disetujui.");
+    }
+
+    public function rejectProvider(Request $request, User $user)
+    {
+        $request->validate([
+            'rejection_reason' => 'required|string|max:500',
+        ]);
+
+        $user->update([
+            'provider_status'            => 'rejected',
+            'provider_rejection_reason'  => $request->rejection_reason,
+        ]);
+
+        return redirect()->back()->with('success', "Pengajuan provider {$user->name} ditolak.");
+    }
+
+    public function activities(User $user)
+    {
+        // Riwayat aktivitas user di platform
+        $bookings     = $user->bookings()->with('bookable')->orderBy('created_at', 'desc')->limit(10)->get();
+        $transactions = $user->marketplaceTransactionsAsBuyer()->with('product')->orderBy('created_at', 'desc')->limit(10)->get();
+        $products     = $user->marketplaceProducts()->orderBy('created_at', 'desc')->limit(10)->get();
+
+        return view('admin.users.activities', compact('user', 'bookings', 'transactions', 'products'));
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

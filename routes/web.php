@@ -19,6 +19,9 @@ use App\Http\Controllers\Provider\BookingManagementController;
 use App\Http\Controllers\Provider\MarketplaceTransactionController as ProviderMarketplaceTransactionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserManagementController;
+use App\Http\Controllers\Admin\ResidenceManagementController as AdminResidenceController;
+use App\Http\Controllers\Admin\ActivityManagementController as AdminActivityController;
+use App\Http\Controllers\Admin\MarketplaceManagementController as AdminMarketplaceController;
 use App\Http\Controllers\MarketplaceController;
 
 // ============================================================
@@ -179,5 +182,33 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}/activities', [UserManagementController::class, 'activities'])->name('users.activities');
         Route::patch('/users/{user}/toggle-status', [UserManagementController::class, 'toggleStatus'])
             ->name('users.toggleStatus');
+
+        // Approval seller
+        Route::patch('/users/{user}/approve-seller', [UserManagementController::class, 'approveSeller'])->name('users.approveSeller');
+        Route::patch('/users/{user}/reject-seller', [UserManagementController::class, 'rejectSeller'])->name('users.rejectSeller');
+
+        // Approval provider
+        Route::patch('/users/{user}/approve-provider', [UserManagementController::class, 'approveProvider'])->name('users.approveProvider');
+        Route::patch('/users/{user}/reject-provider', [UserManagementController::class, 'rejectProvider'])->name('users.rejectProvider');
+
+        // Manajemen Hunian
+        Route::get('/residences', [AdminResidenceController::class, 'index'])->name('residences.index');
+        Route::get('/residences/{residence}', [AdminResidenceController::class, 'show'])->name('residences.show');
+        Route::patch('/residences/{residence}/toggle-status', [AdminResidenceController::class, 'toggleStatus'])->name('residences.toggleStatus');
+        Route::delete('/residences/{residence}', [AdminResidenceController::class, 'destroy'])->name('residences.destroy');
+
+        // Manajemen Acara/Event
+        Route::get('/activities', [AdminActivityController::class, 'index'])->name('activities.index');
+        Route::get('/activities/{activity}', [AdminActivityController::class, 'show'])->name('activities.show');
+        Route::patch('/activities/{activity}/toggle-status', [AdminActivityController::class, 'toggleStatus'])->name('activities.toggleStatus');
+        Route::delete('/activities/{activity}', [AdminActivityController::class, 'destroy'])->name('activities.destroy');
+
+        // Manajemen Marketplace
+        Route::get('/marketplace/products', [AdminMarketplaceController::class, 'products'])->name('marketplace.products');
+        Route::patch('/marketplace/products/{product}/toggle-status', [AdminMarketplaceController::class, 'toggleProductStatus'])->name('marketplace.products.toggleStatus');
+        Route::delete('/marketplace/products/{product}', [AdminMarketplaceController::class, 'destroyProduct'])->name('marketplace.products.destroy');
+        Route::get('/marketplace/transactions', [AdminMarketplaceController::class, 'transactions'])->name('marketplace.transactions');
+        Route::get('/marketplace/transactions/{transaction}', [AdminMarketplaceController::class, 'showTransaction'])->name('marketplace.transactions.show');
+        Route::get('/marketplace/report', [AdminMarketplaceController::class, 'report'])->name('marketplace.report');
     });
 });
