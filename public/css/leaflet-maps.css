@@ -205,29 +205,24 @@
     }
 }
 
-/* Error state */
-.map-error {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    color: #dc2626;
-    padding: 1rem;
-    border-radius: 6px;
-    text-align: center;
+/* ── Fix: peta tidak menimpa navbar (sticky/fixed) ── */
+.map-container {
+    position: relative;
+    isolation: isolate;    /* buat stacking context baru */
+    z-index: 0;
 }
 
-.map-error h4 {
-    margin: 0 0 0.5rem 0;
-    color: #dc2626;
+.leaflet-pane         { z-index: 4 !important; }
+.leaflet-tile-pane    { z-index: 2 !important; }
+.leaflet-overlay-pane { z-index: 3 !important; }
+.leaflet-shadow-pane  { z-index: 4 !important; }
+.leaflet-marker-pane  { z-index: 5 !important; }
+.leaflet-tooltip-pane { z-index: 6 !important; }
+.leaflet-popup-pane   { z-index: 7 !important; }
+.leaflet-top,
+.leaflet-bottom       { z-index: 8 !important; }
+
+/* Tinggi peta di halaman create/edit */
+.map-container .leaflet-container {
+    height: 380px;
 }
-
-.map-error p {
-    margin: 0;
-    font-size: 0.875rem;
-}
-
-
-
-
-
-
-

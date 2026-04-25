@@ -262,12 +262,13 @@
                                             <div class="min-w-0">
                                                 @if ($hasDiscount)
                                                     <div class="text-xs text-gray-400 line-through">Rp
-                                                        {{ number_format($residence->price) }}</div>
-                                                    <div class="text-lg font-extrabold text-blue-600 leading-tight">Rp
-                                                        {{ number_format($residence->getDiscountedPrice()) }}</div>
+                                                        {{ number_format($residence->price, 0, ',', '.') }}</div>
+                                                    <div class="text-lg font-semibold text-blue-600 leading-tight">Rp
+                                                        {{ number_format($residence->getDiscountedPrice(), 0, ',', '.') }}
+                                                    </div>
                                                 @else
-                                                    <div class="text-lg font-extrabold text-blue-600 leading-tight">Rp
-                                                        {{ number_format($residence->price) }}</div>
+                                                    <div class="text-lg font-semibold text-blue-600 leading-tight">Rp
+                                                        {{ number_format($residence->price, 0, ',', '.') }}</div>
                                                 @endif
                                                 <span
                                                     class="text-xs text-gray-400">/{{ $residence->rental_period === 'monthly' ? 'bulan' : 'tahun' }}</span>

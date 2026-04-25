@@ -25,6 +25,7 @@ class UpdateResidenceRequest extends FormRequest
             // The form uses price_per_month; we map it to price in prepareForValidation
             'price_per_month' => 'required|numeric|min:0',
             'capacity' => 'required|integer|min:1',
+            'available_slots' => 'nullable|integer|min:0|lte:capacity',
             'facilities' => 'required|array|min:1',
             'facilities.*' => 'string|max:255',
             'images' => 'nullable|array|max:10',
@@ -56,6 +57,9 @@ class UpdateResidenceRequest extends FormRequest
             'capacity.required' => 'Kapasitas wajib diisi',
             'capacity.integer' => 'Kapasitas harus berupa angka',
             'capacity.min' => 'Kapasitas minimal 1',
+            'available_slots.integer' => 'Slot tersedia harus berupa angka',
+            'available_slots.min' => 'Slot tersedia tidak boleh negatif',
+            'available_slots.lte' => 'Slot tersedia tidak boleh melebihi kapasitas',
             'facilities.required' => 'Fasilitas wajib diisi',
             'facilities.array' => 'Fasilitas harus berupa array',
             'facilities.min' => 'Minimal 1 fasilitas',
@@ -85,4 +89,3 @@ class UpdateResidenceRequest extends FormRequest
         }
     }
 }
-

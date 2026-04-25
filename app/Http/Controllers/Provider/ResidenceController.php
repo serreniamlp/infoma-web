@@ -54,10 +54,11 @@ class ResidenceController extends Controller
     {
         try {
             $data = $request->validated();
-            $data['provider_id'] = auth()->id();
 
-            // Ensure price is set from price_per_month (validated key)
-            $data['price'] = $request->input('price', $request->input('price_per_month'));
+            // Peta price_per_month → kolom price di database
+            $data['price'] = (float) $request->input('price_per_month');
+            unset($data['price_per_month']);
+            $data['provider_id'] = auth()->id();
 
             // Handle image uploads
             if ($request->hasFile('images')) {
@@ -107,35 +108,40 @@ class ResidenceController extends Controller
         try {
             $data = $request->validated();
 
-            // Ensure price is set from price_per_month (validated key)
-            $data['price'] = $request->input('price', $request->input('price_per_month'));
+            // Peta price_per_month → kolom price di database
+            $data['price'] = (float) $request->input('price_per_month');
+            unset($data['price_per_month']); // buang key yang tidak ada di fillable
 
-            // Handle image uploads
-            $existingImages = $residence->images ?? [];
+            // ── Kelola gambar ──────────────────────────────────────────
+            // Ambil gambar yang sudah ada (sudah array karena model cast)
+            $existingImages = is_array($residence->images) ? $residence->images : [];
 
-            // Handle removed images
-            if ($request->filled('removed_images')) {
-                $removedIndexes = json_decode($request->input('removed_images'), true) ?? [];
-                foreach ($removedIndexes as $idx) {
-                    if (isset($existingImages[$idx])) {
-                        Storage::disk('public')->delete($existingImages[$idx]);
-                        unset($existingImages[$idx]);
+            // Hapus gambar yang ditandai dihapus
+            $removedRaw = $request->input('removed_images', '[]');
+            $removedIndexes = is_array($removedRaw)
+                ? $removedRaw
+                : (json_decode($removedRaw, true) ?? []);
+
+            foreach ($removedIndexes as $idx) {
+                if (isset($existingImages[$idx])) {
+                    Storage::disk('public')->delete($existingImages[$idx]);
+                    unset($existingImages[$idx]);
+                }
+            }
+            $existingImages = array_values($existingImages);
+
+            // Tambahkan gambar baru yang diupload
+            if ($request->hasFile('images')) {
+                foreach ($request->file('images') as $file) {
+                    if ($file && $file->isValid()) {
+                        $path = $file->store('residences', 'public');
+                        $existingImages[] = $path;
                     }
                 }
-                $existingImages = array_values($existingImages);
             }
+            $data['images'] = $existingImages;
 
-            // Append new uploaded images
-            if ($request->hasFile('images')) {
-                foreach ($request->file('images') as $image) {
-                    $path = $image->store('residences', 'public');
-                    $existingImages[] = $path;
-                }
-            }
-
-            $data['images'] = array_values($existingImages);
-
-            // Handle facilities
+            // ── Kelola fasilitas ───────────────────────────────────────
             $facilities = isset($data['facilities']) ? array_values($data['facilities']) : [];
             if ($request->filled('custom_facilities')) {
                 $custom = array_filter(array_map('trim', explode(',', $request->input('custom_facilities'))));
@@ -169,8 +175,8 @@ class ResidenceController extends Controller
                     ->with('error', 'Tidak dapat menghapus residence dengan booking aktif');
             }
 
-            // Delete images
-            $images = json_decode($residence->images, true) ?? [];
+            // Delete images (sudah array karena model cast, tidak perlu json_decode)
+            $images = $residence->images ?? [];
             foreach ($images as $image) {
                 Storage::disk('public')->delete($image);
             }

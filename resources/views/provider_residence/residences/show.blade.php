@@ -135,7 +135,7 @@
                     <div class="space-y-3">
                         <div class="flex justify-between">
                             <span class="text-gray-600">Harga Dasar</span>
-                            <span class="font-medium">Rp {{ number_format($residence->price_per_month) }}</span>
+                            <span class="font-medium">Rp {{ number_format($residence->price_per_month, 0, ',', '.') }}</span>
                         </div>
 
                         @if($residence->discount_type && $residence->discount_value)
@@ -145,7 +145,7 @@
                                     @if($residence->discount_type === 'percentage')
                                         {{ $residence->discount_value }}%
                                     @else
-                                        Rp {{ number_format($residence->discount_value) }}
+                                        Rp {{ number_format($residence->discount_value, 0, ',', '.') }}
                                     @endif
                                 </span>
                             </div>
@@ -153,7 +153,7 @@
                             <div class="border-t border-gray-200 pt-3">
                                 <div class="flex justify-between text-lg font-semibold">
                                     <span>Harga Akhir</span>
-                                    <span>Rp {{ number_format($residence->getDiscountedPrice()) }}</span>
+                                    <span>Rp {{ number_format($residence->getDiscountedPrice(), 0, ',', '.') }}</span>
                                 </div>
                             </div>
                         @endif

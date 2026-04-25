@@ -83,22 +83,16 @@ class ResidenceController extends Controller
                 ->first();
         }
 
-        // Check if user can rate (has approved booking and paid transaction)
+        // Check if user can rate (has completed or approved booking)
         $canRate = false;
         if (auth()->check()) {
             $canRate = auth()->user()->bookings()
                 ->where('bookable_type', Residence::class)
                 ->where('bookable_id', $residence->id)
-                ->where('status', 'approved')
-                ->whereHas('transaction', function ($q) {
-                    $q->where('payment_status', 'paid');
-                })
+                ->whereIn('status', ['completed', 'approved'])
                 ->exists();
         }
 
         return view('user.residences.show', compact('residence', 'isBookmarked', 'userRating', 'canRate'));
     }
 }
-
-
-

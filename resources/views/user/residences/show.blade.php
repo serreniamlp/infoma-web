@@ -394,10 +394,11 @@
                             <div class="mb-5">
                                 @if ($residence->discount_type && $residence->discount_value)
                                     <div class="price-old mb-1">
-                                        Rp {{ number_format($residence->price_per_month ?? $residence->price) }}
+                                        Rp
+                                        {{ number_format($residence->price_per_month ?? $residence->price, 0, ',', '.') }}
                                     </div>
                                     <div class="price-main">
-                                        Rp {{ number_format($residence->getDiscountedPrice()) }}
+                                        Rp {{ number_format($residence->getDiscountedPrice(), 0, ',', '.') }}
                                     </div>
                                     <div
                                         class="mt-1 inline-flex items-center gap-1 bg-green-50 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full">
@@ -405,12 +406,13 @@
                                         @if ($residence->discount_type === 'percentage')
                                             Hemat {{ $residence->discount_value }}%
                                         @else
-                                            Hemat Rp {{ number_format($residence->discount_value) }}
+                                            Hemat Rp {{ number_format($residence->discount_value, 0, ',', '.') }}
                                         @endif
                                     </div>
                                 @else
                                     <div class="price-main">
-                                        Rp {{ number_format($residence->price_per_month ?? $residence->price) }}
+                                        Rp
+                                        {{ number_format($residence->price_per_month ?? $residence->price, 0, ',', '.') }}
                                     </div>
                                 @endif
                                 <div class="text-sm text-gray-400 mt-1">
@@ -649,7 +651,7 @@
                     .addTo(peta)
                     .bindPopup(
                         '<strong>{{ addslashes($residence->name) }}</strong><br>{{ addslashes($residence->address) }}'
-                        )
+                    )
                     .openPopup();
             });
         @endif
