@@ -200,7 +200,7 @@
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">Alamat Lengkap <span
                                     class="text-red-500">*</span></label>
-                            <textarea name="address" rows="3" required
+                            <textarea name="address" id="address" rows="3" required
                                 class="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('address') border-red-400 bg-red-50 @else border-gray-300 @enderror"
                                 placeholder="Jalan, nomor, RT/RW, kelurahan, kecamatan, kota...">{{ old('address') }}</textarea>
                             @error('address')
@@ -406,6 +406,12 @@
                             </p>
                         @enderror
 
+                        {{-- Error foto kosong (dari JS) --}}
+                        <p id="imageError"
+                            class="hidden mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                            <i class="fas fa-exclamation-circle mr-1"></i>Foto hunian wajib diupload minimal 1 foto.
+                        </p>
+
                         {{-- Area drag & drop / klik untuk pilih foto --}}
                         <div class="upload-zone" id="uploadZone" onclick="document.getElementById('images').click()">
                             <i class="fas fa-cloud-upload-alt text-3xl text-gray-300 mb-3"></i>
@@ -413,8 +419,7 @@
                             <p class="text-xs text-gray-400 mt-1">Format: JPG, PNG &middot; Maks. 5MB per file</p>
                         </div>
 
-                        <input type="file" name="images[]" id="images" multiple accept="image/*" class="hidden"
-                            required>
+                        <input type="file" name="images[]" id="images" multiple accept="image/*" class="hidden">
 
                         {{-- Grid preview foto yang dipilih --}}
                         <div class="image-preview-grid mt-4" id="imagePreviewGrid"></div>
@@ -471,6 +476,20 @@
     <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
     <script src="{{ asset('js/leaflet-maps.js') }}"></script>
     <script>
+        // ── VALIDASI: Foto hunian wajib sebelum submit ───────────────
+        document.getElementById('hunianForm').addEventListener('submit', function(e) {
+            if (selectedFiles.length === 0) {
+                e.preventDefault();
+                document.getElementById('imageError').classList.remove('hidden');
+                document.getElementById('imageError').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                return;
+            }
+            document.getElementById('imageError').classList.add('hidden');
+        });
+
         // ── FITUR: Preview multi-foto sebelum upload ──────────────────
         // selectedFiles = array file yang dipilih user
         let selectedFiles = [];
@@ -509,14 +528,12 @@
                 selectedFiles.push(file);
             });
             renderPreviews();
-            syncFilesToInput();
         }
 
         // Hapus foto dari daftar pilihan
         function removeFile(index) {
             selectedFiles.splice(index, 1);
             renderPreviews();
-            syncFilesToInput();
         }
 
         // Tampilkan grid thumbnail foto yang dipilih
@@ -537,16 +554,57 @@
                 };
                 reader.readAsDataURL(file);
             });
-            // Wajib isi foto jika belum ada yang dipilih
-            imageInput.required = selectedFiles.length === 0;
+            // Sembunyikan error saat ada foto dipilih
+            document.getElementById('imageError').classList.add('hidden');
         }
 
-        // Sinkronkan array ke input file agar ikut terkirim saat submit
-        function syncFilesToInput() {
-            const dt = new DataTransfer();
-            selectedFiles.forEach(f => dt.items.add(f));
-            imageInput.files = dt.files;
-        }
+        // ── Submit via FormData + fetch ──────────────────────────────
+        // Solusi: file diambil dari array selectedFiles dan dimasukkan
+        // ke FormData secara langsung — tidak perlu set input.files
+        document.getElementById('hunianForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Validasi foto
+            if (selectedFiles.length === 0) {
+                const err = document.getElementById('imageError');
+                err.classList.remove('hidden');
+                err.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                return;
+            }
+
+            const btn = this.querySelector('button[type="submit"]');
+            const btnTeks = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
+
+            // Bangun FormData dari seluruh field form
+            const formData = new FormData(this);
+            // Hapus images[] kosong dari input file (yang tidak bisa dikirim)
+            formData.delete('images[]');
+            // Masukkan file langsung dari array JS ke FormData
+            selectedFiles.forEach(file => formData.append('images[]', file));
+
+            try {
+                const res = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                });
+                const html = await res.text();
+                // Perbarui URL browser sesuai halaman hasil
+                window.history.pushState({}, '', res.url);
+                // Render halaman hasil (sukses redirect atau form + error validasi)
+                document.open();
+                document.write(html);
+                document.close();
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = btnTeks;
+                alert('Terjadi kesalahan jaringan. Silakan coba lagi.');
+            }
+        });
 
         // ── FITUR: Preview tag fasilitas tambahan saat mengetik ───────
         document.getElementById('custom_facilities').addEventListener('input', function() {

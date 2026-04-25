@@ -223,10 +223,9 @@
                     </div>
                     <div class="p-6 space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Alamat Lengkap <span class="text-red-500">*</span>
-                            </label>
-                            <textarea name="address" rows="3" required
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Alamat Lengkap <span
+                                    class="text-red-500">*</span></label>
+                            <textarea name="address" id="address" rows="3" required
                                 class="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('address') border-red-400 bg-red-50 @else border-gray-300 @enderror">{{ old('address', $residence->address) }}</textarea>
                             @error('address')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
@@ -291,9 +290,8 @@
                         </div>
 
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                Kapasitas (orang) <span class="text-red-500">*</span>
-                            </label>
+                            <label class="block text-sm font-medium text-gray-700 mb-1.5">Kapasitas (orang) <span
+                                    class="text-red-500">*</span></label>
                             <input type="number" name="capacity" required min="1"
                                 value="{{ old('capacity', $residence->capacity) }}"
                                 class="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent @error('capacity') border-red-400 bg-red-50 @else border-gray-300 @enderror"
@@ -301,6 +299,27 @@
                             @error('capacity')
                                 <p class="mt-1 text-xs text-red-600">{{ $message }}</p>
                             @enderror
+                        </div>
+
+                        {{-- Slot tersedia — penyedia bisa atur manual --}}
+                        <div class="md:col-span-2 bg-blue-50 border border-blue-100 rounded-lg p-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">
+                                <i class="fas fa-door-open text-blue-500 mr-1"></i>
+                                Slot Tersedia (saat ini)
+                            </label>
+                            <p class="text-xs text-gray-500 mb-3">
+                                Jumlah tempat yang masih bisa dipesan mahasiswa.
+                                Berkurang otomatis saat booking disetujui. Maksimal sama dengan kapasitas
+                                <strong>({{ $residence->capacity }})</strong>.
+                            </p>
+                            <div class="flex items-center gap-4">
+                                <input type="number" name="available_slots" min="0"
+                                    max="{{ $residence->capacity }}"
+                                    value="{{ old('available_slots', $residence->available_slots) }}"
+                                    class="w-36 px-4 py-2.5 border border-blue-300 bg-white rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent font-semibold text-blue-700">
+                                <span class="text-sm text-gray-500">slot tersisa dari {{ $residence->capacity }}
+                                    total</span>
+                            </div>
                         </div>
 
                         <div>
@@ -399,17 +418,14 @@
                         <div class="mt-5 p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <label class="block text-sm font-medium text-gray-700 mb-1.5">
                                 <i class="fas fa-plus-circle text-blue-500 mr-1"></i>
-                                Fasilitas Tambahan
-                                <span class="text-gray-400 font-normal">(pisahkan dengan koma)</span>
+                                Fasilitas Tambahan <span class="text-gray-400 font-normal">(pisahkan dengan koma)</span>
                             </label>
-                            {{-- $savedCustom = fasilitas custom yang sudah tersimpan di DB --}}
                             <input type="text" name="custom_facilities" id="custom_facilities"
                                 value="{{ old('custom_facilities', $savedCustom) }}"
                                 class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                                 placeholder="Contoh: Taman, Kolam Renang, Ruang Tamu Bersama">
-                            <p class="text-xs text-gray-400 mt-1.5">
-                                Fasilitas yang belum ada di daftar atas bisa ditambahkan di sini.
-                            </p>
+                            <p class="text-xs text-gray-400 mt-1.5">Fasilitas yang belum ada di daftar atas bisa
+                                ditambahkan di sini.</p>
                             <div id="customFacilityTags" class="flex flex-wrap gap-2 mt-3"></div>
                         </div>
                     </div>
@@ -425,6 +441,12 @@
                         </h2>
                     </div>
                     <div class="p-6">
+                        {{-- Error message untuk validasi foto --}}
+                        <p id="imageError"
+                            class="hidden mb-3 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">
+                            <i class="fas fa-exclamation-circle mr-1"></i>Hunian harus memiliki minimal 1 foto. Jangan
+                            hapus semua foto tanpa menambahkan foto baru.
+                        </p>
 
                         {{-- Tampilkan foto yang sudah ada di database --}}
                         @if ($residence->images && count($residence->images) > 0)
@@ -523,19 +545,35 @@
     <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
     <script src="{{ asset('js/leaflet-maps.js') }}"></script>
     <script>
-        // ── FITUR: Hapus foto lama (yang sudah tersimpan) ─────────────
-        // removedIndexes = daftar index foto yang mau dihapus
+        // ─── Form validation: ensure at least 1 image remains ──────────
+        const totalExistingImages = {{ count($residence->images ?? []) }};
+
+        document.getElementById('hunianForm').addEventListener('submit', function(e) {
+            const remainingExisting = totalExistingImages - removedIndexes.length;
+            const hasNewImages = newFiles.length > 0;
+
+            if (remainingExisting === 0 && !hasNewImages) {
+                e.preventDefault();
+                document.getElementById('imageError').classList.remove('hidden');
+                document.getElementById('imageError').scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                return;
+            }
+            document.getElementById('imageError').classList.add('hidden');
+        });
+
+        // ─── Existing images remove ────────────────────────────────────
         let removedIndexes = [];
 
         function removeExistingImage(index) {
-            // Tandai foto sebagai dihapus (visual: transparan)
             removedIndexes.push(index);
             document.getElementById('existing-' + index).classList.add('img-removed');
-            // Kirim daftar index yang dihapus ke server lewat input hidden
             document.getElementById('removedImagesInput').value = JSON.stringify(removedIndexes);
         }
 
-        // ── FITUR: Upload & preview foto baru ─────────────────────────
+        // ─── New images preview ────────────────────────────────────────
         let newFiles = [];
         const imageInput = document.getElementById('images');
         const newGrid = document.getElementById('newImagesGrid');
@@ -569,13 +607,11 @@
                 newFiles.push(file);
             });
             renderNewPreviews();
-            syncFilesToInput();
         }
 
         function removeNewFile(index) {
             newFiles.splice(index, 1);
             renderNewPreviews();
-            syncFilesToInput();
         }
 
         function renderNewPreviews() {
@@ -585,41 +621,84 @@
                 reader.onload = e => {
                     const div = document.createElement('div');
                     div.className = 'image-preview-item';
-                    div.innerHTML = `
-                <img src="${e.target.result}" alt="preview">
+                    div.innerHTML =
+                        `<img src="${e.target.result}" alt="preview">
                 <span class="badge-utama" style="background:#16a34a">Baru</span>
-                <button type="button" class="remove-btn" onclick="removeNewFile(${i})">
-                    <i class="fas fa-times"></i>
-                </button>`;
+                <button type="button" class="remove-btn" onclick="removeNewFile(${i})"><i class="fas fa-times"></i></button>`;
                     newGrid.appendChild(div);
                 };
                 reader.readAsDataURL(file);
             });
+            // Sembunyikan error saat ada foto baru dipilih
+            if (newFiles.length > 0) {
+                document.getElementById('imageError').classList.add('hidden');
+            }
         }
 
-        function syncFilesToInput() {
-            const dt = new DataTransfer();
-            newFiles.forEach(f => dt.items.add(f));
-            imageInput.files = dt.files;
-        }
+        // ── Submit via FormData + fetch ──────────────────────────────
+        document.getElementById('hunianForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
 
-        // ── FITUR: Tampilkan tag fasilitas custom yang sudah tersimpan ─
+            // Validasi: harus ada foto existing yang tidak dihapus atau foto baru
+            const remainingExisting = totalExistingImages - removedIndexes.length;
+            const hasNewImages = newFiles.length > 0;
+
+            if (remainingExisting === 0 && !hasNewImages) {
+                const err = document.getElementById('imageError');
+                err.classList.remove('hidden');
+                err.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+                return;
+            }
+
+            const btn = this.querySelector('button[type="submit"]');
+            const btnTeks = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Menyimpan...';
+
+            // Bangun FormData dari seluruh field form
+            const formData = new FormData(this);
+            // Hapus images[] kosong dari input file
+            formData.delete('images[]');
+            // Masukkan file baru langsung dari array JS ke FormData
+            newFiles.forEach(file => formData.append('images[]', file));
+
+            try {
+                const res = await fetch(this.action, {
+                    method: 'POST',
+                    body: formData
+                });
+                const html = await res.text();
+                // Perbarui URL browser sesuai halaman hasil
+                window.history.pushState({}, '', res.url);
+                // Render halaman hasil
+                document.open();
+                document.write(html);
+                document.close();
+            } catch (err) {
+                btn.disabled = false;
+                btn.innerHTML = btnTeks;
+                alert('Terjadi kesalahan jaringan. Silakan coba lagi.');
+            }
+        });
+
+        // ─── Custom facilities tags + restore saved custom ─────────────
         function renderCustomTags(val) {
             const tags = document.getElementById('customFacilityTags');
             const items = val.split(',').map(s => s.trim()).filter(Boolean);
             tags.innerHTML = items.map(item =>
                 `<span class="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-xs px-2.5 py-1 rounded-full font-medium">
-            <i class="fas fa-check text-xs"></i>${item}
-        </span>`
+            <i class="fas fa-check text-xs"></i>${item}</span>`
             ).join('');
         }
-
         const cfInput = document.getElementById('custom_facilities');
         cfInput.addEventListener('input', () => renderCustomTags(cfInput.value));
-        // Tampilkan tag custom saat halaman pertama dibuka
+        // Render existing custom facilities on load
         if (cfInput.value.trim()) renderCustomTags(cfInput.value);
 
-        // ── FITUR: Label diskon berubah sesuai jenis yang dipilih ─────
+        // ─── Diskon dinamis ───────────────────────────────────────────
         document.getElementById('discount_type').addEventListener('change', function() {
             const val = document.getElementById('discount_value');
             const lbl = document.getElementById('discount_label');
@@ -638,7 +717,7 @@
             }
         });
 
-        // ── FITUR: Label "Aktif/Nonaktif" mengikuti toggle ────────────
+        // ─── Toggle status label ──────────────────────────────────────
         document.getElementById('is_active').addEventListener('change', function() {
             document.getElementById('statusLabel').textContent = this.checked ? 'Aktif' : 'Nonaktif';
         });
