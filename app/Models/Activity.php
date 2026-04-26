@@ -24,17 +24,21 @@ class Activity extends Model
         'capacity',
         'available_slots',
         'images',
+        'speakers',
+        'benefits',
         'discount_type',
         'discount_value',
         'is_active',
     ];
 
     protected $casts = [
-        'images' => 'array',
+        'images'    => 'array',
+        'speakers'  => 'array',
+        'benefits'  => 'array',
         'is_active' => 'boolean',
         'event_date' => 'datetime',
         'registration_deadline' => 'datetime',
-        'latitude' => 'decimal:8',
+        'latitude'  => 'decimal:8',
         'longitude' => 'decimal:8',
     ];
 

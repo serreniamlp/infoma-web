@@ -19,6 +19,7 @@
         <form method="POST" action="{{ route('provider.event.activities.store') }}" enctype="multipart/form-data" class="space-y-6">
             @csrf
 
+            {{-- INFORMASI DASAR --}}
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Informasi Dasar</h2>
 
@@ -68,6 +69,7 @@
                 </div>
             </div>
 
+            {{-- PETA LOKASI --}}
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Peta Lokasi</h2>
                 <p class="text-sm text-gray-600 mb-4">Pilih lokasi kegiatan di peta atau gunakan pencarian untuk menemukan alamat</p>
@@ -107,6 +109,7 @@
                 </div>
             </div>
 
+            {{-- KAPASITAS & HARGA --}}
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Kapasitas & Harga</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -143,6 +146,7 @@
                 </div>
             </div>
 
+            {{-- GAMBAR --}}
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Gambar</h2>
                 <div>
@@ -153,6 +157,123 @@
                 </div>
             </div>
 
+            {{-- PEMATERI (SPEAKERS) --}}
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Pemateri</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Tambahkan satu atau lebih pemateri untuk kegiatan ini</p>
+                    </div>
+                    <button type="button" id="add-speaker-btn"
+                        class="inline-flex items-center px-3 py-2 border border-green-600 text-green-600 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Tambah Pemateri
+                    </button>
+                </div>
+
+                <div id="speakers-container" class="space-y-3">
+                    @if(old('speakers'))
+                        @foreach(old('speakers') as $i => $speaker)
+                        <div class="speaker-item flex gap-3 items-start p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Nama Pemateri <span class="text-red-500">*</span></label>
+                                    <input type="text" name="speakers[{{ $i }}][name]" value="{{ $speaker['name'] ?? '' }}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        placeholder="Nama lengkap pemateri">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Jabatan / Profesi</label>
+                                    <input type="text" name="speakers[{{ $i }}][title]" value="{{ $speaker['title'] ?? '' }}"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        placeholder="Contoh: CEO di Perusahaan X">
+                                </div>
+                            </div>
+                            <button type="button" onclick="removeSpeaker(this)"
+                                class="mt-6 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Hapus pemateri">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                        @endforeach
+                    @else
+                        {{-- Default: satu baris kosong --}}
+                        <div class="speaker-item flex gap-3 items-start p-4 bg-gray-50 rounded-lg border border-gray-200">
+                            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Nama Pemateri <span class="text-red-500">*</span></label>
+                                    <input type="text" name="speakers[0][name]"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        placeholder="Nama lengkap pemateri">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-gray-600 mb-1">Jabatan / Profesi</label>
+                                    <input type="text" name="speakers[0][title]"
+                                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                        placeholder="Contoh: CEO di Perusahaan X">
+                                </div>
+                            </div>
+                            <button type="button" onclick="removeSpeaker(this)"
+                                class="mt-6 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Hapus pemateri">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    @endif
+                </div>
+
+                @error('speakers.*.name')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- BENEFIT --}}
+            <div class="bg-white rounded-lg shadow-sm p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <div>
+                        <h2 class="text-lg font-semibold text-gray-900">Benefit</h2>
+                        <p class="text-sm text-gray-500 mt-0.5">Apa yang akan didapatkan peserta dari kegiatan ini?</p>
+                    </div>
+                    <button type="button" id="add-benefit-btn"
+                        class="inline-flex items-center px-3 py-2 border border-green-600 text-green-600 rounded-lg text-sm font-medium hover:bg-green-50 transition-colors">
+                        <i class="fas fa-plus mr-2"></i>Tambah Benefit
+                    </button>
+                </div>
+
+                <div id="benefits-container" class="space-y-2">
+                    @if(old('benefits'))
+                        @foreach(old('benefits') as $i => $benefit)
+                        <div class="benefit-item flex gap-2 items-center">
+                            <span class="text-green-500 flex-shrink-0"><i class="fas fa-check-circle"></i></span>
+                            <input type="text" name="benefits[{{ $i }}]" value="{{ $benefit }}"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="Contoh: E-sertifikat">
+                            <button type="button" onclick="removeBenefit(this)"
+                                class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Hapus benefit">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        @endforeach
+                    @else
+                        {{-- Default: tiga baris kosong --}}
+                        @foreach(['E-sertifikat', 'Ilmu dan insight', 'Networking'] as $i => $placeholder)
+                        <div class="benefit-item flex gap-2 items-center">
+                            <span class="text-green-500 flex-shrink-0"><i class="fas fa-check-circle"></i></span>
+                            <input type="text" name="benefits[{{ $i }}]"
+                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                                placeholder="{{ $placeholder }}">
+                            <button type="button" onclick="removeBenefit(this)"
+                                class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Hapus benefit">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        @endforeach
+                    @endif
+                </div>
+
+                @error('benefits.*')
+                    <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+            </div>
+
+            {{-- STATUS --}}
             <div class="bg-white rounded-lg shadow-sm p-6">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Status</h2>
                 <div class="flex items-center">
@@ -176,6 +297,7 @@
 <script src="https://unpkg.com/leaflet-control-geocoder@1.13.0/dist/Control.Geocoder.js"></script>
 <script src="{{ asset('js/leaflet-maps.js') }}"></script>
 <script>
+// ── Discount toggle ──────────────────────────────────────────────
 document.getElementById('discount_type').addEventListener('change', function() {
     const discountValue = document.getElementById('discount_value');
     const label = discountValue.previousElementSibling;
@@ -193,6 +315,77 @@ document.getElementById('discount_type').addEventListener('change', function() {
         discountValue.value = '';
     }
 });
+
+// ── Speakers ────────────────────────────────────────────────────
+let speakerIndex = {{ old('speakers') ? count(old('speakers')) : 1 }};
+
+document.getElementById('add-speaker-btn').addEventListener('click', function () {
+    const container = document.getElementById('speakers-container');
+    const html = `
+        <div class="speaker-item flex gap-3 items-start p-4 bg-gray-50 rounded-lg border border-gray-200">
+            <div class="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Nama Pemateri <span class="text-red-500">*</span></label>
+                    <input type="text" name="speakers[${speakerIndex}][name]"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Nama lengkap pemateri">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Jabatan / Profesi</label>
+                    <input type="text" name="speakers[${speakerIndex}][title]"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                        placeholder="Contoh: CEO di Perusahaan X">
+                </div>
+            </div>
+            <button type="button" onclick="removeSpeaker(this)"
+                class="mt-6 p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Hapus pemateri">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+    speakerIndex++;
+});
+
+function removeSpeaker(btn) {
+    const items = document.querySelectorAll('.speaker-item');
+    if (items.length <= 1) {
+        // Kosongkan saja, jangan hapus baris terakhir
+        btn.closest('.speaker-item').querySelectorAll('input').forEach(i => i.value = '');
+        return;
+    }
+    btn.closest('.speaker-item').remove();
+}
+
+// ── Benefits ─────────────────────────────────────────────────────
+let benefitIndex = {{ old('benefits') ? count(old('benefits')) : 3 }};
+
+document.getElementById('add-benefit-btn').addEventListener('click', function () {
+    const container = document.getElementById('benefits-container');
+    const html = `
+        <div class="benefit-item flex gap-2 items-center">
+            <span class="text-green-500 flex-shrink-0"><i class="fas fa-check-circle"></i></span>
+            <input type="text" name="benefits[${benefitIndex}]"
+                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                placeholder="Tambahkan benefit...">
+            <button type="button" onclick="removeBenefit(this)"
+                class="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0" title="Hapus benefit">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>`;
+    container.insertAdjacentHTML('beforeend', html);
+    benefitIndex++;
+    // Auto-focus ke input baru
+    container.lastElementChild.querySelector('input').focus();
+});
+
+function removeBenefit(btn) {
+    const items = document.querySelectorAll('.benefit-item');
+    if (items.length <= 1) {
+        btn.closest('.benefit-item').querySelector('input').value = '';
+        return;
+    }
+    btn.closest('.benefit-item').remove();
+}
 </script>
 @endpush
 @endsection

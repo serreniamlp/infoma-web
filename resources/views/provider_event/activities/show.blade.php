@@ -76,6 +76,55 @@
                     </div>
                 </div>
 
+                {{-- PEMATERI --}}
+                @if($activity->speakers && count($activity->speakers) > 0)
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-chalkboard-teacher mr-2 text-green-600"></i>Pemateri
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        @foreach($activity->speakers as $speaker)
+                            @if(!empty($speaker['name']))
+                            <div class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                                <div class="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0">
+                                    <span class="text-lg font-bold text-green-700">
+                                        {{ strtoupper(substr($speaker['name'], 0, 1)) }}
+                                    </span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-semibold text-gray-900 truncate">{{ $speaker['name'] }}</p>
+                                    @if(!empty($speaker['title']))
+                                        <p class="text-sm text-gray-500 truncate">{{ $speaker['title'] }}</p>
+                                    @endif
+                                </div>
+                            </div>
+                            @endif
+                        @endforeach
+                    </div>
+                </div>
+                @endif
+
+                {{-- BENEFIT --}}
+                @if($activity->benefits && count(array_filter($activity->benefits)) > 0)
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-gift mr-2 text-green-600"></i>Yang Akan Kamu Dapatkan
+                    </h3>
+                    <ul class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        @foreach($activity->benefits as $benefit)
+                            @if(!empty($benefit))
+                            <li class="flex items-center gap-3">
+                                <span class="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
+                                    <i class="fas fa-check text-green-600 text-xs"></i>
+                                </span>
+                                <span class="text-gray-700 text-sm">{{ $benefit }}</span>
+                            </li>
+                            @endif
+                        @endforeach
+                    </ul>
+                </div>
+                @endif
+
                 <!-- Event Details -->
                 <div class="bg-white rounded-lg shadow-sm p-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Detail Kegiatan</h3>

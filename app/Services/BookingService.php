@@ -31,9 +31,9 @@ class BookingService
                 throw new \Exception('Tidak ada slot tersedia');
             }
 
-            // Handle document uploads (store structured info)
+            // Handle document uploads (residence only — event tidak perlu dokumen)
             $documents = [];
-            if (isset($data['documents'])) {
+            if (isset($data['documents']) && is_array($data['documents'])) {
                 foreach ($data['documents'] as $uploadedFile) {
                     $path = $uploadedFile->store('documents', 'public');
                     $documents[] = [
@@ -45,20 +45,24 @@ class BookingService
             }
 
             // Calculate dates based on type
-            $checkInDate = $data['check_in_date'];
+            $checkInDate  = $data['check_in_date'];
             $checkOutDate = $data['check_out_date'] ?? $this->calculateCheckOutDate($bookable, $checkInDate);
 
             // Create booking
             $booking = Booking::create([
-                'user_id' => auth()->id(),
-                'bookable_type' => $bookableClass,
-                'bookable_id' => $bookable->id,
-                'booking_code' => $this->generateBookingCode(),
-                'check_in_date' => $checkInDate,
-                'check_out_date' => $checkOutDate,
-                'documents' => $documents,
-                'status' => 'pending',
-                'notes' => $data['notes'] ?? null
+                'user_id'           => auth()->id(),
+                'bookable_type'     => $bookableClass,
+                'bookable_id'       => $bookable->id,
+                'booking_code'      => $this->generateBookingCode(),
+                'check_in_date'     => $checkInDate,
+                'check_out_date'    => $checkOutDate,
+                'documents'         => $documents,
+                'status'            => 'pending',
+                'notes'             => $data['notes'] ?? null,
+                // Field pendaftaran event
+                'participant_name'  => $data['participant_name'] ?? null,
+                'participant_email' => $data['participant_email'] ?? null,
+                'participant_phone' => $data['participant_phone'] ?? null,
             ]);
 
             // Send notification to provider
