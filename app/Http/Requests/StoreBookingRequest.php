@@ -15,21 +15,26 @@ class StoreBookingRequest extends FormRequest
 
     public function rules()
     {
+        $isActivity = in_array($this->bookable_type, ['activity', 'App\\Models\\Activity']);
+
         $rules = [
             'bookable_type' => 'required|in:residence,activity,App\\Models\\Residence,App\\Models\\Activity',
-            'bookable_id' => 'required|integer',
-            'documents' => 'required|array|min:1',
-            'documents.*' => 'file|mimes:pdf,jpg,jpeg,png|max:2048',
-            'notes' => 'nullable|string|max:1000'
+            'bookable_id'   => 'required|integer',
+            'notes'         => 'nullable|string|max:1000',
         ];
 
-        // Add conditional rules based on bookable type
-        if ($this->bookable_type === 'residence') {
-            $rules['check_in_date'] = 'required|date|after_or_equal:today';
-            $rules['check_out_date'] = 'nullable|date|after:check_in_date';
+        if ($isActivity) {
+            // Field khusus pendaftaran event — tidak perlu dokumen
+            $rules['check_in_date']      = 'required|date';
+            $rules['participant_name']   = 'required|string|max:255';
+            $rules['participant_email']  = 'required|email|max:255';
+            $rules['participant_phone']  = ['required', 'string', 'regex:/^[0-9]{8,15}$/'];
         } else {
-            // For activity, check_in_date is required but validation is handled in validateBookableItem
-            $rules['check_in_date'] = 'required|date';
+            // Residence tetap pakai dokumen
+            $rules['check_in_date']  = 'required|date|after_or_equal:today';
+            $rules['check_out_date'] = 'nullable|date|after:check_in_date';
+            $rules['documents']      = 'required|array|min:1';
+            $rules['documents.*']    = 'file|mimes:pdf,jpg,jpeg,png|max:2048';
         }
 
         return $rules;
@@ -38,22 +43,29 @@ class StoreBookingRequest extends FormRequest
     public function messages()
     {
         return [
-            'bookable_type.required' => 'Tipe booking wajib dipilih',
-            'bookable_type.in' => 'Tipe booking harus residence atau activity',
-            'bookable_id.required' => 'Item booking wajib dipilih',
-            'bookable_id.integer' => 'ID item harus berupa angka',
-            'check_in_date.required' => 'Tanggal check-in wajib diisi',
-            'check_in_date.date' => 'Tanggal check-in harus berupa tanggal yang valid',
-            'check_in_date.after_or_equal' => 'Tanggal check-in minimal hari ini',
-            'check_out_date.date' => 'Tanggal check-out harus berupa tanggal yang valid',
-            'check_out_date.after' => 'Tanggal check-out harus setelah tanggal check-in',
-            'documents.required' => 'Dokumen wajib diupload',
-            'documents.array' => 'Dokumen harus berupa array',
-            'documents.min' => 'Minimal 1 dokumen',
-            'documents.*.file' => 'File harus berupa file yang valid',
-            'documents.*.mimes' => 'Format file: pdf, jpg, jpeg, png',
-            'documents.*.max' => 'Ukuran file maksimal 2MB',
-            'notes.max' => 'Catatan maksimal 1000 karakter'
+            'bookable_type.required'        => 'Tipe booking wajib dipilih',
+            'bookable_type.in'              => 'Tipe booking harus residence atau activity',
+            'bookable_id.required'          => 'Item booking wajib dipilih',
+            'bookable_id.integer'           => 'ID item harus berupa angka',
+            'check_in_date.required'        => 'Tanggal check-in wajib diisi',
+            'check_in_date.date'            => 'Tanggal check-in harus berupa tanggal yang valid',
+            'check_in_date.after_or_equal'  => 'Tanggal check-in minimal hari ini',
+            'check_out_date.date'           => 'Tanggal check-out harus berupa tanggal yang valid',
+            'check_out_date.after'          => 'Tanggal check-out harus setelah tanggal check-in',
+            'documents.required'            => 'Dokumen wajib diupload',
+            'documents.array'               => 'Dokumen harus berupa array',
+            'documents.min'                 => 'Minimal 1 dokumen',
+            'documents.*.file'              => 'File harus berupa file yang valid',
+            'documents.*.mimes'             => 'Format file: pdf, jpg, jpeg, png',
+            'documents.*.max'               => 'Ukuran file maksimal 2MB',
+            'notes.max'                     => 'Catatan maksimal 1000 karakter',
+            'participant_name.required'     => 'Nama lengkap wajib diisi',
+            'participant_name.max'          => 'Nama lengkap maksimal 255 karakter',
+            'participant_email.required'    => 'Email wajib diisi',
+            'participant_email.email'       => 'Format email tidak valid',
+            'participant_email.max'         => 'Email maksimal 255 karakter',
+            'participant_phone.required'    => 'Nomor telepon wajib diisi',
+            'participant_phone.regex'       => 'Nomor telepon hanya boleh berisi angka (8–15 digit)',
         ];
     }
 
@@ -78,13 +90,9 @@ class StoreBookingRequest extends FormRequest
     protected function validateBookableItem($validator)
     {
         $type = $this->bookable_type;
-        $id = $this->bookable_id;
+        $id   = $this->bookable_id;
 
-        if ($type === 'residence') {
-            $item = Residence::find($id);
-        } else {
-            $item = Activity::find($id);
-        }
+        $item = $type === 'residence' ? Residence::find($id) : Activity::find($id);
 
         if (!$item) {
             $validator->errors()->add('bookable_id', 'Item tidak ditemukan');
@@ -95,13 +103,11 @@ class StoreBookingRequest extends FormRequest
             $validator->errors()->add('bookable_id', 'Item tidak aktif');
         }
 
-        // Additional validation for activity
         if ($type === 'activity') {
             if ($item->registration_deadline <= now()) {
                 $validator->errors()->add('bookable_id', 'Registrasi sudah ditutup');
             }
 
-            // Validate that check_in_date matches event_date
             $checkInDate = $this->input('check_in_date');
             if ($checkInDate && $item->event_date->format('Y-m-d') !== $checkInDate) {
                 $validator->errors()->add('check_in_date', 'Tanggal booking harus sesuai dengan tanggal kegiatan');
@@ -112,17 +118,12 @@ class StoreBookingRequest extends FormRequest
     protected function validateAvailability($validator)
     {
         $type = $this->bookable_type;
-        $id = $this->bookable_id;
+        $id   = $this->bookable_id;
 
-        if ($type === 'residence') {
-            $item = Residence::find($id);
-        } else {
-            $item = Activity::find($id);
-        }
+        $item = $type === 'residence' ? Residence::find($id) : Activity::find($id);
 
         if ($item && $item->available_slots <= 0) {
             $validator->errors()->add('bookable_id', 'Tidak ada slot tersedia');
         }
     }
 }
-
