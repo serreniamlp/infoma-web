@@ -23,6 +23,11 @@ class StoreBookingRequest extends FormRequest
             'notes'         => 'nullable|string|max:1000',
         ];
 
+        if (!$isActivity) {
+            // Durasi sewa dalam bulan — wajib untuk residence
+            $rules['duration_months'] = 'required|integer|min:1|max:24';
+        }
+
         if ($isActivity) {
             // Field khusus pendaftaran event — tidak perlu dokumen
             $rules['check_in_date']      = 'required|date';
@@ -47,7 +52,11 @@ class StoreBookingRequest extends FormRequest
             'bookable_type.in'              => 'Tipe booking harus residence atau activity',
             'bookable_id.required'          => 'Item booking wajib dipilih',
             'bookable_id.integer'           => 'ID item harus berupa angka',
-            'check_in_date.required'        => 'Tanggal check-in wajib diisi',
+            'duration_months.required'  => 'Durasi sewa wajib diisi',
+            'duration_months.integer'   => 'Durasi sewa harus berupa angka',
+            'duration_months.min'       => 'Durasi minimal 1 bulan',
+            'duration_months.max'       => 'Durasi maksimal 24 bulan',
+            'check_in_date.required'    => 'Tanggal check-in wajib diisi',
             'check_in_date.date'            => 'Tanggal check-in harus berupa tanggal yang valid',
             'check_in_date.after_or_equal'  => 'Tanggal check-in minimal hari ini',
             'check_out_date.date'           => 'Tanggal check-out harus berupa tanggal yang valid',
