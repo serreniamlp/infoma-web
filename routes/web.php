@@ -51,6 +51,8 @@ Route::middleware('auth')->group(function () {
 
     // Profile (available to any authenticated user)
     Route::get('/profile', [ProfileController::class, 'show'])->name('user.profile.show');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('user.profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('user.profile.update');
 
     // User specific routes
     Route::middleware('role:user')->prefix('user')->name('user.')->group(function () {
