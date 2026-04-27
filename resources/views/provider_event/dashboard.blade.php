@@ -3,6 +3,55 @@
 @section('title', 'Dashboard - Provider Event')
 
 @section('content')
+{{-- Banner verifikasi — tampil jika belum approved --}}
+@if(auth()->user()->provider_status === 'pending')
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div class="p-4 bg-orange-50 border border-orange-200 rounded-xl flex items-start gap-3">
+            <i class="fas fa-clock text-orange-500 mt-0.5 text-lg"></i>
+            <div>
+                <p class="font-semibold text-orange-800">Akun sedang dalam proses verifikasi</p>
+                <p class="text-sm text-orange-700 mt-0.5">
+                    Admin EduLiving sedang meninjau akun kamu. Kamu bisa mulai membuat listing setelah disetujui.
+                    Proses biasanya memakan waktu 1×24 jam.
+                </p>
+            </div>
+        </div>
+    </div>
+
+@elseif(auth()->user()->provider_status === 'rejected')
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div class="p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+            <i class="fas fa-times-circle text-red-500 mt-0.5 text-lg"></i>
+            <div>
+                <p class="font-semibold text-red-800">Akun ditolak oleh admin</p>
+                @if(auth()->user()->provider_rejection_reason)
+                    <p class="text-sm text-red-700 mt-0.5">
+                        Alasan: {{ auth()->user()->provider_rejection_reason }}
+                    </p>
+                @endif
+                <p class="text-sm text-red-700 mt-1">
+                    Hubungi admin EduLiving untuk informasi lebih lanjut.
+                </p>
+            </div>
+        </div>
+    </div>
+@endif
+
+{{-- Flash messages --}}
+@if(session('info'))
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl flex items-center gap-3 text-blue-700">
+            <i class="fas fa-info-circle"></i> {{ session('info') }}
+        </div>
+    </div>
+@endif
+@if(session('warning'))
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div class="p-4 bg-yellow-50 border border-yellow-200 rounded-xl flex items-center gap-3 text-yellow-700">
+            <i class="fas fa-exclamation-triangle"></i> {{ session('warning') }}
+        </div>
+    </div>
+@endif
 <div class="min-h-screen bg-gray-50 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

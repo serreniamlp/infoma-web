@@ -1,411 +1,497 @@
-@extends('layouts.app')
+{{-- resources/views/auth/register.blade.php --}}
 
-@section('title', 'Register - Infoma')
+@extends('layouts.app')
+@section('title', 'Daftar — EduLiving')
 
 @section('content')
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-lg w-full space-y-8">
-            <!-- Header -->
-            <div class="text-center">
-                <div class="mx-auto flex items-center justify-center mb-4">
-                    <img src="{{ asset('images/Infoma_Branding-blue.png') }}" alt="Infoma Logo" class="w-16 h-16">
-                </div>
-                <h2 class="text-3xl font-bold text-gray-900 mb-2">Bergabung dengan Infoma</h2>
-                <p class="text-gray-600">Buat akun baru untuk mengakses layanan kami</p>
+<div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gray-50">
+    <div class="max-w-lg w-full space-y-8">
+
+        {{-- Header --}}
+        <div class="text-center">
+            <img src="{{ asset('images/Infoma_Branding-blue.png') }}" alt="EduLiving" class="w-16 h-16 mx-auto mb-4">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Bergabung dengan EduLiving</h2>
+            <p class="text-gray-600">Buat akun baru untuk mengakses layanan kami</p>
+        </div>
+
+        @if(session('error'))
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl flex items-center gap-3">
+                <i class="fas fa-exclamation-circle"></i> {{ session('error') }}
             </div>
+        @endif
 
-            <!-- Success Messages -->
-            @if(session('success'))
-                <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl mb-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-check-circle text-green-500"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm">{{ session('success') }}</p>
+        <div class="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
+            <form method="POST" action="{{ route('register') }}"
+                  enctype="multipart/form-data"
+                  id="register-form">
+                @csrf
+
+                {{-- ---- Role ---- --}}
+                <div class="mb-5">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user-tag mr-2 text-blue-500"></i>Daftar sebagai
+                    </label>
+                    <div class="relative">
+                        <select id="role" name="role" required
+                                onchange="handleRoleChange(this.value)"
+                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white appearance-none @error('role') border-red-500 @enderror">
+                            <option value="" disabled {{ old('role') ? '' : 'selected' }}>Pilih peran Anda</option>
+                            <option value="user"               {{ old('role') === 'user'               ? 'selected' : '' }}>Mahasiswa</option>
+                            <option value="provider_residence" {{ old('role') === 'provider_residence' ? 'selected' : '' }}>Provider Hunian (Pemilik Kost/Kontrakan)</option>
+                            <option value="provider_event"     {{ old('role') === 'provider_event'     ? 'selected' : '' }}>Provider Event (Penyelenggara Kegiatan)</option>
+                        </select>
+                        <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                            <i class="fas fa-chevron-down text-gray-400"></i>
                         </div>
                     </div>
+                    @error('role')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
-            @endif
 
-            <!-- Error Messages -->
-            @if(session('error'))
-                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4">
-                    <div class="flex">
-                        <div class="flex-shrink-0">
-                            <i class="fas fa-exclamation-circle text-red-500"></i>
-                        </div>
-                        <div class="ml-3">
-                            <p class="text-sm">{{ session('error') }}</p>
-                        </div>
-                    </div>
+                {{-- ---- Nama ---- --}}
+                <div class="mb-5">
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-user mr-2 text-blue-500"></i>Nama Lengkap
+                    </label>
+                    <input id="name" name="name" type="text" required autofocus
+                           value="{{ old('name') }}"
+                           placeholder="Masukkan nama lengkap"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white @error('name') border-red-500 @enderror">
+                    @error('name')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
                 </div>
-            @endif
 
-            <!-- Register Form -->
-            <div class="bg-white rounded-2xl shadow-2xl p-8 border border-gray-100">
-                <form class="space-y-6" method="POST" action="{{ route('register') }}">
-                    @csrf
+                {{-- ---- Email ---- --}}
+                <div class="mb-5">
+                    <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-envelope mr-2 text-blue-500"></i>Email
+                    </label>
+                    <input id="email" name="email" type="email" required
+                           value="{{ old('email') }}"
+                           placeholder="nama@email.com"
+                           class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white @error('email') border-red-500 @enderror">
+                    @error('email')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                    <!-- Role Selection Dropdown -->
-                    <div>
-                        <label for="role" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-user-tag mr-2 text-blue-500"></i>Daftar sebagai
-                        </label>
-                        <div class="relative">
-                            <select id="role" name="role" required
-                                class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white appearance-none @error('role') border-red-500 @enderror">
-                                <option value="" disabled {{ old('role') ? '' : 'selected' }}>Pilih peran Anda</option>
-                                <option value="user" {{ old('role') == 'user' ? 'selected' : '' }}>
-                                    Mahasiswa
-                                </option>
-                                <option value="provider_residence" {{ old('role') == 'provider_residence' ? 'selected' : '' }}>
-                                    Provider Hunian (Pemilik Kost/Kontrakan)
-                                </option>
-                                <option value="provider_event" {{ old('role') == 'provider_event' ? 'selected' : '' }}>
-                                    Provider Event (Penyelenggara Kegiatan)
-                                </option>
-                            </select>
-                            <div class="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
-                                <i class="fas fa-chevron-down text-gray-400"></i>
-                            </div>
-                        </div>
-                        @error('role')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Name Field -->
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-user mr-2 text-blue-500"></i>Nama Lengkap
-                        </label>
-                        <input id="name" name="name" type="text" required autofocus
-                            value="{{ old('name') }}"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white @error('name') border-red-500 @enderror"
-                            placeholder="Masukkan nama lengkap">
-                        @error('name')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Email Field -->
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-envelope mr-2 text-blue-500"></i>Email
-                        </label>
-                        <input id="email" name="email" type="email" required autocomplete="email"
-                            value="{{ old('email') }}"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white @error('email') border-red-500 @enderror"
-                            placeholder="nama@email.com">
-                        @error('email')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Phone Field -->
-                    <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-phone mr-2 text-blue-500"></i>Nomor Telepon
-                        </label>
-                        <input id="phone" name="phone" type="tel" required
-                            value="{{ old('phone') }}"
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white @error('phone') border-red-500 @enderror"
-                            placeholder="08xxxxxxxxxx">
-                        @error('phone')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Address Field -->
-                    <div>
-                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
-                            <i class="fas fa-map-marker-alt mr-2 text-blue-500"></i>Alamat
-                        </label>
-                        <textarea id="address" name="address" rows="3" required
-                            class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white @error('address') border-red-500 @enderror"
-                            placeholder="Masukkan alamat lengkap">{{ old('address') }}</textarea>
-                        @error('address')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Password Fields -->
-                    <div class="grid grid-cols-1 gap-4">
-                        <div>
-                            <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-lock mr-2 text-blue-500"></i>Password
-                            </label>
-                            <div class="relative">
-                                <input id="password" name="password" type="password" required autocomplete="new-password"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white pr-12 @error('password') border-red-500 @enderror"
-                                    placeholder="Minimal 8 karakter">
-                                <button type="button" onclick="togglePassword('password')"
-                                    class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                    <i id="toggleIcon1" class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                            @error('password')
-                                <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                            @enderror
-                        </div>
-                        <div>
-                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-lock mr-2 text-blue-500"></i>Konfirmasi Password
-                            </label>
-                            <div class="relative">
-                                <input id="password_confirmation" name="password_confirmation" type="password" required autocomplete="new-password"
-                                    class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition duration-200 bg-gray-50 focus:bg-white pr-12"
-                                    placeholder="Ulangi password">
-                                <button type="button" onclick="togglePassword('password_confirmation')"
-                                    class="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                                    <i id="toggleIcon2" class="fas fa-eye"></i>
-                                </button>
-                            </div>
-                            <div id="password-match-message" class="mt-1 text-sm hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- Terms and Privacy -->
-                    <div class="flex items-start">
-                        <input id="terms" name="terms" type="checkbox" required
-                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mt-1">
-                        <label for="terms" class="ml-3 block text-sm text-gray-700">
-                            Saya menyetujui <a href="#" class="text-blue-600 hover:text-blue-500">Syarat & Ketentuan</a>
-                            dan <a href="#" class="text-blue-600 hover:text-blue-500">Kebijakan Privasi</a> Infoma
-                        </label>
-                        @error('terms')
-                            <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <!-- Submit Button -->
-                    <div>
-                        <button type="submit" id="submitBtn"
-                            class="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-xl text-white bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
-                            <span class="absolute left-0 inset-y-0 flex items-center pl-3">
-                                <i class="fas fa-user-plus text-blue-200 group-hover:text-blue-100"></i>
-                            </span>
-                            <span id="submitText">Daftar Sekarang</span>
-                            <span id="submitSpinner" class="hidden">
-                                <i class="fas fa-spinner fa-spin mr-2"></i>Mendaftar...
-                            </span>
+                {{-- ---- Password ---- --}}
+                <div class="mb-5">
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2 text-blue-500"></i>Password
+                    </label>
+                    <div class="relative">
+                        <input id="password" name="password" type="password" required
+                               placeholder="Minimal 8 karakter"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white pr-12 @error('password') border-red-500 @enderror">
+                        <button type="button" onclick="togglePassword('password','icon1')"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i id="icon1" class="fas fa-eye"></i>
                         </button>
                     </div>
+                    @error('password')
+                        <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
+                    @enderror
+                </div>
 
-                    <!-- Divider -->
+                {{-- ---- Konfirmasi Password ---- --}}
+                <div class="mb-6">
+                    <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-2">
+                        <i class="fas fa-lock mr-2 text-blue-500"></i>Konfirmasi Password
+                    </label>
                     <div class="relative">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-gray-300"></div>
-                        </div>
-                        <div class="relative flex justify-center text-sm">
-                            <span class="px-2 bg-white text-gray-500">atau</span>
+                        <input id="password_confirmation" name="password_confirmation" type="password" required
+                               placeholder="Ulangi password"
+                               oninput="checkPasswordMatch()"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white pr-12">
+                        <button type="button" onclick="togglePassword('password_confirmation','icon2')"
+                                class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                            <i id="icon2" class="fas fa-eye"></i>
+                        </button>
+                    </div>
+                    <p id="password-match-msg" class="mt-1 text-sm hidden"></p>
+                </div>
+
+                {{-- ================================================================ --}}
+                {{-- SECTION VERIFIKASI PROVIDER — muncul saat pilih role provider  --}}
+                {{-- ================================================================ --}}
+                <div id="provider-verification" class="hidden mb-6">
+
+                    <div class="border-t border-gray-100 mb-6"></div>
+
+                    {{-- Info banner --}}
+                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-xl mb-5">
+                        <div class="flex items-start gap-2">
+                            <i class="fas fa-shield-alt text-blue-500 mt-0.5"></i>
+                            <div>
+                                <p class="text-sm font-semibold text-blue-800 mb-0.5">Verifikasi Identitas Provider</p>
+                                <p class="text-xs text-blue-700">Isi data di bawah untuk proses verifikasi. Admin akan meninjau dalam 1×24 jam setelah kamu mendaftar.</p>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Login Link -->
-                    <div class="text-center">
-                        <p class="text-sm text-gray-600">
-                            Sudah punya akun?
-                            <a href="{{ route('login') }}"
-                                class="font-medium text-blue-600 hover:text-blue-500 transition duration-200">
-                                Masuk di sini
-                            </a>
-                        </p>
+                    {{-- Errors khusus provider --}}
+                    @if($errors->hasAny(['provider_nik','provider_ktp','provider_selfie']))
+                        <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-xl">
+                            <ul class="text-sm text-red-700 space-y-1">
+                                @error('provider_nik')<li class="flex items-center gap-2"><i class="fas fa-exclamation-circle"></i>{{ $message }}</li>@enderror
+                                @error('provider_ktp')<li class="flex items-center gap-2"><i class="fas fa-exclamation-circle"></i>{{ $message }}</li>@enderror
+                                @error('provider_selfie')<li class="flex items-center gap-2"><i class="fas fa-exclamation-circle"></i>{{ $message }}</li>@enderror
+                            </ul>
+                        </div>
+                    @endif
+
+                    {{-- NIK --}}
+                    <div class="mb-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">1</div>
+                            <h3 class="font-semibold text-gray-900 text-sm">NIK</h3>
+                        </div>
+                        <input type="text"
+                               name="provider_nik"
+                               id="provider_nik"
+                               value="{{ old('provider_nik') }}"
+                               maxlength="16"
+                               inputmode="numeric"
+                               placeholder="16 digit NIK sesuai KTP"
+                               class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 focus:bg-white text-sm @error('provider_nik') border-red-500 @enderror"
+                               oninput="this.value = this.value.replace(/[^0-9]/g,'').slice(0,16); document.getElementById('nik-count').textContent = this.value.length">
+                        <div class="flex justify-between mt-1">
+                            <span class="text-xs text-red-500">@error('provider_nik'){{ $message }}@enderror</span>
+                            <span class="text-xs text-gray-400"><span id="nik-count">0</span>/16 digit</span>
+                        </div>
                     </div>
-                </form>
-            </div>
 
-            <!-- Footer -->
-            <div class="text-center text-sm text-gray-500">
-                <p>&copy; {{ date('Y') }} Infoma. Semua hak dilindungi.</p>
-            </div>
+                    {{-- Nama (prefill readonly) --}}
+                    <div class="mb-5">
+                        <label class="block text-xs text-gray-500 mb-1">Nama Lengkap <span class="text-gray-400">(sesuai KTP)</span></label>
+                        <div class="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-xl text-sm text-gray-600 flex items-center gap-2">
+                            <i class="fas fa-user text-gray-400"></i>
+                            <span id="nama-preview">—</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">Diambil otomatis dari nama lengkap yang kamu isi</p>
+                    </div>
+
+                    {{-- Foto KTP --}}
+                    <div class="mb-5">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">2</div>
+                            <h3 class="font-semibold text-gray-900 text-sm">Foto KTP</h3>
+                        </div>
+                        <div class="relative border-2 border-dashed border-gray-300 rounded-xl p-5 text-center hover:border-blue-400 transition-colors cursor-pointer"
+                             id="ktp-dropzone">
+                            <input type="file" name="provider_ktp" id="provider_ktp" accept="image/*"
+                                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                   onchange="previewKtp(this)">
+                            <div id="ktp-placeholder">
+                                <i class="fas fa-id-card text-gray-300 text-3xl mb-2 block"></i>
+                                <p class="text-sm font-medium text-gray-700">Klik atau drag foto KTP</p>
+                                <p class="text-xs text-gray-400 mt-1">JPG, PNG — Maks. 2MB</p>
+                            </div>
+                            <div id="ktp-preview" class="hidden">
+                                <img id="ktp-preview-img" src="" alt="KTP"
+                                     class="max-h-36 mx-auto rounded-lg object-cover border border-gray-200">
+                                <p class="text-xs text-green-600 mt-2 font-medium" id="ktp-name"></p>
+                                <p class="text-xs text-gray-400">Klik untuk ganti</p>
+                            </div>
+                        </div>
+                        <div class="mt-2 grid grid-cols-3 gap-1.5 text-center">
+                            <div class="p-1.5 bg-green-50 rounded-lg"><p class="text-xs text-green-700"><i class="fas fa-check text-green-400 mr-1"></i>Jelas</p></div>
+                            <div class="p-1.5 bg-green-50 rounded-lg"><p class="text-xs text-green-700"><i class="fas fa-check text-green-400 mr-1"></i>Tidak blur</p></div>
+                            <div class="p-1.5 bg-green-50 rounded-lg"><p class="text-xs text-green-700"><i class="fas fa-check text-green-400 mr-1"></i>Lengkap</p></div>
+                        </div>
+                    </div>
+
+                    {{-- Foto Selfie Kamera --}}
+                    <div class="mb-2">
+                        <div class="flex items-center gap-2 mb-3">
+                            <div class="w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">3</div>
+                            <h3 class="font-semibold text-gray-900 text-sm">Foto Selfie Pegang KTP</h3>
+                        </div>
+                        <p class="text-xs text-gray-500 mb-3">Pastikan wajah dan tulisan KTP terlihat jelas.</p>
+
+                        <input type="hidden" name="provider_selfie" id="selfie-input">
+
+                        {{-- Idle --}}
+                        <div id="selfie-idle" class="border-2 border-dashed border-gray-300 rounded-xl p-6 text-center">
+                            <i class="fas fa-camera text-gray-300 text-3xl mb-2 block"></i>
+                            <p class="text-sm font-medium text-gray-700 mb-3">Belum ada foto selfie</p>
+                            <button type="button" onclick="startCamera()"
+                                    class="px-5 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                                <i class="fas fa-camera mr-2"></i>Buka Kamera
+                            </button>
+                        </div>
+
+                        {{-- Kamera aktif --}}
+                        <div id="selfie-camera" class="hidden rounded-xl overflow-hidden border border-gray-200">
+                            <div class="relative bg-black">
+                                <video id="camera-video" autoplay playsinline
+                                       class="w-full max-h-64 object-cover"></video>
+                                <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div class="border-2 border-white/60 rounded-full w-28 h-28 flex items-center justify-center">
+                                        <span class="text-white/60 text-xs text-center leading-tight">Posisikan<br>wajah</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-gray-900 flex gap-2 justify-center">
+                                <button type="button" onclick="capturePhoto()"
+                                        class="px-5 py-2 bg-white text-gray-900 rounded-lg text-sm font-semibold hover:bg-gray-100 transition-colors">
+                                    <i class="fas fa-camera mr-2"></i>Ambil Foto
+                                </button>
+                                <button type="button" onclick="stopCamera()"
+                                        class="px-4 py-2 bg-gray-700 text-white rounded-lg text-sm font-medium hover:bg-gray-600 transition-colors">
+                                    Batal
+                                </button>
+                            </div>
+                        </div>
+
+                        {{-- Hasil foto --}}
+                        <div id="selfie-result" class="hidden rounded-xl overflow-hidden border border-green-200">
+                            <div class="relative">
+                                <img id="selfie-preview-img" src="" alt="Selfie"
+                                     class="w-full max-h-64 object-cover">
+                                <div class="absolute top-2 right-2">
+                                    <span class="px-2 py-1 bg-green-500 text-white text-xs font-semibold rounded-full">
+                                        <i class="fas fa-check mr-1"></i>Foto diambil
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="p-3 bg-green-50 flex justify-center">
+                                <button type="button" onclick="retakePhoto()"
+                                        class="px-4 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-50 transition-colors">
+                                    <i class="fas fa-redo mr-1"></i>Ambil Ulang
+                                </button>
+                            </div>
+                        </div>
+
+                        <canvas id="selfie-canvas" class="hidden"></canvas>
+
+                        @error('provider_selfie')
+                            <p class="mt-2 text-sm text-red-600"><i class="fas fa-exclamation-circle mr-1"></i>{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                </div>
+                {{-- END SECTION PROVIDER --}}
+
+                {{-- Terms --}}
+                <div class="flex items-start mb-6">
+                    <input id="terms" name="terms" type="checkbox" required
+                           class="h-4 w-4 text-blue-600 border-gray-300 rounded mt-0.5">
+                    <label for="terms" class="ml-3 text-sm text-gray-700">
+                        Saya menyetujui
+                        <a href="#" class="text-blue-600 hover:underline">Syarat & Ketentuan</a>
+                        dan
+                        <a href="#" class="text-blue-600 hover:underline">Kebijakan Privasi</a>
+                        EduLiving
+                    </label>
+                </div>
+                @error('terms')
+                    <p class="mb-4 text-sm text-red-600">{{ $message }}</p>
+                @enderror
+
+                {{-- Submit --}}
+                <button type="button" onclick="submitForm()" id="submit-btn"
+                        class="w-full flex justify-center items-center gap-2 py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-gray-400 disabled:to-gray-400 text-white font-semibold rounded-xl transition duration-200 shadow-lg">
+                    <i class="fas fa-user-plus"></i>
+                    <span id="submit-text">Daftar Sekarang</span>
+                    <span id="submit-spinner" class="hidden"><i class="fas fa-spinner fa-spin"></i> Mendaftar...</span>
+                </button>
+
+                <div class="mt-6 text-center">
+                    <p class="text-sm text-gray-600">
+                        Sudah punya akun?
+                        <a href="{{ route('login') }}" class="font-medium text-blue-600 hover:text-blue-500">Masuk di sini</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+
+        <div class="text-center text-sm text-gray-500">
+            <p>&copy; {{ date('Y') }} EduLiving. Semua hak dilindungi.</p>
         </div>
     </div>
+</div>
 
-    <!-- Loading Overlay -->
-    <div id="loadingOverlay" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white p-6 rounded-lg shadow-lg text-center">
-            <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-3"></div>
-            <p class="text-gray-600">Sedang mendaftarkan akun...</p>
-        </div>
-    </div>
+<script>
+let stream     = null;
+let isProvider = false;
 
-    <script>
-    function togglePassword(fieldId) {
-        const passwordInput = document.getElementById(fieldId);
-        const iconNumber = fieldId === 'password' ? '1' : '2';
-        const toggleIcon = document.getElementById('toggleIcon' + iconNumber);
+// ---- Role change ----
+function handleRoleChange(value) {
+    const section = document.getElementById('provider-verification');
+    const ktpInput  = document.getElementById('provider_ktp');
+    const nikInput  = document.getElementById('provider_nik');
 
-        if (passwordInput.type === 'password') {
-            passwordInput.type = 'text';
-            toggleIcon.classList.remove('fa-eye');
-            toggleIcon.classList.add('fa-eye-slash');
-        } else {
-            passwordInput.type = 'password';
-            toggleIcon.classList.remove('fa-eye-slash');
-            toggleIcon.classList.add('fa-eye');
-        }
+    isProvider = value === 'provider_residence' || value === 'provider_event';
+
+    if (isProvider) {
+        section.classList.remove('hidden');
+        ktpInput.setAttribute('required', '');
+        nikInput.setAttribute('required', '');
+    } else {
+        section.classList.add('hidden');
+        ktpInput.removeAttribute('required');
+        nikInput.removeAttribute('required');
     }
+}
 
-    // Role selection functionality (simplified for dropdown)
-    document.getElementById('role').addEventListener('change', function() {
-        const selectedValue = this.value;
-        if (selectedValue) {
-            this.classList.add('text-gray-900');
-            this.classList.remove('text-gray-500');
-        }
-    });
+// Sync nama ke preview
+document.getElementById('name').addEventListener('input', function () {
+    const preview = document.getElementById('nama-preview');
+    if (preview) preview.textContent = this.value || '—';
+});
 
-    // Set initial selection styling
-    const roleSelect = document.getElementById('role');
-    if (roleSelect.value) {
-        roleSelect.classList.add('text-gray-900');
-        roleSelect.classList.remove('text-gray-500');
+// Inisialisasi saat load (untuk old() value setelah validation error)
+document.addEventListener('DOMContentLoaded', function () {
+    const role = document.getElementById('role').value;
+    if (role) handleRoleChange(role);
+
+    // Sync nama jika sudah ada value
+    const nameVal = document.getElementById('name').value;
+    const preview = document.getElementById('nama-preview');
+    if (preview && nameVal) preview.textContent = nameVal;
+
+    // Update counter NIK jika ada old value
+    const nik = document.getElementById('provider_nik');
+    if (nik) document.getElementById('nik-count').textContent = nik.value.length;
+});
+
+// ---- Toggle password ----
+function togglePassword(fieldId, iconId) {
+    const input = document.getElementById(fieldId);
+    const icon  = document.getElementById(iconId);
+    const hide  = input.type === 'password';
+    input.type  = hide ? 'text' : 'password';
+    icon.classList.toggle('fa-eye', !hide);
+    icon.classList.toggle('fa-eye-slash', hide);
+}
+
+// ---- Password match ----
+function checkPasswordMatch() {
+    const pw    = document.getElementById('password').value;
+    const conf  = document.getElementById('password_confirmation').value;
+    const msg   = document.getElementById('password-match-msg');
+    const input = document.getElementById('password_confirmation');
+
+    if (!conf) { msg.classList.add('hidden'); return true; }
+
+    if (pw === conf) {
+        msg.textContent = '✓ Password cocok';
+        msg.className   = 'mt-1 text-sm text-green-600';
+        input.classList.replace('border-red-500', 'border-green-500');
+        return true;
+    } else {
+        msg.textContent = '✗ Password tidak cocok';
+        msg.className   = 'mt-1 text-sm text-red-600';
+        input.classList.replace('border-green-500', 'border-red-500');
+        return false;
     }
+}
 
-    // Password confirmation validation
-    function validatePassword() {
-        const password = document.getElementById('password').value;
-        const confirmPassword = document.getElementById('password_confirmation').value;
-        const messageDiv = document.getElementById('password-match-message');
-        const confirmInput = document.getElementById('password_confirmation');
+// ---- Preview KTP ----
+function previewKtp(input) {
+    if (!input.files?.[0]) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+        document.getElementById('ktp-placeholder').classList.add('hidden');
+        document.getElementById('ktp-preview').classList.remove('hidden');
+        document.getElementById('ktp-preview-img').src = e.target.result;
+        document.getElementById('ktp-name').textContent = input.files[0].name;
+        document.getElementById('ktp-dropzone').classList.add('border-blue-400', 'bg-blue-50');
+    };
+    reader.readAsDataURL(input.files[0]);
+}
 
-        if (confirmPassword && password !== confirmPassword) {
-            messageDiv.textContent = 'Password tidak cocok';
-            messageDiv.classList.remove('hidden', 'text-green-600');
-            messageDiv.classList.add('text-red-600');
-            confirmInput.classList.add('border-red-500');
-            confirmInput.classList.remove('border-gray-300', 'border-green-500');
-            return false;
-        } else if (confirmPassword && password === confirmPassword) {
-            messageDiv.textContent = 'Password cocok';
-            messageDiv.classList.remove('hidden', 'text-red-600');
-            messageDiv.classList.add('text-green-600');
-            confirmInput.classList.add('border-green-500');
-            confirmInput.classList.remove('border-gray-300', 'border-red-500');
-            return true;
-        } else {
-            messageDiv.classList.add('hidden');
-            confirmInput.classList.remove('border-red-500', 'border-green-500');
-            confirmInput.classList.add('border-gray-300');
-            return true;
-        }
-    }
-
-    document.getElementById('password').addEventListener('input', validatePassword);
-    document.getElementById('password_confirmation').addEventListener('input', validatePassword);
-
-    // Form submission handling
-    document.querySelector('form').addEventListener('submit', function(e) {
-        const submitBtn = document.getElementById('submitBtn');
-        const submitText = document.getElementById('submitText');
-        const submitSpinner = document.getElementById('submitSpinner');
-        const loadingOverlay = document.getElementById('loadingOverlay');
-
-        // Validate password match before submission
-        if (!validatePassword()) {
-            e.preventDefault();
-            return false;
-        }
-
-        // Show loading states
-        submitBtn.disabled = true;
-        submitText.classList.add('hidden');
-        submitSpinner.classList.remove('hidden');
-        loadingOverlay.classList.remove('hidden');
-    });
-
-    // Phone number formatting
-    document.getElementById('phone').addEventListener('input', function(e) {
-        let value = e.target.value.replace(/\D/g, '');
-
-        // Format Indonesian phone number
-        if (value.startsWith('08')) {
-            // Keep as is for mobile numbers
-        } else if (value.startsWith('8')) {
-            value = '0' + value;
-        } else if (value.startsWith('628')) {
-            value = '0' + value.substring(2);
-        }
-
-        e.target.value = value;
-    });
-
-    // Auto hide alerts after 5 seconds
-    setTimeout(function() {
-        const alerts = document.querySelectorAll('.bg-green-100, .bg-red-100');
-        alerts.forEach(alert => {
-            alert.style.transition = 'opacity 0.5s';
-            alert.style.opacity = '0';
-            setTimeout(() => alert.remove(), 500);
+// ---- Kamera ----
+async function startCamera() {
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } }
         });
-    }, 5000);
+        document.getElementById('camera-video').srcObject = stream;
+        document.getElementById('selfie-idle').classList.add('hidden');
+        document.getElementById('selfie-camera').classList.remove('hidden');
+    } catch (err) {
+        if (err.name === 'NotAllowedError') {
+            alert('Akses kamera ditolak. Izinkan akses kamera di pengaturan browser, lalu coba lagi.');
+        } else {
+            alert('Tidak bisa membuka kamera: ' + err.message);
+        }
+    }
+}
 
-    // Password strength indicator
-    document.getElementById('password').addEventListener('input', function() {
-        const password = this.value;
-        const strengthDiv = document.getElementById('password-strength');
+function capturePhoto() {
+    const video  = document.getElementById('camera-video');
+    const canvas = document.getElementById('selfie-canvas');
+    canvas.width  = video.videoWidth;
+    canvas.height = video.videoHeight;
 
-        if (password.length === 0) {
-            if (strengthDiv) strengthDiv.classList.add('hidden');
+    const ctx = canvas.getContext('2d');
+    ctx.translate(canvas.width, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+    document.getElementById('selfie-input').value        = dataUrl;
+    document.getElementById('selfie-preview-img').src   = dataUrl;
+    document.getElementById('selfie-camera').classList.add('hidden');
+    document.getElementById('selfie-result').classList.remove('hidden');
+
+    stopCamera();
+}
+
+function stopCamera() {
+    stream?.getTracks().forEach(t => t.stop());
+    stream = null;
+    document.getElementById('selfie-camera').classList.add('hidden');
+    if (!document.getElementById('selfie-input').value) {
+        document.getElementById('selfie-idle').classList.remove('hidden');
+    }
+}
+
+function retakePhoto() {
+    document.getElementById('selfie-input').value = '';
+    document.getElementById('selfie-result').classList.add('hidden');
+    document.getElementById('selfie-idle').classList.remove('hidden');
+}
+
+// ---- Submit dengan validasi ----
+function submitForm() {
+    if (!checkPasswordMatch()) return;
+
+    if (isProvider) {
+        const nik    = document.getElementById('provider_nik').value;
+        const ktp    = document.getElementById('provider_ktp').files[0];
+        const selfie = document.getElementById('selfie-input').value;
+
+        if (nik.length !== 16) {
+            alert('NIK harus 16 digit.');
+            document.getElementById('provider_nik').focus();
             return;
         }
-
-        let strength = 0;
-        let feedback = [];
-
-        if (password.length >= 8) strength++;
-        else feedback.push('Minimal 8 karakter');
-
-        if (/[a-z]/.test(password)) strength++;
-        else feedback.push('Huruf kecil');
-
-        if (/[A-Z]/.test(password)) strength++;
-        else feedback.push('Huruf besar');
-
-        if (/\d/.test(password)) strength++;
-        else feedback.push('Angka');
-
-        if (/[^A-Za-z0-9]/.test(password)) strength++;
-        else feedback.push('Simbol');
-
-        // You can add password strength indicator here if needed
-    });
-    </script>
-@endsection
-
-@push('scripts')
-<script>
-// Password strength indicator
-document.getElementById('password').addEventListener('input', function() {
-    const password = this.value;
-    const strengthDiv = document.getElementById('password-strength');
-
-    if (password.length === 0) {
-        if (strengthDiv) strengthDiv.classList.add('hidden');
-        return;
+        if (!ktp) {
+            alert('Foto KTP wajib diunggah.');
+            return;
+        }
+        if (!selfie) {
+            alert('Foto selfie wajib diambil. Klik tombol "Buka Kamera".');
+            return;
+        }
     }
 
-    let strength = 0;
-    let feedback = [];
+    const btn     = document.getElementById('submit-btn');
+    const text    = document.getElementById('submit-text');
+    const spinner = document.getElementById('submit-spinner');
+    btn.disabled  = true;
+    text.classList.add('hidden');
+    spinner.classList.remove('hidden');
 
-    if (password.length >= 8) strength++;
-    else feedback.push('Minimal 8 karakter');
+    document.getElementById('register-form').submit();
+}
 
-    if (/[a-z]/.test(password)) strength++;
-    else feedback.push('Huruf kecil');
-
-    if (/[A-Z]/.test(password)) strength++;
-    else feedback.push('Huruf besar');
-
-    if (/\d/.test(password)) strength++;
-    else feedback.push('Angka');
-
-    if (/[^A-Za-z0-9]/.test(password)) strength++;
-    else feedback.push('Simbol');
-
-    // You can add password strength indicator here if needed
-});
+window.addEventListener('beforeunload', stopCamera);
 </script>
-@endpush
+@endsection

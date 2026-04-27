@@ -21,8 +21,13 @@ class User extends Authenticatable
         'is_seller',
         'seller_status',
         'seller_ktp',
+        'seller_nik',
+        'seller_selfie',
         'seller_rejection_reason',
         'provider_status',
+        'provider_nik',       // tambah
+        'provider_ktp',       // tambah
+        'provider_selfie',    // tambah
         'provider_rejection_reason',
         'is_active',
     ];

@@ -43,15 +43,29 @@ class ResidenceController extends Controller
         return view('provider_residence.residences.show', compact('residence'));
     }
 
-    public function create()
-    {
-        $categories = Category::where('type', 'residence')->get();
+    // app/Http/Controllers/Provider/ResidenceController.php
+    // Tambahkan method ini, lalu panggil di create() dan store()
 
-        return view('provider_residence.residences.create', compact('categories'));
+    private function checkProviderApproved()
+    {
+        $user = auth()->user();
+        if ($user->provider_status !== 'approved') {
+            return redirect()->route('provider.residence.dashboard')
+                ->with('warning', 'Akun kamu belum diverifikasi admin. Kamu belum bisa membuat listing.');
+        }
+        return null;
     }
 
-    public function store(StoreResidenceRequest $request)
+    public function create()
     {
+        if ($redirect = $this->checkProviderApproved()) return $redirect;
+        return view('provider_residence.residences.create');
+    }
+
+    public function store(Request $request)
+    {
+        if ($redirect = $this->checkProviderApproved()) return $redirect;
+        // ... sisa logic store yang sudah ada
         try {
             $data = $request->validated();
 

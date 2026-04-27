@@ -206,35 +206,89 @@
                         </div>
 
                         <div class="p-6">
-                            @if($user->provider_status === 'rejected' && $user->provider_rejection_reason)
-                                <div class="mb-4 p-3 bg-red-50 rounded-lg border border-red-200 text-sm text-red-700">
-                                    <strong>Alasan penolakan:</strong> {{ $user->provider_rejection_reason }}
+                            {{-- Data Identitas --}}
+                            <div class="grid grid-cols-2 gap-4 mb-5 p-4 bg-gray-50 rounded-xl">
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-0.5">Nama Lengkap</p>
+                                    <p class="text-sm font-medium text-gray-900">{{ $user->name }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-gray-500 mb-0.5">NIK</p>
+                                    <p class="text-sm font-medium text-gray-900 font-mono tracking-wider">
+                                        {{ $user->seller_nik ?? '—' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {{-- Kedua foto berdampingan --}}
+                            @if($user->seller_ktp || $user->seller_selfie)
+                                <div class="grid grid-cols-2 gap-4 mb-5">
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                            <i class="fas fa-id-card text-gray-400"></i>Foto KTP
+                                        </p>
+                                        @if($user->seller_ktp)
+                                            <a href="{{ Storage::url($user->seller_ktp) }}" target="_blank">
+                                                <img src="{{ Storage::url($user->seller_ktp) }}" alt="KTP"
+                                                    class="w-full rounded-lg border border-gray-200 object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                                                    style="max-height: 180px;">
+                                            </a>
+                                            <p class="text-xs text-gray-400 mt-1 text-center">Klik untuk perbesar</p>
+                                        @else
+                                            <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                                                Belum ada foto
+                                            </div>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-medium text-gray-700 mb-2 flex items-center gap-1">
+                                            <i class="fas fa-camera text-gray-400"></i>Foto Selfie + KTP
+                                        </p>
+                                        @if($user->seller_selfie)
+                                            <a href="{{ Storage::url($user->seller_selfie) }}" target="_blank">
+                                                <img src="{{ Storage::url($user->seller_selfie) }}" alt="Selfie"
+                                                    class="w-full rounded-lg border border-gray-200 object-cover hover:opacity-90 transition-opacity cursor-zoom-in"
+                                                    style="max-height: 180px;">
+                                            </a>
+                                            <p class="text-xs text-gray-400 mt-1 text-center">Klik untuk perbesar</p>
+                                        @else
+                                            <div class="w-full h-32 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-sm">
+                                                Belum ada foto
+                                            </div>
+                                        @endif
+                                    </div>
                                 </div>
                             @endif
 
-                            @if($user->provider_status === 'pending')
-                                <p class="text-sm text-gray-500 mb-4">
-                                    Role provider: <strong>{{ $user->roles->whereIn('name', ['provider_residence', 'provider_event'])->pluck('display_name')->join(', ') }}</strong>
-                                </p>
+                            {{-- Alasan penolakan (jika rejected) --}}
+                            @if($user->seller_status === 'rejected' && $user->seller_rejection_reason)
+                                <div class="mb-4 p-3 bg-red-50 rounded-lg border border-red-200 text-sm text-red-700">
+                                    <strong>Alasan penolakan:</strong> {{ $user->seller_rejection_reason }}
+                                </div>
+                            @endif
+
+                            {{-- Tombol approve/reject (hanya jika pending) --}}
+                            @if($user->seller_status === 'pending')
                                 <div class="flex gap-3">
-                                    <form method="POST" action="{{ route('admin.users.approveProvider', $user) }}" class="flex-1">
+                                    <form method="POST" action="{{ route('admin.users.approveSeller', $user) }}" class="flex-1">
                                         @csrf @method('PATCH')
-                                        <button type="submit" onclick="return confirm('Setujui pengajuan provider {{ $user->name }}?')"
+                                        <button type="submit" onclick="return confirm('Setujui pengajuan seller {{ $user->name }}?')"
                                                 class="w-full py-2 px-4 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors">
                                             <i class="fas fa-check mr-2"></i>Setujui
                                         </button>
                                     </form>
+
                                     <div class="flex-1" x-data="{ showReject: false }">
                                         <button @click="showReject = !showReject"
                                                 class="w-full py-2 px-4 bg-red-50 text-red-700 border border-red-200 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors">
                                             <i class="fas fa-times mr-2"></i>Tolak
                                         </button>
                                         <div x-show="showReject" x-transition class="mt-3">
-                                            <form method="POST" action="{{ route('admin.users.rejectProvider', $user) }}">
+                                            <form method="POST" action="{{ route('admin.users.rejectSeller', $user) }}">
                                                 @csrf @method('PATCH')
                                                 <textarea name="rejection_reason" rows="3" required
-                                                          placeholder="Alasan penolakan..."
-                                                          class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent mb-2"></textarea>
+                                                        placeholder="Tulis alasan penolakan yang jelas untuk user..."
+                                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-red-500 focus:border-transparent mb-2"></textarea>
                                                 <button type="submit"
                                                         class="w-full py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors">
                                                     Konfirmasi Tolak

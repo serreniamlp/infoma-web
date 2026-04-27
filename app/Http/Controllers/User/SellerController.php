@@ -39,6 +39,9 @@ class SellerController extends Controller
     /**
      * Submit pengajuan seller (upload KTP)
      */
+// app/Http/Controllers/User/SellerController.php
+// Ganti method activate() dengan ini:
+
     public function activate(Request $request)
     {
         $user = Auth::user();
@@ -53,22 +56,47 @@ class SellerController extends Controller
         }
 
         $request->validate([
-            'seller_ktp' => 'required|image|mimes:jpg,jpeg,png|max:2048',
+            'seller_nik'    => ['required', 'digits:16'],
+            'seller_ktp'    => ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'],
+            'seller_selfie' => ['required', 'string'], // base64 dari kamera
         ], [
+            'seller_nik.required' => 'NIK wajib diisi.',
+            'seller_nik.digits'   => 'NIK harus 16 digit.',
             'seller_ktp.required' => 'Foto KTP wajib diunggah.',
-            'seller_ktp.image'    => 'File harus berupa gambar.',
-            'seller_ktp.max'      => 'Ukuran foto maksimal 2MB.',
+            'seller_ktp.image'    => 'File KTP harus berupa gambar.',
+            'seller_ktp.max'      => 'Ukuran foto KTP maksimal 2MB.',
+            'seller_selfie.required' => 'Foto selfie wajib diambil.',
         ]);
 
+        // Simpan foto KTP (upload biasa)
         $ktpPath = $request->file('seller_ktp')->store('seller-ktp', 'public');
 
+        // Simpan foto selfie (dari base64 kamera)
+        $selfieBase64 = $request->seller_selfie;
+
+        // Validasi format base64
+        if (!preg_match('/^data:image\/(\w+);base64,/', $selfieBase64, $matches)) {
+            return redirect()->back()
+                ->withInput()
+                ->withErrors(['seller_selfie' => 'Format foto selfie tidak valid. Silakan ambil ulang.']);
+        }
+
+        $imageData   = substr($selfieBase64, strpos($selfieBase64, ',') + 1);
+        $imageData   = base64_decode($imageData);
+        $extension   = $matches[1] === 'jpeg' ? 'jpg' : $matches[1];
+        $selfieName  = 'seller-selfie/' . uniqid('selfie_', true) . '.' . $extension;
+
+        \Illuminate\Support\Facades\Storage::disk('public')->put($selfieName, $imageData);
+
         $user->update([
+            'seller_nik'    => $request->seller_nik,
             'seller_ktp'    => $ktpPath,
+            'seller_selfie' => $selfieName,
             'seller_status' => 'pending',
         ]);
 
         return redirect()->route('user.marketplace.sell')
-            ->with('success', 'Pengajuan penjual berhasil dikirim! Tunggu konfirmasi admin.');
+            ->with('success', 'Pengajuan penjual berhasil dikirim! Tunggu konfirmasi admin dalam 1×24 jam.');
     }
 
     /**
