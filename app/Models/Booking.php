@@ -16,16 +16,24 @@ class Booking extends Model
         'booking_code',
         'check_in_date',
         'check_out_date',
+        'duration_months',
+        'total_price',
         'documents',
         'status',
         'rejection_reason',
         'notes',
+        // Field pendaftaran event (dari update sebelumnya)
+        'participant_name',
+        'participant_email',
+        'participant_phone',
     ];
 
     protected $casts = [
-        'documents' => 'array',
-        'check_in_date' => 'date',
-        'check_out_date' => 'date',
+        'documents'       => 'array',
+        'check_in_date'   => 'date',
+        'check_out_date'  => 'date',
+        'duration_months' => 'integer',
+        'total_price'     => 'decimal:2',
     ];
 
     public function user() {
