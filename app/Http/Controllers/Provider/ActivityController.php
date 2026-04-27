@@ -51,15 +51,29 @@ class ActivityController extends Controller
         return view('provider_event.activities.show', compact('activity'));
     }
 
-    public function create()
-    {
-        $categories = Category::where('type', 'activity')->get();
+    // app/Http/Controllers/Provider/ResidenceController.php
+    // Tambahkan method ini, lalu panggil di create() dan store()
 
-        return view('provider_event.activities.create', compact('categories'));
+    private function checkProviderApproved()
+    {
+        $user = auth()->user();
+        if ($user->provider_status !== 'approved') {
+            return redirect()->route('provider.residence.dashboard')
+                ->with('warning', 'Akun kamu belum diverifikasi admin. Kamu belum bisa membuat listing.');
+        }
+        return null;
     }
 
-    public function store(StoreActivityRequest $request)
+    public function create()
     {
+        if ($redirect = $this->checkProviderApproved()) return $redirect;
+        return view('provider_residence.event.create');
+    }
+
+    public function store(Request $request)
+    {
+        if ($redirect = $this->checkProviderApproved()) return $redirect;
+
         try {
             $data = $request->validated();
             $data['provider_id'] = auth()->id();
