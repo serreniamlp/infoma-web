@@ -57,6 +57,8 @@ Route::middleware('auth')->group(function () {
 
     // Profile (semua user yang login bisa akses)
     Route::get('/profile', [ProfileController::class, 'show'])->name('user.profile.show');
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])->name('user.profile.edit');
+    Route::put('/profile', [ProfileController::class, 'update'])->name('user.profile.update');
 
     // Marketplace bookmark (semua user yang login bisa akses)
     Route::prefix('marketplace')->name('marketplace.')->group(function () {
