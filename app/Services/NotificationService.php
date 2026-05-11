@@ -1,114 +1,169 @@
 <?php
+// app/Services/NotificationService.php
 
 namespace App\Services;
 
-use App\Models\Booking;
-use App\Notifications\BookingNotification;
-use Illuminate\Support\Facades\Mail;
+use App\Models\Notification;
+use Illuminate\Support\Str;
 
 class NotificationService
 {
-    public function sendBookingNotification(Booking $booking, string $type)
+    /**
+     * Kirim notifikasi ke satu user
+     */
+    public static function send(int $userId, string $type, string $message, string $url, string $icon = 'fa-bell', string $color = 'blue'): void
     {
-        switch ($type) {
-            case 'new_booking':
-                $this->sendNewBookingNotification($booking);
-                break;
-            case 'booking_approved':
-                $this->sendBookingApprovedNotification($booking);
-                break;
-            case 'booking_rejected':
-                $this->sendBookingRejectedNotification($booking);
-                break;
-            case 'booking_cancelled':
-                $this->sendBookingCancelledNotification($booking);
-                break;
-            case 'payment_received':
-                $this->sendPaymentReceivedNotification($booking);
-                break;
-        }
+        Notification::create([
+            'id'              => Str::uuid(),
+            'type'            => $type,
+            'notifiable_type' => 'App\Models\User',
+            'notifiable_id'   => $userId,
+            'data'            => [
+                'message' => $message,
+                'url'     => $url,
+                'icon'    => $icon,
+                'color'   => $color,
+            ],
+        ]);
     }
 
-    protected function sendNewBookingNotification(Booking $booking)
-    {
-        // Notify provider
-        $booking->bookable->provider->notify(new BookingNotification(
-            'Booking Baru',
-            "Anda menerima booking baru untuk {$booking->bookable->name} dari {$booking->user->name}",
-            'booking_status',
-            $booking
-        ));
+    // -------------------------------------------------------
+    // BOOKING
+    // -------------------------------------------------------
 
-        // Send email if enabled
-        // Mail::to($booking->bookable->provider->email)->send(new NewBookingMail($booking));
+    public static function bookingBaru(int $providerId, string $userName, string $bookableName, string $bookingUrl): void
+    {
+        self::send(
+            $providerId,
+            'booking.baru',
+            "Booking baru dari {$userName} untuk {$bookableName}",
+            $bookingUrl,
+            'fa-bookmark',
+            'blue'
+        );
     }
 
-    protected function sendBookingApprovedNotification(Booking $booking)
+    public static function bookingDisetujui(int $userId, string $bookableName, string $bookingUrl): void
     {
-        // Notify user
-        $booking->user->notify(new BookingNotification(
-            'Booking Disetujui',
-            "Booking Anda untuk {$booking->bookable->name} telah disetujui. Silakan lakukan pembayaran.",
-            'booking_status',
-            $booking
-        ));
+        self::send(
+            $userId,
+            'booking.disetujui',
+            "Booking kamu di \"{$bookableName}\" telah disetujui",
+            $bookingUrl,
+            'fa-check-circle',
+            'green'
+        );
     }
 
-    protected function sendBookingRejectedNotification(Booking $booking)
+    public static function bookingDitolak(int $userId, string $bookableName, string $bookingUrl): void
     {
-        // Notify user
-        $booking->user->notify(new BookingNotification(
-            'Booking Ditolak',
-            "Booking Anda untuk {$booking->bookable->name} ditolak. Alasan: {$booking->rejection_reason}",
-            'booking_status',
-            $booking
-        ));
+        self::send(
+            $userId,
+            'booking.ditolak',
+            "Booking kamu di \"{$bookableName}\" ditolak",
+            $bookingUrl,
+            'fa-times-circle',
+            'red'
+        );
     }
 
-    protected function sendBookingCancelledNotification(Booking $booking)
+    // -------------------------------------------------------
+    // MARKETPLACE — PESANAN
+    // -------------------------------------------------------
+
+    public static function pesananBaru(int $sellerId, string $buyerName, string $productName, string $orderUrl): void
     {
-        // Notify provider
-        $booking->bookable->provider->notify(new BookingNotification(
-            'Booking Dibatalkan',
-            "Booking untuk {$booking->bookable->name} dari {$booking->user->name} telah dibatalkan",
-            'booking_status',
-            $booking
-        ));
+        self::send(
+            $sellerId,
+            'pesanan.baru',
+            "Pesanan baru dari {$buyerName} untuk \"{$productName}\"",
+            $orderUrl,
+            'fa-shopping-cart',
+            'blue'
+        );
     }
 
-    protected function sendPaymentReceivedNotification(Booking $booking)
+    public static function statusPesananDiupdate(int $buyerId, string $productName, string $status, string $orderUrl): void
     {
-        // Notify provider
-        $booking->bookable->provider->notify(new BookingNotification(
-            'Pembayaran Diterima',
-            "Pembayaran untuk booking {$booking->booking_code} telah diterima",
-            'payment_status',
-            $booking
-        ));
+        $labelStatus = match($status) {
+            'confirmed'   => 'dikonfirmasi seller',
+            'in_progress' => 'sedang diproses',
+            'completed'   => 'selesai',
+            'cancelled'   => 'dibatalkan',
+            default       => $status,
+        };
 
-        // Notify user
-        $booking->user->notify(new BookingNotification(
-            'Pembayaran Berhasil',
-            "Pembayaran Anda untuk {$booking->bookable->name} telah berhasil diproses",
-            'payment_status',
-            $booking
-        ));
+        $color = match($status) {
+            'confirmed'   => 'blue',
+            'in_progress' => 'indigo',
+            'completed'   => 'green',
+            'cancelled'   => 'red',
+            default       => 'gray',
+        };
+
+        self::send(
+            $buyerId,
+            'pesanan.update',
+            "Pesanan \"{$productName}\" {$labelStatus}",
+            $orderUrl,
+            'fa-box',
+            $color
+        );
     }
 
-    public function markAsRead($notificationId, $userId)
+    // -------------------------------------------------------
+    // APPROVAL SELLER
+    // -------------------------------------------------------
+
+    public static function sellerDisetujui(int $userId): void
     {
-        $user = \App\Models\User::findOrFail($userId);
-        $notification = $user->notifications()->where('id', $notificationId)->firstOrFail();
-        return (bool) $notification->markAsRead();
+        self::send(
+            $userId,
+            'seller.disetujui',
+            'Selamat! Akun penjual kamu sudah aktif. Mulai jual sekarang!',
+            route('user.marketplace.seller.home'),
+            'fa-store',
+            'green'
+        );
     }
 
-    public function markAllAsRead($userId)
+    public static function sellerDitolak(int $userId, string $reason): void
     {
-        $user = \App\Models\User::findOrFail($userId);
-        foreach ($user->unreadNotifications as $notification) {
-            $notification->markAsRead();
-        }
-        return true;
+        self::send(
+            $userId,
+            'seller.ditolak',
+            "Pengajuan penjual kamu ditolak: {$reason}",
+            route('user.marketplace.sell'),
+            'fa-store',
+            'red'
+        );
+    }
+
+    // -------------------------------------------------------
+    // APPROVAL PROVIDER
+    // -------------------------------------------------------
+
+    public static function providerDisetujui(int $userId, string $roleLabel): void
+    {
+        self::send(
+            $userId,
+            'provider.disetujui',
+            "Selamat! Akun provider {$roleLabel} kamu sudah aktif. Mulai buat listing sekarang!",
+            '/',
+            'fa-building',
+            'green'
+        );
+    }
+
+    public static function providerDitolak(int $userId, string $roleLabel, string $reason): void
+    {
+        self::send(
+            $userId,
+            'provider.ditolak',
+            "Pengajuan provider {$roleLabel} kamu ditolak: {$reason}",
+            '/',
+            'fa-building',
+            'red'
+        );
     }
 }
-

@@ -8,6 +8,7 @@ use App\Models\MarketplaceProduct;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use App\Services\NotificationService;
 
 class SellerController extends Controller
 {
@@ -222,6 +223,12 @@ class SellerController extends Controller
         }
 
         $transaction->update($data);
+        NotificationService::statusPesananDiupdate(
+            $transaction->buyer_id,
+            $transaction->product->name,
+            $request->status,
+            route('user.marketplace.transactions.show', $transaction->id)
+        );
 
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui!');
     }
