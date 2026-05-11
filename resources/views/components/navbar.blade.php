@@ -179,8 +179,12 @@
             </div>
 
             <!-- Right side: Avatar dropdown -->
-            <div class="hidden md:block">
+            <div class="hidden md:flex items-center gap-2">
                 @auth
+                    {{-- Bell notifikasi --}}
+                    <x-notification-dropdown />
+
+                    {{-- Avatar dropdown --}}
                     <div class="ml-3 relative" x-data="{ open: false }">
                         <button @click="open = !open"
                                 class="bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">

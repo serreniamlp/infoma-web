@@ -23,6 +23,8 @@ use App\Http\Controllers\Admin\ResidenceManagementController as AdminResidenceCo
 use App\Http\Controllers\Admin\ActivityManagementController as AdminActivityController;
 use App\Http\Controllers\Admin\MarketplaceManagementController as AdminMarketplaceController;
 use App\Http\Controllers\MarketplaceController;
+use App\Http\Controllers\NotificationController;
+
 
 // ============================================================
 // Public Routes
@@ -54,6 +56,14 @@ Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 // Authenticated Routes
 // ============================================================
 Route::middleware('auth')->group(function () {
+
+    // Notifikasi (semua user yang login)
+    Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
+        Route::get('/count',    [App\Http\Controllers\NotificationController::class, 'count'])->name('count');
+        Route::get('/list',     [App\Http\Controllers\NotificationController::class, 'list'])->name('list');
+        Route::patch('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('markRead');
+        Route::patch('/read-all',  [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('markAllRead');
+    });
 
     // Profile (semua user yang login bisa akses)
     Route::get('/profile', [ProfileController::class, 'show'])->name('user.profile.show');

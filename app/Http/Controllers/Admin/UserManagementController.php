@@ -8,6 +8,7 @@ use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
+use App\Services\NotificationService;
 
 class UserManagementController extends Controller
 {
@@ -85,25 +86,27 @@ class UserManagementController extends Controller
             'is_seller'     => true,
         ]);
 
+        // Kirim notifikasi
+        NotificationService::sellerDisetujui($user->id);
+
         return redirect()->back()->with('success', "Pengajuan seller {$user->name} berhasil disetujui.");
     }
 
     public function rejectSeller(Request $request, User $user)
     {
-        $request->validate([
-            'rejection_reason' => 'required|string|max:500',
-        ]);
+        $request->validate(['rejection_reason' => 'required|string|max:500']);
 
         $user->update([
-            'seller_status'            => 'rejected',
-            'is_seller'                => false,
-            'seller_rejection_reason'  => $request->rejection_reason,
+            'seller_status'           => 'rejected',
+            'is_seller'               => false,
+            'seller_rejection_reason' => $request->rejection_reason,
         ]);
+
+        // Kirim notifikasi
+        NotificationService::sellerDitolak($user->id, $request->rejection_reason);
 
         return redirect()->back()->with('success', "Pengajuan seller {$user->name} ditolak.");
     }
-
-    // --- APPROVAL PROVIDER ---
 
     public function approveProvider(User $user)
     {
@@ -113,19 +116,38 @@ class UserManagementController extends Controller
 
         $user->update(['provider_status' => 'approved']);
 
+        // Tentukan label role untuk pesan notif
+        $roleLabel = $user->roles
+            ->whereIn('name', ['provider_residence', 'provider_event'])
+            ->map(fn($r) => match($r->name) {
+                'provider_residence' => 'hunian',
+                'provider_event'     => 'event',
+                default              => $r->name,
+            })->join(' & ');
+
+        NotificationService::providerDisetujui($user->id, $roleLabel);
+
         return redirect()->back()->with('success', "Pengajuan provider {$user->name} berhasil disetujui.");
     }
 
     public function rejectProvider(Request $request, User $user)
     {
-        $request->validate([
-            'rejection_reason' => 'required|string|max:500',
-        ]);
+        $request->validate(['rejection_reason' => 'required|string|max:500']);
 
         $user->update([
             'provider_status'            => 'rejected',
             'provider_rejection_reason'  => $request->rejection_reason,
         ]);
+
+        $roleLabel = $user->roles
+            ->whereIn('name', ['provider_residence', 'provider_event'])
+            ->map(fn($r) => match($r->name) {
+                'provider_residence' => 'hunian',
+                'provider_event'     => 'event',
+                default              => $r->name,
+            })->join(' & ');
+
+        NotificationService::providerDitolak($user->id, $roleLabel, $request->rejection_reason);
 
         return redirect()->back()->with('success', "Pengajuan provider {$user->name} ditolak.");
     }

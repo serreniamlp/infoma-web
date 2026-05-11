@@ -23,18 +23,16 @@ class BookingManagementController extends Controller
     {
         $status = $request->get('status', '');
         $search = $request->get('search');
-        $type = $request->get('type');
+        $type   = $request->get('type');
 
         $query = Booking::whereHas('bookable', function ($q) {
             $q->where('provider_id', auth()->id());
         })->with(['user', 'bookable', 'transaction']);
 
-        // Status filter
         if (!empty($status)) {
             $query->where('status', $status);
         }
 
-        // Type filter (residence or activity)
         if ($type) {
             if ($type === 'residence') {
                 $query->where('bookable_type', 'App\\Models\\Residence');
@@ -43,31 +41,24 @@ class BookingManagementController extends Controller
             }
         }
 
-        // Search filter
         if ($search) {
             $query->where(function ($q) use ($search) {
                 $q->where('booking_code', 'like', "%{$search}%")
-                ->orWhereHas('user', function ($userQuery) use ($search) {
-                    $userQuery->where('name', 'like', "%{$search}%")
-                            ->orWhere('email', 'like', "%{$search}%");
-                })
-                ->orWhereHas('bookable', function ($bookableQuery) use ($search) {
-                    $bookableQuery->where('name', 'like', "%{$search}%");
-                });
+                  ->orWhereHas('user', function ($userQuery) use ($search) {
+                      $userQuery->where('name', 'like', "%{$search}%")
+                                ->orWhere('email', 'like', "%{$search}%");
+                  })
+                  ->orWhereHas('bookable', function ($bookableQuery) use ($search) {
+                      $bookableQuery->where('name', 'like', "%{$search}%");
+                  });
             });
         }
 
-        // Date filter
         $dateFrom = $request->get('date_from');
         $dateTo   = $request->get('date_to');
 
-        if ($dateFrom) {
-            $query->whereDate('created_at', '>=', $dateFrom);
-        }
-
-        if ($dateTo) {
-            $query->whereDate('created_at', '<=', $dateTo);
-        }
+        if ($dateFrom) $query->whereDate('created_at', '>=', $dateFrom);
+        if ($dateTo)   $query->whereDate('created_at', '<=', $dateTo);
 
         $bookings = $query->orderBy('created_at', 'desc')->paginate(15);
 
@@ -77,11 +68,9 @@ class BookingManagementController extends Controller
 
         return view($viewName, compact('bookings', 'status', 'search', 'type', 'dateFrom', 'dateTo'));
     }
-    
 
     public function show(Booking $booking)
     {
-        // Check if booking belongs to provider's item
         if ($booking->bookable->provider_id !== auth()->id()) {
             abort(403);
         }
@@ -97,7 +86,6 @@ class BookingManagementController extends Controller
 
     public function approve(Request $request, Booking $booking)
     {
-        // Check if booking belongs to provider's item
         if ($booking->bookable->provider_id !== auth()->id()) {
             abort(403);
         }
@@ -108,6 +96,18 @@ class BookingManagementController extends Controller
 
         try {
             $this->bookingService->approveBooking($booking, $request->get('notes'));
+
+            // Kirim notifikasi ke mahasiswa
+            NotificationService::bookingDisetujui(
+                $booking->user_id,
+                $booking->bookable->name ?? 'listing',
+                route(
+                    auth()->user()->hasRole('provider_residence')
+                        ? 'provider.residence.bookings.show'
+                        : 'provider.event.bookings.show',
+                    $booking->id
+                )
+            );
 
             return redirect()->back()->with('success', 'Booking berhasil disetujui');
 
@@ -122,7 +122,6 @@ class BookingManagementController extends Controller
             'rejection_reason' => 'required|string|max:1000'
         ]);
 
-        // Check if booking belongs to provider's item
         if ($booking->bookable->provider_id !== auth()->id()) {
             abort(403);
         }
@@ -134,6 +133,18 @@ class BookingManagementController extends Controller
         try {
             $this->bookingService->rejectBooking($booking, $request->rejection_reason, $request->get('notes'));
 
+            // Kirim notifikasi ke mahasiswa
+            NotificationService::bookingDitolak(
+                $booking->user_id,
+                $booking->bookable->name ?? 'listing',
+                route(
+                    auth()->user()->hasRole('provider_residence')
+                        ? 'provider.residence.bookings.show'
+                        : 'provider.event.bookings.show',
+                    $booking->id
+                )
+            );
+
             return redirect()->back()->with('success', 'Booking berhasil ditolak');
 
         } catch (\Exception $e) {
@@ -141,6 +152,3 @@ class BookingManagementController extends Controller
         }
     }
 }
-
-
-
