@@ -56,7 +56,7 @@ class AuthController extends Controller
             'password' => ['required', 'string', 'min:8', 'confirmed'],
             'phone' => ['required', 'string', 'max:20'],
             'address' => ['required', 'string'],
-            'role' => ['required', 'in:user,provider'],
+            'role' => ['required', 'in:user,provider,provider_residence,provider_event'],
         ]);
 
         $user = User::create([
