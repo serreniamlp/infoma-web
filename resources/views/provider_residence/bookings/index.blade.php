@@ -245,7 +245,7 @@
 @push('scripts')
 <script>
 function openRejectModal(bookingId) {
-    document.getElementById('rejectForm').action = `/provider/bookings/${bookingId}/reject`;
+    document.getElementById('rejectForm').action = `/provider/residence/bookings/${bookingId}/reject`;
     document.getElementById('rejectModal').classList.remove('hidden');
 }
 

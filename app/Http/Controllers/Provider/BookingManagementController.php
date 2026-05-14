@@ -97,17 +97,7 @@ class BookingManagementController extends Controller
         try {
             $this->bookingService->approveBooking($booking, $request->get('notes'));
 
-            // Kirim notifikasi ke mahasiswa
-            NotificationService::bookingDisetujui(
-                $booking->user_id,
-                $booking->bookable->name ?? 'listing',
-                route(
-                    auth()->user()->hasRole('provider_residence')
-                        ? 'provider.residence.bookings.show'
-                        : 'provider.event.bookings.show',
-                    $booking->id
-                )
-            );
+            // HAPUS baris NotificationService::bookingDisetujui(...) yang ada di sini
 
             return redirect()->back()->with('success', 'Booking berhasil disetujui');
 
@@ -133,17 +123,7 @@ class BookingManagementController extends Controller
         try {
             $this->bookingService->rejectBooking($booking, $request->rejection_reason, $request->get('notes'));
 
-            // Kirim notifikasi ke mahasiswa
-            NotificationService::bookingDitolak(
-                $booking->user_id,
-                $booking->bookable->name ?? 'listing',
-                route(
-                    auth()->user()->hasRole('provider_residence')
-                        ? 'provider.residence.bookings.show'
-                        : 'provider.event.bookings.show',
-                    $booking->id
-                )
-            );
+            // HAPUS baris NotificationService::bookingDitolak(...) yang ada di sini
 
             return redirect()->back()->with('success', 'Booking berhasil ditolak');
 

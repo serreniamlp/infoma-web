@@ -59,49 +59,93 @@ class ResidenceController extends Controller
     public function create()
     {
         if ($redirect = $this->checkProviderApproved()) return $redirect;
-        return view('provider_residence.residences.create');
+        $categories = Category::where('type', 'residence')->get();
+        return view('provider_residence.residences.create', compact('categories'));
+        // return view('provider_residence.residences.create');
     }
 
     public function store(Request $request)
     {
         if ($redirect = $this->checkProviderApproved()) return $redirect;
-        // ... sisa logic store yang sudah ada
-        try {
-            $data = $request->validated();
 
-            // Peta price_per_month → kolom price di database
-            $data['price'] = (float) $request->input('price_per_month');
-            unset($data['price_per_month']);
+        try {
+            $request->validate([
+                'name'              => 'required|string|max:255',
+                'description'       => 'required|string',
+                'category_id'       => 'required|exists:categories,id',
+                'rental_period'     => 'required|string|max:100',
+                'address'           => 'required|string|max:500',
+                'latitude'          => 'nullable|numeric|between:-90,90',
+                'longitude'         => 'nullable|numeric|between:-180,180',
+                'price_per_month'   => 'required|numeric|min:0',
+                'capacity'          => 'required|integer|min:1',
+                'discount_type'     => 'nullable|in:percentage,fixed',
+                'discount_value'    => 'nullable|numeric|min:0',
+                'facilities'        => 'nullable|array',
+                'facilities.*'      => 'string|max:100',
+                'custom_facilities' => 'nullable|string|max:500',
+                'images'            => 'nullable|array|max:10',
+                'images.*'          => 'image|mimes:jpg,jpeg,png,webp|max:2048',
+                'is_active'         => 'nullable|boolean',
+            ], [
+                'name.required'            => 'Nama hunian wajib diisi.',
+                'description.required'     => 'Deskripsi wajib diisi.',
+                'category_id.required'     => 'Kategori wajib dipilih.',
+                'category_id.exists'       => 'Kategori tidak valid.',
+                'rental_period.required'   => 'Periode sewa wajib diisi.',
+                'address.required'         => 'Alamat wajib diisi.',
+                'price_per_month.required' => 'Harga per bulan wajib diisi.',
+                'price_per_month.numeric'  => 'Harga harus berupa angka.',
+                'capacity.required'        => 'Kapasitas wajib diisi.',
+                'capacity.integer'         => 'Kapasitas harus berupa angka.',
+                'images.*.image'           => 'File harus berupa gambar.',
+                'images.*.max'             => 'Ukuran gambar maksimal 2MB.',
+            ]);
+
+            $data = $request->except(['_token', '_method', 'price_per_month', 'custom_facilities', 'images']);
+
+            $data['price']       = (float) $request->input('price_per_month');
             $data['provider_id'] = auth()->id();
+            $data['is_active']   = $request->boolean('is_active', true);
+
+            // Discount — kosongkan value kalau tidak ada tipe
+            if (empty($data['discount_type'])) {
+                $data['discount_type']  = null;
+                $data['discount_value'] = null;
+            }
 
             // Handle image uploads
             if ($request->hasFile('images')) {
                 $images = [];
                 foreach ($request->file('images') as $image) {
-                    $path = $image->store('residences', 'public');
-                    $images[] = $path;
+                    $images[] = $image->store('residences', 'public');
                 }
-                $data['images'] = $images; // rely on $casts to store as JSON
+                $data['images'] = $images;
             }
 
             // Handle facilities
-            $facilities = isset($data['facilities']) ? array_values($data['facilities']) : [];
+            $facilities = $request->input('facilities', []);
             if ($request->filled('custom_facilities')) {
-                $custom = array_filter(array_map('trim', explode(',', $request->input('custom_facilities'))));
+                $custom     = array_filter(array_map('trim', explode(',', $request->input('custom_facilities'))));
                 $facilities = array_values(array_unique(array_merge($facilities, $custom)));
             }
-            $data['facilities'] = $facilities;
+            $data['facilities'] = array_values($facilities);
 
-            // Set available_slots to capacity initially
             $data['available_slots'] = $data['capacity'];
 
             $residence = Residence::create($data);
 
             return redirect()->route('provider.residence.residences.show', $residence)
-                ->with('success', 'Residence berhasil ditambahkan');
+                ->with('success', 'Hunian berhasil ditambahkan!');
+
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            return redirect()->back()
+                ->withErrors($e->errors())
+                ->withInput();
+
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'Gagal menambahkan residence: ' . $e->getMessage())
+                ->with('error', 'Gagal menambahkan hunian: ' . $e->getMessage())
                 ->withInput();
         }
     }
