@@ -259,6 +259,11 @@ use Illuminate\Support\Str;
             <form method="POST" action="{{ route('provider.residence.bookings.reject', $booking) }}">
                 @csrf
                 @method('PATCH')
+                <form method="POST" action="{{ route('provider.residence.bookings.reject', $booking) }}">
+    @csrf
+    @method('PATCH')
+    {{-- tambah ini untuk debug --}}
+    <p class="text-xs text-gray-400 mb-2">Action: {{ route('provider.residence.bookings.reject', $booking) }}</p>
                 <div class="mb-4">
                     <label class="block text-sm font-medium text-gray-700 mb-2">Alasan Penolakan</label>
                     <textarea name="rejection_reason" rows="3" required

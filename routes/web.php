@@ -61,7 +61,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('auth')->prefix('notifications')->name('notifications.')->group(function () {
         Route::get('/count',    [App\Http\Controllers\NotificationController::class, 'count'])->name('count');
         Route::get('/list',     [App\Http\Controllers\NotificationController::class, 'list'])->name('list');
-        Route::patch('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('markRead');
+        Route::get('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('markRead');
         Route::patch('/read-all',  [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('markAllRead');
     });
 

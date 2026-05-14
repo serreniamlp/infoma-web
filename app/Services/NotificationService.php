@@ -5,6 +5,7 @@ namespace App\Services;
 
 use App\Models\Notification;
 use Illuminate\Support\Str;
+use App\Models\Booking;
 
 class NotificationService
 {
@@ -165,5 +166,90 @@ class NotificationService
             'fa-building',
             'red'
         );
+    }
+
+    public static function sendBookingNotification(Booking $booking, string $type): void
+    {
+        // Load relasi kalau belum
+        $booking->loadMissing(['user', 'bookable']);
+
+        $bookableName = $booking->bookable->name ?? 'listing';
+        $userName     = $booking->user->name ?? 'Pengguna';
+        $providerId   = $booking->bookable->provider_id ?? null;
+        $userId       = $booking->user_id ?? null;
+
+        $userUrl     = url('/user/bookings');
+        $providerUrl = $providerId
+            ? url('/provider/residence/bookings/' . $booking->id)
+            : url('/');
+
+        // Guard — jangan kirim notif kalau ID tidak valid
+        if (!$userId && in_array($type, ['booking_approved', 'booking_rejected', 'booking_cancelled'])) {
+            return;
+        }
+
+        if (!$providerId && in_array($type, ['new_booking', 'payment_received'])) {
+            return;
+        }
+
+        match($type) {
+
+            'new_booking' => self::send(
+                $providerId,
+                'booking.baru',
+                "Booking baru dari {$userName} untuk \"{$bookableName}\"",
+                $providerUrl,
+                'fa-bookmark',
+                'blue'
+            ),
+
+            'booking_approved' => self::send(
+                $userId,
+                'booking.disetujui',
+                "Booking kamu di \"{$bookableName}\" telah disetujui",
+                $userUrl,
+                'fa-check-circle',
+                'green'
+            ),
+
+            'booking_rejected' => self::send(
+                $userId,
+                'booking.ditolak',
+                "Booking kamu di \"{$bookableName}\" ditolak",
+                $userUrl,
+                'fa-times-circle',
+                'red'
+            ),
+
+            'booking_cancelled' => $providerId ? self::send(
+                $providerId,
+                'booking.dibatalkan',
+                "Booking dari {$userName} untuk \"{$bookableName}\" dibatalkan",
+                $providerUrl,
+                'fa-calendar-times',
+                'red'
+            ) : null,
+
+            'payment_received' => $providerId ? self::send(
+                $providerId,
+                'booking.pembayaran',
+                "Pembayaran diterima dari {$userName} untuk \"{$bookableName}\"",
+                $providerUrl,
+                'fa-money-bill-wave',
+                'green'
+            ) : null,
+
+            default => null,
+        };
+    }
+
+    // Wrapper instance → delegate ke static, agar BookingService bisa inject via constructor
+    public function __call(string $method, array $args): mixed
+    {
+        if (method_exists(static::class, $method)) {
+            return static::$method(...$args);
+        }
+
+        throw new \BadMethodCallException("Method {$method} tidak ditemukan di NotificationService");
     }
 }
