@@ -9,6 +9,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use App\Services\NotificationService;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class SellerController extends Controller
 {
@@ -231,5 +233,90 @@ class SellerController extends Controller
         );
 
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui!');
+    }
+
+    public function report(Request $request)
+    {
+        if (!Auth::user()->isSeller()) {
+            return redirect()->route('user.marketplace.sell');
+        }
+
+        $sellerId = Auth::id();
+        $period   = $request->period ?? 'this_month';
+
+        $dateFrom = match($period) {
+            'this_week'  => Carbon::now()->startOfWeek(),
+            'this_month' => Carbon::now()->startOfMonth(),
+            'last_month' => Carbon::now()->subMonth()->startOfMonth(),
+            'this_year'  => Carbon::now()->startOfYear(),
+            'custom'     => ($request->filled('date_from')
+                                ? Carbon::parse($request->date_from)->startOfDay()
+                                : Carbon::now()->startOfMonth()),
+            default      => Carbon::now()->startOfMonth(),
+        };
+
+        $dateTo = match($period) {
+            'last_month' => Carbon::now()->subMonth()->endOfMonth(),
+            'custom'     => ($request->filled('date_to')
+                                ? Carbon::parse($request->date_to)->endOfDay()
+                                : Carbon::now()->endOfDay()),
+            default      => Carbon::now()->endOfDay(),
+        };
+
+        // --- Summary ---
+        $baseQuery = MarketplaceTransaction::where('seller_id', $sellerId)
+            ->whereBetween('created_at', [$dateFrom, $dateTo]);
+
+        $totalOrders     = (clone $baseQuery)->count();
+        $pendingOrders   = (clone $baseQuery)->where('status', 'pending')->count();
+        $completedOrders = (clone $baseQuery)->where('status', 'completed')->count();
+        $cancelledOrders = (clone $baseQuery)->where('status', 'cancelled')->count();
+        $totalRevenue    = (clone $baseQuery)->where('status', 'completed')->sum('total_amount');
+
+        // --- Revenue per produk ---
+        $revenuePerProduct = MarketplaceProduct::where('seller_id', $sellerId)
+            ->withCount(['transactions as order_count' => fn($q) =>
+                $q->whereBetween('created_at', [$dateFrom, $dateTo])
+            ])
+            ->withSum(['transactions as revenue' => fn($q) =>
+                $q->where('status', 'completed')
+                ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ], 'total_amount')
+            ->orderByDesc('revenue')
+            ->get();
+
+        // --- Detail transaksi ---
+        $transactions = MarketplaceTransaction::with(['product', 'buyer'])
+            ->where('seller_id', $sellerId)
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->orderBy('created_at', 'desc')
+            ->paginate(15)
+            ->withQueryString();
+
+        // --- Chart: revenue harian ---
+        $dailyRevenue = MarketplaceTransaction::where('seller_id', $sellerId)
+            ->where('status', 'completed')
+            ->whereBetween('created_at', [$dateFrom, $dateTo])
+            ->select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('SUM(total_amount) as revenue'),
+                DB::raw('COUNT(*) as count')
+            )
+            ->groupBy('date')
+            ->orderBy('date')
+            ->get();
+
+        $summary = [
+            'total_revenue'    => $totalRevenue,
+            'total_orders'     => $totalOrders,
+            'pending_orders'   => $pendingOrders,
+            'completed_orders' => $completedOrders,
+            'cancelled_orders' => $cancelledOrders,
+        ];
+
+        return view('user.marketplace.seller-report', compact(
+            'summary', 'revenuePerProduct', 'transactions',
+            'dailyRevenue', 'period', 'dateFrom', 'dateTo'
+        ));
     }
 }

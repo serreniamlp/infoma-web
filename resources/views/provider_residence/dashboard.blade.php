@@ -71,9 +71,16 @@
                     <div class="text-4xl font-bold text-blue-600 mb-2">{{ $stats['monthly_bookings'] }}</div>
                     <div class="text-sm font-medium text-blue-700">Booking Bulan Ini</div>
                 </div>
+                {{-- Ganti card pendapatan bulan ini yang lama dengan ini --}}
                 <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
                     <div class="text-4xl font-bold text-green-600 mb-2">Rp {{ number_format($stats['monthly_revenue']) }}</div>
                     <div class="text-sm font-medium text-green-700">Pendapatan Bulan Ini</div>
+                    @if($stats['marketplace_revenue'] > 0)
+                        <div class="mt-2 pt-2 border-t border-green-200 text-xs text-green-600 space-y-0.5">
+                            <div>Booking: Rp {{ number_format($stats['booking_revenue'] ?? 0) }}</div>
+                            <div>FJB: Rp {{ number_format($stats['marketplace_revenue']) }}</div>
+                        </div>
+                    @endif
                 </div>
                 <div class="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl">
                     <div class="text-4xl font-bold text-purple-600 mb-2">{{ $stats['approval_rate'] }}%</div>
@@ -81,6 +88,44 @@
                 </div>
             </div>
         </div>
+
+        {{-- Marketplace Stats — hanya tampil jika provider juga seller --}}
+        @if($marketplaceStats)
+            <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
+                <div class="flex items-center justify-between mb-5">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Pendapatan Marketplace FJB</h3>
+                        <p class="text-sm text-gray-500 mt-0.5">Kamu juga terdaftar sebagai seller FJB</p>
+                    </div>
+                    <a href="{{ route('user.marketplace.seller.home') }}"
+                    class="text-sm text-blue-600 hover:underline flex items-center gap-1">
+                        Dashboard Seller <i class="fas fa-arrow-right text-xs"></i>
+                    </a>
+                </div>
+                <div class="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div class="text-center p-4 bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl">
+                        <div class="text-3xl font-bold text-yellow-600 mb-1">{{ $marketplaceStats['total_orders'] }}</div>
+                        <div class="text-xs font-medium text-yellow-700">Total Pesanan</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl">
+                        <div class="text-3xl font-bold text-orange-600 mb-1">{{ $marketplaceStats['pending_orders'] }}</div>
+                        <div class="text-xs font-medium text-orange-700">Pesanan Pending</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 rounded-xl">
+                        <div class="text-3xl font-bold text-green-600 mb-1">{{ $marketplaceStats['completed_orders'] }}</div>
+                        <div class="text-xs font-medium text-green-700">Pesanan Selesai</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
+                        <div class="text-2xl font-bold text-blue-600 mb-1">Rp {{ number_format($marketplaceStats['month_revenue']) }}</div>
+                        <div class="text-xs font-medium text-blue-700">Revenue Bulan Ini</div>
+                    </div>
+                    <div class="text-center p-4 bg-gradient-to-br from-indigo-50 to-indigo-100 rounded-xl">
+                        <div class="text-2xl font-bold text-indigo-600 mb-1">Rp {{ number_format($marketplaceStats['total_revenue']) }}</div>
+                        <div class="text-xs font-medium text-indigo-700">Total Revenue FJB</div>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- Main Content Grid -->
         <div class="grid grid-cols-1 xl:grid-cols-3 gap-8 mb-8">
