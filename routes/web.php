@@ -134,6 +134,7 @@ Route::middleware('auth')->group(function () {
                 Route::get('/orders', [\App\Http\Controllers\User\SellerController::class, 'orders'])->name('orders');
                 Route::get('/orders/{transaction}', [\App\Http\Controllers\User\SellerController::class, 'orderShow'])->name('orders.show');
                 Route::patch('/orders/{transaction}/status', [\App\Http\Controllers\User\SellerController::class, 'updateOrderStatus'])->name('orders.updateStatus');
+                Route::get('/report', [\App\Http\Controllers\User\SellerController::class, 'report'])->name('report');
             });
         });
     });
@@ -157,6 +158,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
         Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
+        // Laporan Provider Hunian
+        Route::get('/report', [ProviderDashboardController::class, 'report'])->name('report');
     });
 
     // --------------------------------------------------------
@@ -178,6 +181,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
         Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
+        // Laporan Provider Event
+        Route::get('/report', [ProviderDashboardController::class, 'report'])->name('report');
     });
 
     // --------------------------------------------------------

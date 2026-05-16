@@ -89,6 +89,10 @@
                                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('provider.residence.bookings.*') ? 'text-blue-600 bg-blue-50' : '' }}">
                                 <i class="fas fa-clipboard-list mr-1"></i>Kelola Booking
                             </a>
+                            <a href="{{ route('provider.residence.report') }}"
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('provider.residence.report') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-chart-bar mr-1"></i>Laporan
+                            </a>
 
                         {{-- ============================================================ --}}
                         {{-- PROVIDER EVENT --}}
@@ -106,6 +110,10 @@
                                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('provider.event.bookings.*') ? 'text-blue-600 bg-blue-50' : '' }}">
                                 <i class="fas fa-clipboard-list mr-1"></i>Kelola Pendaftaran
                             </a>
+                            <a href="{{ route('provider.event.report') }}"
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('provider.event.report') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-chart-bar mr-1"></i>Laporan
+                            </a>
 
                         {{-- ============================================================ --}}
                         {{-- MAHASISWA SELLER MODE --}}
@@ -122,6 +130,10 @@
                             <a href="{{ route('user.marketplace.seller.orders') }}"
                                class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('user.marketplace.seller.orders*') ? 'text-blue-600 bg-blue-50' : '' }}">
                                 <i class="fas fa-clipboard-list mr-1"></i>Kelola Pesanan
+                            </a>
+                            <a href="{{ route('user.marketplace.seller.report') }}"
+                            class="text-gray-700 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium transition-colors {{ request()->routeIs('user.marketplace.seller.report') ? 'text-blue-600 bg-blue-50' : '' }}">
+                                <i class="fas fa-chart-bar mr-1"></i>Laporan
                             </a>
 
                         {{-- ============================================================ --}}
@@ -329,6 +341,9 @@
                                 <a href="{{ route('provider.residence.bookings.index') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-clipboard-list mr-2"></i>Kelola Booking</a>
                                 <div class="border-t border-gray-200 my-2"></div>
                                 <a href="{{ route('provider.residence.dashboard') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a>
+                                <a href="{{ route('provider.residence.report') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-chart-bar mr-2"></i>Laporan
+                                </a>
 
                             @elseif(auth()->user()->hasRole('provider_event'))
                                 <a href="{{ route('home') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-home mr-2"></i>Beranda</a>
@@ -336,6 +351,26 @@
                                 <a href="{{ route('provider.event.bookings.index') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-clipboard-list mr-2"></i>Kelola Pendaftaran</a>
                                 <div class="border-t border-gray-200 my-2"></div>
                                 <a href="{{ route('provider.event.dashboard') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a>
+                                <a href="{{ route('provider.event.report') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-chart-bar mr-2"></i>Laporan
+                                </a>
+                            @elseif(auth()->user()->isSeller() && request()->routeIs('user.marketplace.seller.*'))
+                                <a href="{{ route('user.marketplace.seller.home') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-home mr-2"></i>Beranda Seller
+                                </a>
+                                <a href="{{ route('user.marketplace.seller.my-products') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-boxes mr-2"></i>Produk Saya
+                                </a>
+                                <a href="{{ route('user.marketplace.seller.orders') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-clipboard-list mr-2"></i>Kelola Pesanan
+                                </a>
+                                <a href="{{ route('user.marketplace.seller.report') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-chart-bar mr-2"></i>Laporan
+                                </a>
+                                <div class="border-t border-gray-200 my-2"></div>
+                                <a href="{{ route('marketplace.index') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
+                                    <i class="fas fa-arrow-left mr-2"></i>Kembali ke Buyer
+                                </a>
 
                             @else
                                 <a href="{{ route('home') }}" class="text-gray-900 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-home mr-2"></i>Beranda</a>
