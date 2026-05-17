@@ -1,39 +1,70 @@
 <?php
+// app/Http/Controllers/Api/Provider/DashboardController.php
+// TULIS ULANG
 
 namespace App\Http\Controllers\Api\Provider;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\Residence;
 use App\Models\Activity;
-use App\Models\Booking;
-use Illuminate\Http\Request;
+use App\Models\MarketplaceTransaction;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
-    public function __construct()
+    public function index()
     {
-        $this->middleware('auth:sanctum');
+        $providerId  = Auth::id();
+        $user        = Auth::user();
+        $isResidence = $user->hasRole('provider_residence');
+
+        $totalItems = $isResidence
+            ? Residence::where('provider_id', $providerId)->count()
+            : Activity::where('provider_id', $providerId)->count();
+
+        $totalBookings     = Booking::whereHas('bookable', fn($q) => $q->where('provider_id', $providerId))->count();
+        $pendingBookings   = Booking::whereHas('bookable', fn($q) => $q->where('provider_id', $providerId))->where('status', 'pending')->count();
+        $approvedBookings  = Booking::whereHas('bookable', fn($q) => $q->where('provider_id', $providerId))->where('status', 'approved')->count();
+
+        $monthlyBookings = Booking::whereHas('bookable', fn($q) => $q->where('provider_id', $providerId))
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+
+        // Revenue booking
+        $bookingRevenue = $this->getBookingRevenue($providerId);
+
+        // Revenue marketplace
+        $marketplaceRevenue = $user->isSeller()
+            ? MarketplaceTransaction::where('seller_id', $providerId)->where('status', 'completed')->sum('total_amount')
+            : 0;
+
+        return response()->json([
+            'status' => 'success',
+            'data'   => [
+                'role'                => $isResidence ? 'provider_residence' : 'provider_event',
+                'provider_status'     => $user->provider_status,
+                'total_items'         => $totalItems,
+                'total_bookings'      => $totalBookings,
+                'pending_bookings'    => $pendingBookings,
+                'approved_bookings'   => $approvedBookings,
+                'monthly_bookings'    => $monthlyBookings,
+                'booking_revenue'     => $bookingRevenue,
+                'marketplace_revenue' => $marketplaceRevenue,
+                'total_revenue'       => $bookingRevenue + $marketplaceRevenue,
+                'approval_rate'       => $totalBookings > 0
+                    ? round($approvedBookings / $totalBookings * 100, 1)
+                    : 0,
+            ],
+        ]);
     }
 
-    public function index(Request $request)
+    private function getBookingRevenue($providerId)
     {
-        $providerId = $request->user()->id;
-
-        // Statistics
-        $totalResidences = Residence::where('provider_id', $providerId)->count();
-        $totalActivities = Activity::where('provider_id', $providerId)->count();
-
-        $totalBookings = Booking::whereHas('bookable', function ($query) use ($providerId) {
-            $query->where('provider_id', $providerId);
-        })->count();
-
-        $pendingBookings = Booking::whereHas('bookable', function ($query) use ($providerId) {
-            $query->where('provider_id', $providerId);
-        })->where('status', 'pending')->count();
-
-        // Calculate total revenue
-        $totalRevenue = DB::table('transactions')
+        $residenceRevenue = DB::table('transactions')
             ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
             ->join('residences', function ($join) use ($providerId) {
                 $join->on('bookings.bookable_id', '=', 'residences.id')
@@ -43,7 +74,7 @@ class DashboardController extends Controller
             ->where('transactions.payment_status', 'paid')
             ->sum('transactions.final_amount');
 
-        $totalRevenue += DB::table('transactions')
+        $activityRevenue = DB::table('transactions')
             ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
             ->join('activities', function ($join) use ($providerId) {
                 $join->on('bookings.bookable_id', '=', 'activities.id')
@@ -53,84 +84,6 @@ class DashboardController extends Controller
             ->where('transactions.payment_status', 'paid')
             ->sum('transactions.final_amount');
 
-        // Recent bookings
-        $recentBookings = Booking::whereHas('bookable', function ($query) use ($providerId) {
-            $query->where('provider_id', $providerId);
-        })->with(['user', 'bookable'])
-            ->orderBy('created_at', 'desc')
-            ->limit(10)
-            ->get()
-            ->map(function ($booking) {
-                return [
-                    'id' => $booking->id,
-                    'booking_code' => $booking->booking_code,
-                    'status' => $booking->status,
-                    'total_amount' => $booking->total_amount,
-                    'created_at' => $booking->created_at,
-                    'user' => [
-                        'id' => $booking->user->id,
-                        'name' => $booking->user->name,
-                        'email' => $booking->user->email,
-                    ],
-                    'bookable' => [
-                        'id' => $booking->bookable->id,
-                        'name' => $booking->bookable->name,
-                        'type' => class_basename($booking->bookable_type),
-                    ]
-                ];
-            });
-
-        // Popular items
-        $popularResidences = Residence::where('provider_id', $providerId)
-            ->withCount('bookings')
-            ->orderBy('bookings_count', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($residence) {
-                return [
-                    'id' => $residence->id,
-                    'name' => $residence->name,
-                    'type' => 'Residence',
-                    'bookings_count' => $residence->bookings_count,
-                    'created_at' => $residence->created_at,
-                ];
-            });
-
-        $popularActivities = Activity::where('provider_id', $providerId)
-            ->withCount('bookings')
-            ->orderBy('bookings_count', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function ($activity) {
-                return [
-                    'id' => $activity->id,
-                    'name' => $activity->name,
-                    'type' => 'Activity',
-                    'bookings_count' => $activity->bookings_count,
-                    'created_at' => $activity->created_at,
-                ];
-            });
-
-        $recentItems = $popularResidences->concat($popularActivities)->sortByDesc('created_at')->take(5)->values();
-
-        $stats = [
-            'total_residences' => $totalResidences,
-            'total_activities' => $totalActivities,
-            'total_bookings' => $totalBookings,
-            'pending_bookings' => $pendingBookings,
-            'total_revenue' => $totalRevenue,
-            'monthly_bookings' => $totalBookings,
-            'monthly_revenue' => $totalRevenue,
-            'approval_rate' => $totalBookings > 0 ? round((($totalBookings - $pendingBookings) / $totalBookings) * 100, 1) : 0,
-        ];
-
-        return response()->json([
-            'status' => 'success',
-            'data' => [
-                'stats' => $stats,
-                'recent_bookings' => $recentBookings,
-                'recent_items' => $recentItems,
-            ]
-        ], 200);
+        return $residenceRevenue + $activityRevenue;
     }
 }
