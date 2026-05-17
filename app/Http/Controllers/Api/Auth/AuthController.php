@@ -1,95 +1,119 @@
 <?php
+// app/Http/Controllers/Api/Auth/AuthController.php
 
 namespace App\Http\Controllers\Api\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
-use Laravel\Sanctum\HasApiTokens;
 
 class AuthController extends Controller
 {
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required|email',
             'password' => 'required|string',
         ]);
 
-        $credentials = $request->only('email', 'password');
-
-        if (!Auth::attempt($credentials)) {
-            throw ValidationException::withMessages([
-                'email' => ['The provided credentials are incorrect.'],
-            ]);
+        if (!Auth::attempt($request->only('email', 'password'))) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Email atau password salah.',
+            ], 401);
         }
 
-        $user = Auth::user();
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $user  = Auth::user();
+        $token = $user->createToken('mobile-token')->plainTextToken;
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Login successful',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'address' => $user->address,
-                    'roles' => $user->roles->pluck('name'),
-                ],
+            'status'  => 'success',
+            'message' => 'Login berhasil.',
+            'data'    => [
+                'user'  => new UserResource($user->load('roles')),
                 'token' => $token,
-            ]
-        ], 200);
+            ],
+        ]);
     }
 
     public function register(Request $request)
     {
-        $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', 'unique:users'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'phone' => ['required', 'string', 'max:20'],
-            'address' => ['required', 'string'],
-            'role' => ['required', 'in:user,provider,provider_residence,provider_event'],
+        $isProvider = in_array($request->role, ['provider_residence', 'provider_event']);
+
+        $rules = [
+            'name'     => 'required|string|max:255',
+            'email'    => 'required|email|unique:users',
+            'password' => 'required|string|min:8|confirmed',
+            'role'     => 'required|in:user,provider_residence,provider_event',
+        ];
+
+        // Provider wajib upload dokumen verifikasi
+        if ($isProvider) {
+            $rules['provider_nik']    = 'required|digits:16';
+            $rules['provider_ktp']    = 'required|image|mimes:jpg,jpeg,png|max:2048';
+            $rules['provider_selfie'] = 'required|string'; // base64
+        }
+
+        $request->validate($rules, [
+            'email.unique'             => 'Email sudah terdaftar.',
+            'password.confirmed'       => 'Konfirmasi password tidak cocok.',
+            'provider_nik.required'    => 'NIK wajib diisi untuk provider.',
+            'provider_nik.digits'      => 'NIK harus 16 digit.',
+            'provider_ktp.required'    => 'Foto KTP wajib diunggah.',
+            'provider_selfie.required' => 'Foto selfie wajib diambil.',
         ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-            'phone' => $request->phone,
-            'address' => $request->address,
+        $userData = [
+            'name'              => $request->name,
+            'email'             => $request->email,
+            'password'          => Hash::make($request->password),
             'email_verified_at' => now(),
-        ]);
+            'provider_status'   => $isProvider ? 'pending' : 'none',
+        ];
 
-        // Assign role
+        if ($isProvider) {
+            $userData['provider_nik'] = $request->provider_nik;
+            $userData['provider_ktp'] = $request->file('provider_ktp')
+                ->store('provider-ktp', 'public');
+
+            // Selfie base64
+            $selfieBase64 = $request->provider_selfie;
+            if (preg_match('/^data:image\/(\w+);base64,/', $selfieBase64, $matches)) {
+                $imageData  = base64_decode(substr($selfieBase64, strpos($selfieBase64, ',') + 1));
+                $extension  = $matches[1] === 'jpeg' ? 'jpg' : $matches[1];
+                $selfiePath = 'provider-selfie/' . uniqid('selfie_', true) . '.' . $extension;
+                Storage::disk('public')->put($selfiePath, $imageData);
+                $userData['provider_selfie'] = $selfiePath;
+            } else {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Format foto selfie tidak valid.',
+                ], 422);
+            }
+        }
+
+        $user = User::create($userData);
+
         $role = Role::where('name', $request->role)->first();
         if ($role) {
             $user->roles()->attach($role->id);
         }
 
-        $token = $user->createToken('auth-token')->plainTextToken;
+        $token = $user->createToken('mobile-token')->plainTextToken;
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Registration successful',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'address' => $user->address,
-                    'roles' => $user->roles->pluck('name'),
-                ],
+            'status'  => 'success',
+            'message' => 'Registrasi berhasil.' . ($isProvider ? ' Akun sedang dalam proses verifikasi.' : ''),
+            'data'    => [
+                'user'  => new UserResource($user->load('roles')),
                 'token' => $token,
-            ]
+            ],
         ], 201);
     }
 
@@ -98,28 +122,30 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Logout successful'
-        ], 200);
+            'status'  => 'success',
+            'message' => 'Logout berhasil.',
+        ]);
     }
 
     public function me(Request $request)
     {
+        return response()->json([
+            'status' => 'success',
+            'data'   => [
+                'user' => new UserResource($request->user()->load('roles')),
+            ],
+        ]);
+    }
+
+    public function refresh(Request $request)
+    {
         $user = $request->user();
-        $user->load('roles');
+        $user->currentAccessToken()->delete();
+        $token = $user->createToken('mobile-token')->plainTextToken;
 
         return response()->json([
             'status' => 'success',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'address' => $user->address,
-                    'roles' => $user->roles->pluck('name'),
-                ]
-            ]
-        ], 200);
+            'data'   => ['token' => $token],
+        ]);
     }
 }
