@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Detail Booking - Infoma')
+@section('title', 'Detail Booking - EduLiving')
 
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
@@ -20,6 +20,61 @@
                 </div>
             </div>
         </div>
+
+        {{-- ================================================================ --}}
+        {{-- BANNER: COUNTDOWN PEMBAYARAN (hanya saat approved & belum bayar) --}}
+        {{-- ================================================================ --}}
+        @if($booking->status === 'approved' && $booking->payment_deadline && $booking->transaction?->payment_status === 'pending')
+            @php
+                $deadlineTs = $booking->payment_deadline->timestamp * 1000; // ms untuk JS
+                $isExpired  = $booking->isPaymentExpired();
+            @endphp
+
+            @if(!$isExpired)
+            <div id="paymentCountdownBanner"
+                 class="mb-6 bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-4">
+                <div class="text-amber-500 text-2xl mt-0.5">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-amber-800 text-base">Segera Lakukan Pembayaran!</h3>
+                    <p class="text-amber-700 text-sm mt-1">
+                        Booking kamu telah disetujui. Selesaikan pembayaran sebelum batas waktu habis,
+                        atau booking akan dibatalkan otomatis.
+                    </p>
+                    <div class="mt-3 flex items-center gap-3">
+                        <span class="text-amber-700 text-sm font-medium">Sisa waktu:</span>
+                        <span id="paymentCountdown"
+                              class="font-mono font-bold text-amber-900 text-lg bg-amber-100 px-3 py-1 rounded-md">
+                            --:--:--
+                        </span>
+                    </div>
+                    <p class="text-amber-600 text-xs mt-2">
+                        Batas akhir: {{ $booking->payment_deadline->format('d M Y, H:i') }} WIB
+                    </p>
+                </div>
+                <a href="{{ route('user.bookings.payment', $booking) }}"
+                   class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors">
+                    Bayar Sekarang
+                </a>
+            </div>
+            @endif
+        @endif
+
+        {{-- Banner: booking di-cancel otomatis --}}
+        @if($booking->status === 'cancelled' && str_contains($booking->rejection_reason ?? '', 'otomatis'))
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <i class="fas fa-clock text-red-400 text-xl mt-0.5"></i>
+                <div>
+                    <h3 class="font-semibold text-red-800">Booking Dibatalkan Otomatis</h3>
+                    <p class="text-red-700 text-sm mt-1">{{ $booking->rejection_reason }}</p>
+                    <a href="{{ route('residences.index') }}"
+                       class="inline-block mt-3 text-sm text-red-700 underline hover:text-red-900">
+                        Cari hunian lain →
+                    </a>
+                </div>
+            </div>
+        @endif
 
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- Main Content -->
@@ -130,12 +185,14 @@
                 @endif
 
                 <!-- Rejection Reason -->
-                @if($booking->status === 'rejected' && $booking->rejection_reason)
+                @if(in_array($booking->status, ['rejected', 'cancelled']) && $booking->rejection_reason)
                 <div class="bg-red-50 border border-red-200 rounded-lg p-6">
                     <div class="flex">
                         <i class="fas fa-exclamation-circle text-red-400 mr-3 mt-0.5"></i>
                         <div>
-                            <h3 class="text-lg font-medium text-red-800 mb-2">Alasan Penolakan</h3>
+                            <h3 class="text-lg font-medium text-red-800 mb-2">
+                                {{ $booking->status === 'rejected' ? 'Alasan Penolakan' : 'Alasan Pembatalan' }}
+                            </h3>
                             <p class="text-red-700">{{ $booking->rejection_reason }}</p>
                         </div>
                     </div>
@@ -181,7 +238,7 @@
                                 </span>
                             </div>
 
-                            @if($booking->transaction->payment_method)
+                            @if($booking->transaction->payment_method && $booking->transaction->payment_method !== 'pending')
                                 <p class="text-sm text-gray-600">Metode: {{ ucfirst($booking->transaction->payment_method) }}</p>
                             @endif
                         </div>
@@ -207,10 +264,16 @@
                         @endif
 
                         @if($booking->status === 'approved' && $booking->transaction && $booking->transaction->payment_status === 'pending')
+                            @if(!$booking->isPaymentExpired())
                             <a href="{{ route('user.bookings.payment', $booking) }}"
                                class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
                                 <i class="fas fa-credit-card mr-2"></i>Bayar Sekarang
                             </a>
+                            @else
+                            <p class="text-sm text-red-600 text-center">
+                                <i class="fas fa-clock mr-1"></i>Batas waktu pembayaran sudah habis.
+                            </p>
+                            @endif
                         @endif
 
                         @if($booking->status === 'completed' && $canRate)
@@ -292,6 +355,47 @@
 
 @push('scripts')
 <script>
+// ── Payment Countdown Timer ──────────────────────────────────────────────────
+@if($booking->status === 'approved' && $booking->payment_deadline && $booking->transaction?->payment_status === 'pending' && !$booking->isPaymentExpired())
+(function () {
+    const deadline = {{ $deadlineTs }};
+    const el = document.getElementById('paymentCountdown');
+
+    if (!el) return;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function updateCountdown() {
+        const remaining = deadline - Date.now();
+
+        if (remaining <= 0) {
+            el.textContent = '00:00:00';
+            el.classList.add('text-red-700', 'bg-red-100');
+            el.classList.remove('text-amber-900', 'bg-amber-100');
+            // Reload halaman agar tombol bayar hilang dan banner otomatis update
+            setTimeout(() => location.reload(), 2000);
+            return;
+        }
+
+        const h = Math.floor(remaining / 3600000);
+        const m = Math.floor((remaining % 3600000) / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+
+        el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+        // Warna merah jika sisa < 10 menit
+        if (remaining < 600000) {
+            el.classList.add('text-red-700', 'bg-red-100');
+            el.classList.remove('text-amber-900', 'bg-amber-100');
+        }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
+@endif
+
+// ── Rating Modal ─────────────────────────────────────────────────────────────
 function openRatingModal() {
     document.getElementById('ratingModal').classList.remove('hidden');
     document.getElementById('ratingModal').classList.add('flex');
@@ -319,12 +423,13 @@ function setRating(rating) {
     ratingInput.value = rating;
 }
 
-// Close modal when clicking outside
+@if($booking->status === 'completed' && $canRate)
 document.getElementById('ratingModal').addEventListener('click', function(e) {
     if (e.target === this) {
         closeRatingModal();
     }
 });
+@endif
 </script>
 @endpush
 @endsection

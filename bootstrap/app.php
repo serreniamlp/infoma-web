@@ -16,7 +16,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => \App\Http\Middleware\CheckRole::class,
             'track.activity' => \App\Http\Middleware\TrackUserActivity::class,
             'guest' => \App\Http\Middleware\RedirectIfAuthenticated::class,
+            'check.ban' => \App\Http\Middleware\CheckBanStatus::class,  // ← TAMBAH
         ]);
+        $middleware->appendToGroup('web', \App\Http\Middleware\CheckBanStatus::class);  // ← TAMBAH
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

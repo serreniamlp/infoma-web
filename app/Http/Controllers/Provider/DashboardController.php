@@ -22,6 +22,13 @@ class DashboardController extends Controller
     {
         $providerId = auth()->id();
 
+        if (!auth()->user()->hasAcceptedTerms()) {
+            return redirect()->route('verification.terms', [
+                'type'        => 'provider',
+                'redirect_to' => url()->current(),
+            ]);
+        }
+
         // Statistics
         $totalResidences = Residence::where('provider_id', $providerId)->count();
         $totalActivities = Activity::where('provider_id', $providerId)->count();

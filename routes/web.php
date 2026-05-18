@@ -24,6 +24,7 @@ use App\Http\Controllers\Admin\ActivityManagementController as AdminActivityCont
 use App\Http\Controllers\Admin\MarketplaceManagementController as AdminMarketplaceController;
 use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\VerificationTermsController;  // ← TAMBAH
 
 
 // ============================================================
@@ -63,6 +64,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/list',     [App\Http\Controllers\NotificationController::class, 'list'])->name('list');
         Route::get('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('markRead');
         Route::patch('/read-all',  [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('markAllRead');
+        // Syarat & Ketentuan Verifikasi
+        Route::get('/verification/terms/{type}',  [VerificationTermsController::class, 'show'])->name('verification.terms');   // ← TAMBAH
+        Route::post('/verification/accept-terms', [VerificationTermsController::class, 'accept'])->name('verification.accept-terms'); // ← TAMBAH
     });
 
     // Profile (semua user yang login bisa akses)
@@ -207,6 +211,8 @@ Route::middleware('auth')->group(function () {
         // Approval provider
         Route::patch('/users/{user}/approve-provider', [UserManagementController::class, 'approveProvider'])->name('users.approveProvider');
         Route::patch('/users/{user}/reject-provider', [UserManagementController::class, 'rejectProvider'])->name('users.rejectProvider');
+        Route::post('/users/{user}/ban',    [UserManagementController::class, 'ban'])->name('users.ban');    // ← TAMBAH
+        Route::patch('/users/{user}/unban', [UserManagementController::class, 'unban'])->name('users.unban'); // ← TAMBAH
 
         // Manajemen Hunian
         Route::get('/residences', [AdminResidenceController::class, 'index'])->name('residences.index');

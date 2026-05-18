@@ -79,41 +79,33 @@ class NotificationService
             'pesanan.baru',
             "Pesanan baru dari {$buyerName} untuk \"{$productName}\"",
             $orderUrl,
-            'fa-shopping-cart',
+            'fa-shopping-bag',
             'blue'
         );
     }
 
     public static function statusPesananDiupdate(int $buyerId, string $productName, string $status, string $orderUrl): void
     {
-        $labelStatus = match($status) {
-            'confirmed'   => 'dikonfirmasi seller',
-            'in_progress' => 'sedang diproses',
-            'completed'   => 'selesai',
-            'cancelled'   => 'dibatalkan',
-            default       => $status,
-        };
-
-        $color = match($status) {
-            'confirmed'   => 'blue',
-            'in_progress' => 'indigo',
-            'completed'   => 'green',
-            'cancelled'   => 'red',
-            default       => 'gray',
-        };
+        $labelMap = [
+            'processing' => 'diproses',
+            'shipped'    => 'dikirim',
+            'completed'  => 'selesai',
+            'cancelled'  => 'dibatalkan',
+        ];
+        $label = $labelMap[$status] ?? $status;
 
         self::send(
             $buyerId,
             'pesanan.update',
-            "Pesanan \"{$productName}\" {$labelStatus}",
+            "Pesanan \"{$productName}\" kamu {$label}",
             $orderUrl,
             'fa-box',
-            $color
+            $status === 'cancelled' ? 'red' : ($status === 'completed' ? 'green' : 'blue')
         );
     }
 
     // -------------------------------------------------------
-    // APPROVAL SELLER
+    // APPROVAL — SELLER & PROVIDER
     // -------------------------------------------------------
 
     public static function sellerDisetujui(int $userId): void
@@ -121,8 +113,8 @@ class NotificationService
         self::send(
             $userId,
             'seller.disetujui',
-            'Selamat! Akun penjual kamu sudah aktif. Mulai jual sekarang!',
-            route('user.marketplace.seller.home'),
+            'Akun seller kamu telah disetujui! Kamu sekarang bisa berjualan di marketplace.',
+            '/user/marketplace/seller/home',
             'fa-store',
             'green'
         );
@@ -133,23 +125,19 @@ class NotificationService
         self::send(
             $userId,
             'seller.ditolak',
-            "Pengajuan penjual kamu ditolak: {$reason}",
-            route('user.marketplace.sell'),
+            "Pengajuan seller kamu ditolak: {$reason}",
+            '/user/marketplace/sell',
             'fa-store',
             'red'
         );
     }
-
-    // -------------------------------------------------------
-    // APPROVAL PROVIDER
-    // -------------------------------------------------------
 
     public static function providerDisetujui(int $userId, string $roleLabel): void
     {
         self::send(
             $userId,
             'provider.disetujui',
-            "Selamat! Akun provider {$roleLabel} kamu sudah aktif. Mulai buat listing sekarang!",
+            "Akun provider {$roleLabel} kamu telah disetujui!",
             '/',
             'fa-building',
             'green'
@@ -168,6 +156,10 @@ class NotificationService
         );
     }
 
+    // -------------------------------------------------------
+    // UNIFIED BOOKING NOTIFICATION (dipakai BookingService)
+    // -------------------------------------------------------
+
     public static function sendBookingNotification(Booking $booking, string $type): void
     {
         // Load relasi kalau belum
@@ -184,7 +176,7 @@ class NotificationService
             : url('/');
 
         // Guard — jangan kirim notif kalau ID tidak valid
-        if (!$userId && in_array($type, ['booking_approved', 'booking_rejected', 'booking_cancelled'])) {
+        if (!$userId && in_array($type, ['booking_approved', 'booking_rejected', 'booking_cancelled', 'payment_expired'])) {
             return;
         }
 
@@ -206,7 +198,7 @@ class NotificationService
             'booking_approved' => self::send(
                 $userId,
                 'booking.disetujui',
-                "Booking kamu di \"{$bookableName}\" telah disetujui",
+                "Booking kamu di \"{$bookableName}\" telah disetujui. Segera lakukan pembayaran dalam 1 jam!",
                 $userUrl,
                 'fa-check-circle',
                 'green'
@@ -238,6 +230,16 @@ class NotificationService
                 'fa-money-bill-wave',
                 'green'
             ) : null,
+
+            // ← BARU: notifikasi ke user saat booking di-cancel otomatis karena tidak bayar
+            'payment_expired' => self::send(
+                $userId,
+                'booking.kadaluarsa',
+                "Booking kamu di \"{$bookableName}\" dibatalkan otomatis karena batas waktu pembayaran (1 jam) terlewat.",
+                $userUrl,
+                'fa-clock',
+                'red'
+            ),
 
             default => null,
         };

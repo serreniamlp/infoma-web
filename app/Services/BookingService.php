@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\Transaction;
 use App\Models\Residence;
 use App\Models\Activity;
+use App\Models\MarketplaceTransaction;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -50,22 +51,13 @@ class BookingService
             $checkInDate = $data['check_in_date'];
 
             if ($bookable instanceof Residence) {
-                // Ambil durasi yang dikirim dari form (sudah divalidasi)
                 $durationMonths = max(1, (int) ($data['duration_months'] ?? 1));
-
-                // Hitung check-out dari check-in + durasi
                 $checkOutDate = \Carbon\Carbon::parse($checkInDate)
                     ->addMonths($durationMonths)
                     ->toDateString();
-
-                // Harga per bulan setelah diskon
                 $pricePerMonth = $bookable->getDiscountedPrice();
-
-                // Total harga = harga per bulan × durasi
                 $totalPrice = $pricePerMonth * $durationMonths;
-
             } else {
-                // Activity: single day, harga flat
                 $durationMonths = 0;
                 $checkOutDate   = $data['check_out_date'] ?? $checkInDate;
                 $totalPrice     = $bookable->getDiscountedPrice();
@@ -105,8 +97,10 @@ class BookingService
             }
 
             $booking->update([
-                'status' => 'approved',
-                'notes'  => $notes,
+                'status'           => 'approved',
+                'notes'            => $notes,
+                // ← BARU: set deadline pembayaran 1 jam dari sekarang
+                'payment_deadline' => now()->addHour(),
             ]);
 
             $booking->bookable->decrement('available_slots');
@@ -141,7 +135,10 @@ class BookingService
 
             $oldStatus = $booking->status;
 
-            $booking->update(['status' => 'cancelled']);
+            $booking->update([
+                'status'           => 'cancelled',
+                'payment_deadline' => null,  // ← clear deadline saat dibatalkan manual
+            ]);
 
             if ($oldStatus === 'approved') {
                 $booking->bookable->increment('available_slots');
@@ -174,6 +171,9 @@ class BookingService
 
             $transaction->update($updateData);
 
+            // ← BARU: clear payment_deadline setelah berhasil bayar
+            $booking->update(['payment_deadline' => null]);
+
             $this->notificationService->sendBookingNotification($booking, 'payment_received');
 
             return $transaction;
@@ -181,21 +181,128 @@ class BookingService
     }
 
     /**
+     * Auto-cancel booking yang melewati payment_deadline.
+     *
+     * Dipanggil dari UpdateBookingStatusCommand (scheduled tiap menit).
+     * Booking yang di-cancel:
+     *   - status = 'approved'
+     *   - payment_deadline sudah lewat
+     *   - transaction payment_status masih 'pending' (belum bayar)
+     *
+     * @return int Jumlah booking yang di-cancel
+     */
+    public function cancelExpiredPayments(): int
+    {
+        $expiredBookings = Booking::where('status', 'approved')
+            ->whereNotNull('payment_deadline')
+            ->where('payment_deadline', '<', now())
+            ->whereHas('transaction', function ($q) {
+                $q->where('payment_status', 'pending');
+            })
+            ->with(['user', 'bookable', 'transaction'])
+            ->get();
+
+        $count = 0;
+
+        foreach ($expiredBookings as $booking) {
+            DB::transaction(function () use ($booking) {
+                // Kembalikan slot
+                $booking->bookable->increment('available_slots');
+
+                // Update status booking
+                $booking->update([
+                    'status'           => 'cancelled',
+                    'rejection_reason' => 'Dibatalkan otomatis karena pembayaran tidak dilakukan dalam 1 jam setelah booking disetujui.',
+                    'payment_deadline' => null,
+                ]);
+
+                // Kirim notifikasi ke user
+                $this->notificationService->sendBookingNotification($booking, 'payment_expired');
+            });
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Auto-cancel marketplace transactions yang payment_deadline-nya sudah lewat.
+     *
+     * Berbeda dengan booking — deadline dihitung dari created_at (bukan approved),
+     * karena buyer harus langsung upload bukti bayar setelah buat pesanan.
+     *
+     * @return int Jumlah transaksi yang di-cancel
+     */
+    public function cancelExpiredMarketplaceTransactions(): int
+    {
+        $expired = MarketplaceTransaction::where('status', 'pending')
+            ->where('payment_status', 'pending')
+            ->whereNotNull('payment_deadline')
+            ->where('payment_deadline', '<', now())
+            ->with(['buyer', 'seller', 'product'])
+            ->get();
+
+        $count = 0;
+
+        foreach ($expired as $transaction) {
+            DB::transaction(function () use ($transaction) {
+                $transaction->update([
+                    'status'              => 'cancelled',
+                    'cancellation_reason' => 'Dibatalkan otomatis karena bukti pembayaran tidak diunggah dalam 1 jam setelah pesanan dibuat.',
+                    'cancelled_at'        => now(),
+                    'payment_deadline'    => null,
+                ]);
+
+                // Notifikasi ke buyer
+                NotificationService::send(
+                    $transaction->buyer_id,
+                    'pesanan.kadaluarsa',
+                    "Pesanan \"{$transaction->product->name}\" dibatalkan otomatis karena batas waktu pembayaran (1 jam) terlewat.",
+                    route('user.marketplace.transactions.show', $transaction->id),
+                    'fa-clock',
+                    'red'
+                );
+
+                // Notifikasi ke seller
+                NotificationService::send(
+                    $transaction->seller_id,
+                    'pesanan.kadaluarsa',
+                    "Pesanan dari {$transaction->buyer->name} untuk \"{$transaction->product->name}\" dibatalkan otomatis karena pembeli tidak melakukan pembayaran.",
+                    route('user.marketplace.seller.orders.show', $transaction->id),
+                    'fa-clock',
+                    'orange'
+                );
+            });
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
+     * Update booking yang sudah selesai (check_out_date lewat) jadi completed.
+     */
+    public function updateExpiredBookings()
+    {
+        return Booking::where('status', 'approved')
+            ->where('check_out_date', '<', now()->toDateString())
+            ->update(['status' => 'completed']);
+    }
+
+    /**
      * Buat transaction saat booking disetujui.
-     * Menggunakan total_price yang sudah disimpan di booking
-     * (sudah termasuk durasi × harga per bulan).
      */
     protected function createTransaction(Booking $booking)
     {
         $bookable = $booking->bookable;
 
-        // Gunakan total_price dari booking jika sudah tersimpan (residence dengan durasi)
         if ($booking->total_price > 0) {
             $durationMonths  = max(1, $booking->duration_months ?: 1);
             $pricePerMonth   = $bookable->price;
             $originalAmount  = $pricePerMonth * $durationMonths;
 
-            // Hitung diskon per bulan × durasi
             $discountAmount = 0;
             if ($bookable->discount_type && $bookable->discount_value) {
                 if ($bookable->discount_type === 'percentage') {
@@ -207,7 +314,6 @@ class BookingService
 
             $finalAmount = $booking->total_price;
         } else {
-            // Fallback untuk activity atau booking lama
             $originalAmount = $bookable->price;
             $discountAmount = 0;
             if ($bookable->discount_type && $bookable->discount_value) {
@@ -239,12 +345,5 @@ class BookingService
     protected function generateTransactionCode(): string
     {
         return 'TR-' . now()->format('Ymd') . '-' . Str::random(6);
-    }
-
-    public function updateExpiredBookings()
-    {
-        return Booking::where('status', 'approved')
-            ->where('check_out_date', '<', now()->toDateString())
-            ->update(['status' => 'completed']);
     }
 }
