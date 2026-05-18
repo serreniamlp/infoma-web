@@ -28,6 +28,71 @@
             </ol>
         </nav>
 
+        {{-- ================================================================ --}}
+        {{-- BANNER: COUNTDOWN PEMBAYARAN                                     --}}
+        {{-- Muncul jika: status pending + payment pending + deadline belum   --}}
+        {{-- lewat. Berbeda dengan booking — deadline dari created_at +1 jam. --}}
+        {{-- ================================================================ --}}
+        @if($transaction->status === 'pending' && $transaction->payment_status === 'pending' && $transaction->payment_deadline)
+            @php $isExpired = $transaction->isPaymentExpired(); @endphp
+
+            @if(!$isExpired)
+            <div id="paymentCountdownBanner"
+                 class="mb-6 bg-amber-50 border border-amber-300 rounded-lg p-4 flex items-start gap-4">
+                <div class="text-amber-500 text-2xl mt-0.5">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-amber-800 text-base">Segera Upload Bukti Pembayaran!</h3>
+                    <p class="text-amber-700 text-sm mt-1">
+                        Pesanan kamu sudah dibuat. Upload bukti pembayaran sebelum batas waktu habis,
+                        atau pesanan akan dibatalkan otomatis.
+                    </p>
+                    <div class="mt-3 flex items-center gap-3">
+                        <span class="text-amber-700 text-sm font-medium">Sisa waktu:</span>
+                        <span id="paymentCountdown"
+                              class="font-mono font-bold text-amber-900 text-lg bg-amber-100 px-3 py-1 rounded-md">
+                            --:--:--
+                        </span>
+                    </div>
+                    <p class="text-amber-600 text-xs mt-2">
+                        Batas akhir: {{ $transaction->payment_deadline->format('d M Y, H:i') }} WIB
+                    </p>
+                </div>
+                <a href="#upload-payment"
+                   class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors">
+                    Upload Sekarang
+                </a>
+            </div>
+            @else
+            {{-- Deadline sudah lewat, tapi command belum jalan — tampilkan pesan --}}
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <i class="fas fa-clock text-red-400 text-xl mt-0.5"></i>
+                <div>
+                    <h3 class="font-semibold text-red-800">Batas Waktu Pembayaran Habis</h3>
+                    <p class="text-red-700 text-sm mt-1">
+                        Pesanan ini akan segera dibatalkan otomatis karena batas waktu pembayaran sudah terlewat.
+                    </p>
+                </div>
+            </div>
+            @endif
+        @endif
+
+        {{-- Banner: dibatalkan otomatis --}}
+        @if($transaction->status === 'cancelled' && str_contains($transaction->cancellation_reason ?? '', 'otomatis'))
+            <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+                <i class="fas fa-clock text-red-400 text-xl mt-0.5"></i>
+                <div>
+                    <h3 class="font-semibold text-red-800">Pesanan Dibatalkan Otomatis</h3>
+                    <p class="text-red-700 text-sm mt-1">{{ $transaction->cancellation_reason }}</p>
+                    <a href="{{ route('marketplace.index') }}"
+                       class="inline-block mt-3 text-sm text-red-700 underline hover:text-red-900">
+                        Cari produk lain →
+                    </a>
+                </div>
+            </div>
+        @endif
+
         <!-- Header -->
         <div class="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
             <div class="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
@@ -167,8 +232,8 @@
             <!-- Sidebar -->
             <div class="space-y-8">
                 <!-- Upload Payment Proof -->
-                @if($transaction->status === 'pending' && $transaction->payment_status === 'pending')
-                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                @if($transaction->status === 'pending' && $transaction->payment_status === 'pending' && !$transaction->isPaymentExpired())
+                <div id="upload-payment" class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
                         <h2 class="text-xl font-bold text-gray-900">Upload Bukti Pembayaran</h2>
                     </div>
@@ -190,7 +255,7 @@
                 @endif
 
                 <!-- Cancel Transaction -->
-                @if($transaction->canBeCancelled())
+                @if($transaction->canBeCancelled() && !$transaction->isPaymentExpired())
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
                         <h2 class="text-xl font-bold text-gray-900">Batalkan Transaksi</h2>
@@ -232,6 +297,14 @@
                             <span class="text-gray-600">Status Pembayaran:</span>
                             <span class="font-medium">{{ $transaction->payment_status_label }}</span>
                         </div>
+                        @if($transaction->payment_deadline && $transaction->status === 'pending' && $transaction->payment_status === 'pending')
+                        <div class="flex justify-between text-sm">
+                            <span class="text-gray-500">Batas Pembayaran:</span>
+                            <span class="font-medium {{ $transaction->isPaymentExpired() ? 'text-red-600' : 'text-amber-600' }}">
+                                {{ $transaction->payment_deadline->format('H:i, d M') }}
+                            </span>
+                        </div>
+                        @endif
                         <div class="flex justify-between border-t pt-3">
                             <span class="text-gray-600">Total:</span>
                             <span class="font-bold text-blue-600">Rp {{ number_format($transaction->total_amount, 0, ',', '.') }}</span>
@@ -242,4 +315,46 @@
         </div>
     </div>
 </div>
+
+@push('scripts')
+<script>
+// ── Payment Countdown Timer (Marketplace) ────────────────────────────────────
+@if($transaction->status === 'pending' && $transaction->payment_status === 'pending' && $transaction->payment_deadline && !$transaction->isPaymentExpired())
+(function () {
+    const deadline = {{ $transaction->payment_deadline->timestamp * 1000 }};
+    const el = document.getElementById('paymentCountdown');
+
+    if (!el) return;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    function updateCountdown() {
+        const remaining = deadline - Date.now();
+
+        if (remaining <= 0) {
+            el.textContent = '00:00:00';
+            el.classList.add('text-red-700', 'bg-red-100');
+            el.classList.remove('text-amber-900', 'bg-amber-100');
+            setTimeout(() => location.reload(), 2000);
+            return;
+        }
+
+        const h = Math.floor(remaining / 3600000);
+        const m = Math.floor((remaining % 3600000) / 60000);
+        const s = Math.floor((remaining % 60000) / 1000);
+
+        el.textContent = `${pad(h)}:${pad(m)}:${pad(s)}`;
+
+        if (remaining < 600000) {
+            el.classList.add('text-red-700', 'bg-red-100');
+            el.classList.remove('text-amber-900', 'bg-amber-100');
+        }
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+})();
+@endif
+</script>
+@endpush
 @endsection

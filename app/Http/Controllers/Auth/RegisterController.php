@@ -1,15 +1,16 @@
 <?php
-// app/Http/Controllers/Auth/RegisterController.php
 
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Models\BannedIdentity;
 use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class RegisterController extends Controller
 {
@@ -22,7 +23,6 @@ class RegisterController extends Controller
     {
         $isProvider = in_array($request->role, ['provider_residence', 'provider_event']);
 
-        // Validasi dasar — berlaku untuk semua role
         $rules = [
             'name'     => ['required', 'string', 'max:255'],
             'email'    => ['required', 'string', 'email', 'max:255', 'unique:users'],
@@ -31,11 +31,10 @@ class RegisterController extends Controller
             'terms'    => ['required', 'accepted'],
         ];
 
-        // Validasi tambahan khusus provider
         if ($isProvider) {
-            $rules['provider_nik']     = ['required', 'digits:16'];
-            $rules['provider_ktp']     = ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'];
-            $rules['provider_selfie']  = ['required', 'string']; // base64
+            $rules['provider_nik']    = ['required', 'digits:16'];
+            $rules['provider_ktp']    = ['required', 'image', 'mimes:jpg,jpeg,png', 'max:2048'];
+            $rules['provider_selfie'] = ['required', 'string']; // base64
         }
 
         $request->validate($rules, [
@@ -54,7 +53,23 @@ class RegisterController extends Controller
             'provider_selfie.required' => 'Foto selfie wajib diambil.',
         ]);
 
-        // Siapkan data user
+        // ── Cek blacklist email (ban permanen) ────────────────────────────
+        if (BannedIdentity::isEmailBanned($request->email)) {
+            throw ValidationException::withMessages([
+                'email' => 'Email ini tidak dapat digunakan untuk mendaftar di EduLiving.',
+            ]);
+        }
+
+        // ── Cek blacklist NIK (ban permanen provider) ─────────────────────
+        if ($isProvider && $request->filled('provider_nik')) {
+            if (BannedIdentity::isNikBanned($request->provider_nik)) {
+                throw ValidationException::withMessages([
+                    'provider_nik' => 'NIK ini tidak dapat digunakan untuk mendaftar sebagai provider di EduLiving.',
+                ]);
+            }
+        }
+
+        // ── Siapkan data user ─────────────────────────────────────────────
         $userData = [
             'name'              => $request->name,
             'email'             => $request->email,
@@ -63,14 +78,12 @@ class RegisterController extends Controller
             'provider_status'   => $isProvider ? 'pending' : 'none',
         ];
 
-        // Proses upload dokumen provider
+        // ── Proses upload dokumen provider ────────────────────────────────
         if ($isProvider) {
-            // Foto KTP (upload biasa)
             $userData['provider_nik'] = $request->provider_nik;
             $userData['provider_ktp'] = $request->file('provider_ktp')
                 ->store('provider-ktp', 'public');
 
-            // Foto selfie (base64 dari kamera)
             $selfieBase64 = $request->provider_selfie;
 
             if (!preg_match('/^data:image\/(\w+);base64,/', $selfieBase64, $matches)) {
@@ -79,9 +92,9 @@ class RegisterController extends Controller
                     ->withErrors(['provider_selfie' => 'Format foto selfie tidak valid. Silakan ambil ulang.']);
             }
 
-            $imageData   = base64_decode(substr($selfieBase64, strpos($selfieBase64, ',') + 1));
-            $extension   = $matches[1] === 'jpeg' ? 'jpg' : $matches[1];
-            $selfieName  = 'provider-selfie/' . uniqid('selfie_', true) . '.' . $extension;
+            $imageData  = base64_decode(substr($selfieBase64, strpos($selfieBase64, ',') + 1));
+            $extension  = $matches[1] === 'jpeg' ? 'jpg' : $matches[1];
+            $selfieName = 'provider-selfie/' . uniqid('selfie_', true) . '.' . $extension;
 
             Storage::disk('public')->put($selfieName, $imageData);
             $userData['provider_selfie'] = $selfieName;
@@ -89,7 +102,6 @@ class RegisterController extends Controller
 
         $user = User::create($userData);
 
-        // Assign role
         $role = Role::where('name', $request->role)->first();
         if ($role) {
             $user->roles()->attach($role->id);

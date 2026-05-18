@@ -22,6 +22,7 @@ class Booking extends Model
         'status',
         'rejection_reason',
         'notes',
+        'payment_deadline',          // ← BARU: deadline pembayaran (1 jam setelah approved)
         // Field pendaftaran event (dari update sebelumnya)
         'participant_name',
         'participant_email',
@@ -29,11 +30,12 @@ class Booking extends Model
     ];
 
     protected $casts = [
-        'documents'       => 'array',
-        'check_in_date'   => 'date',
-        'check_out_date'  => 'date',
-        'duration_months' => 'integer',
-        'total_price'     => 'decimal:2',
+        'documents'        => 'array',
+        'check_in_date'    => 'date',
+        'check_out_date'   => 'date',
+        'duration_months'  => 'integer',
+        'total_price'      => 'decimal:2',
+        'payment_deadline' => 'datetime',  // ← BARU: cast ke Carbon otomatis
     ];
 
     public function user() {
@@ -46,5 +48,35 @@ class Booking extends Model
 
     public function transaction() {
         return $this->hasOne(Transaction::class);
+    }
+
+    /**
+     * Apakah booking sudah melewati deadline pembayaran?
+     */
+    public function isPaymentExpired(): bool
+    {
+        return $this->payment_deadline !== null
+            && $this->payment_deadline->isPast();
+    }
+
+    /**
+     * Sisa waktu pembayaran dalam format human-readable.
+     * Contoh: "45 menit lagi", "sudah kadaluarsa"
+     */
+    public function paymentTimeRemaining(): string
+    {
+        if (!$this->payment_deadline) {
+            return '-';
+        }
+
+        if ($this->isPaymentExpired()) {
+            return 'Sudah kadaluarsa';
+        }
+
+        return $this->payment_deadline->diffForHumans(now(), [
+            'parts'  => 2,
+            'join'   => true,
+            'syntax' => \Carbon\CarbonInterface::DIFF_RELATIVE_TO_NOW,
+        ]);
     }
 }

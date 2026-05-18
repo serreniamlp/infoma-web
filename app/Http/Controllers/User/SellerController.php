@@ -21,6 +21,14 @@ class SellerController extends Controller
     {
         $user = Auth::user();
 
+        // ← TAMBAH: cek S&K dulu sebelum apapun
+        if (!$user->hasAcceptedTerms()) {
+            return redirect()->route('verification.terms', [
+                'type'        => 'seller',
+                'redirect_to' => route('user.marketplace.sell'),
+            ]);
+        }
+
         // Sudah aktif sebagai seller
         if ($user->isSeller()) {
             return redirect()->route('user.marketplace.seller.home');
