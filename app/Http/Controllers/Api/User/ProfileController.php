@@ -3,38 +3,22 @@
 namespace App\Http\Controllers\Api\User;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserResource;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
-    public function __construct()
-    {
-        $this->middleware('auth:sanctum');
-    }
-
     public function show(Request $request)
     {
-        $user = $request->user();
-        $user->load('roles');
-
         return response()->json([
             'status' => 'success',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'address' => $user->address,
-                    'email_verified_at' => $user->email_verified_at,
-                    'roles' => $user->roles->pluck('name'),
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at,
-                ]
-            ]
-        ], 200);
+            'data'   => [
+                'user' => new UserResource($request->user()->load('roles')),
+            ],
+        ]);
     }
 
     public function update(Request $request)
@@ -42,54 +26,56 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'phone' => 'required|string|max:20',
-            'address' => 'required|string',
+            'name'             => 'sometimes|string|max:255',
+            'email'            => ['sometimes', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'phone'            => 'nullable|string|max:20',
+            'address'          => 'nullable|string|max:500',
+            'profile_picture'  => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'current_password' => 'nullable|string',
-            'password' => 'nullable|string|min:8|confirmed',
+            'password'         => 'nullable|string|min:8|confirmed',
+        ], [
+            'email.unique' => 'Email sudah digunakan.',
+            'password.confirmed' => 'Konfirmasi password tidak cocok.',
         ]);
 
         $data = $request->only(['name', 'email', 'phone', 'address']);
 
-        // Handle password update
+        // Handle foto profil
+        if ($request->hasFile('profile_picture')) {
+            if ($user->profile_picture) {
+                Storage::disk('public')->delete($user->profile_picture);
+            }
+            $data['profile_picture'] = $request->file('profile_picture')
+                ->store('profile-pictures', 'public');
+        }
+
+        // Handle ganti password
         if ($request->filled('password')) {
             if (!$request->filled('current_password')) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Current password is required to change password'
-                ], 400);
+                    'status'  => 'error',
+                    'message' => 'Password lama wajib diisi untuk mengganti password.',
+                ], 422);
             }
 
             if (!Hash::check($request->current_password, $user->password)) {
                 return response()->json([
-                    'status' => 'error',
-                    'message' => 'Current password is incorrect'
-                ], 400);
+                    'status'  => 'error',
+                    'message' => 'Password lama tidak sesuai.',
+                ], 422);
             }
 
             $data['password'] = Hash::make($request->password);
         }
 
         $user->update($data);
-        $user->load('roles');
 
         return response()->json([
-            'status' => 'success',
-            'message' => 'Profile updated successfully',
-            'data' => [
-                'user' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
-                    'address' => $user->address,
-                    'email_verified_at' => $user->email_verified_at,
-                    'roles' => $user->roles->pluck('name'),
-                    'created_at' => $user->created_at,
-                    'updated_at' => $user->updated_at,
-                ]
-            ]
-        ], 200);
+            'status'  => 'success',
+            'message' => 'Profil berhasil diperbarui.',
+            'data'    => [
+                'user' => new UserResource($user->fresh()->load('roles')),
+            ],
+        ]);
     }
 }
