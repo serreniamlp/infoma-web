@@ -65,9 +65,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('markRead');
         Route::patch('/read-all',  [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('markAllRead');
         // Syarat & Ketentuan Verifikasi
-        Route::get('/verification/terms/{type}',  [VerificationTermsController::class, 'show'])->name('verification.terms');   // ← TAMBAH
-        Route::post('/verification/accept-terms', [VerificationTermsController::class, 'accept'])->name('verification.accept-terms'); // ← TAMBAH
-    });
+        });
+    Route::get('/verification/terms/{type}',  [VerificationTermsController::class, 'show'])->name('verification.terms');
+    Route::post('/verification/accept-terms', [VerificationTermsController::class, 'accept'])->name('verification.accept-terms');
 
     // Profile (semua user yang login bisa akses)
     Route::get('/profile', [ProfileController::class, 'show'])->name('user.profile.show');
