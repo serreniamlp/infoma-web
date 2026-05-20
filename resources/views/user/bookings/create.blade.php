@@ -67,14 +67,14 @@
                             <div class="text-right flex-shrink-0">
                                 @if($bookable->discount_type && $bookable->discount_value)
                                     <div class="text-sm text-gray-400 line-through">
-                                        Rp {{ number_format($bookable->price ?? $bookable->price_per_month) }}
+                                        Rp {{ number_format($bookable->price ?? $bookable->price_per_month, 0, ',', '.') }}
                                     </div>
                                     <div class="text-xl font-bold text-green-600">
-                                        Rp {{ number_format($bookable->getDiscountedPrice()) }}
+                                        Rp {{ number_format($bookable->getDiscountedPrice(, 0, ',', '.')) }}
                                     </div>
                                 @else
                                     <div class="text-xl font-bold text-green-600">
-                                        Rp {{ number_format($bookable->price ?? $bookable->price_per_month) }}
+                                        Rp {{ number_format($bookable->price ?? $bookable->price_per_month, 0, ',', '.') }}
                                     </div>
                                 @endif
                                 <div class="text-xs text-gray-500 mt-0.5">
@@ -295,7 +295,7 @@
                     <div class="space-y-3 text-sm" id="price-summary">
                         <div class="flex justify-between">
                             <span class="text-gray-500">Harga per Bulan</span>
-                            <span class="font-medium">Rp {{ number_format($bookable->price ?? $bookable->price_per_month) }}</span>
+                            <span class="font-medium">Rp {{ number_format($bookable->price ?? $bookable->price_per_month, 0, ',', '.') }}</span>
                         </div>
 
                         @if($bookable->discount_type && $bookable->discount_value)
@@ -305,13 +305,13 @@
                                     @if($bookable->discount_type === 'percentage')
                                         &minus;{{ $bookable->discount_value }}%
                                     @else
-                                        &minus;Rp {{ number_format($bookable->discount_value) }}/bln
+                                        &minus;Rp {{ number_format($bookable->discount_value, 0, ',', '.') }}/bln
                                     @endif
                                 </span>
                             </div>
                             <div class="flex justify-between text-gray-500">
                                 <span>Harga per Bulan (setelah diskon)</span>
-                                <span>Rp {{ number_format($bookable->getDiscountedPrice()) }}</span>
+                                <span>Rp {{ number_format($bookable->getDiscountedPrice(, 0, ',', '.')) }}</span>
                             </div>
                         @endif
 
@@ -326,7 +326,7 @@
                             <div class="flex justify-between text-base font-semibold">
                                 <span>Total</span>
                                 <span class="text-green-600" id="summary-total">
-                                    Rp {{ number_format($bookable->getDiscountedPrice()) }}
+                                    Rp {{ number_format($bookable->getDiscountedPrice(, 0, ',', '.')) }}
                                 </span>
                             </div>
                         </div>

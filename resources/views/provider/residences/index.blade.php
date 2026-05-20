@@ -137,14 +137,14 @@
                             <div>
                                 @if($residence->discount_type && $residence->discount_value)
                                     <div class="text-sm text-gray-500 line-through">
-                                        Rp {{ number_format($residence->price_per_month) }}
+                                        Rp {{ number_format($residence->price_per_month, 0, ',', '.') }}
                                     </div>
                                     <div class="text-xl font-bold text-blue-600">
                                         Rp {{ number_format($residence->getDiscountedPrice()) }}
                                     </div>
                                 @else
                                     <div class="text-xl font-bold text-blue-600">
-                                        Rp {{ number_format($residence->price_per_month) }}/bulan
+                                        Rp {{ number_format($residence->price_per_month, 0, ',', '.') }}/bulan
                                     </div>
                                 @endif
                             </div>

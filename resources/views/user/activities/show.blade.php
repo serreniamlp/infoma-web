@@ -268,14 +268,14 @@
                     <div class="text-center mb-6">
                         @if($activity->discount_type && $activity->discount_value)
                             <div class="text-sm text-gray-500 line-through mb-1">
-                                Rp {{ number_format($activity->price) }}
+                                Rp {{ number_format($activity->price, 0, ',', '.') }}
                             </div>
                             <div class="text-3xl font-bold text-green-600">
-                                Rp {{ number_format($activity->getDiscountedPrice()) }}
+                                Rp {{ number_format($activity->getDiscountedPrice(), 0, ',', '.') }}
                             </div>
                         @else
                             <div class="text-3xl font-bold text-green-600">
-                                Rp {{ number_format($activity->price) }}
+                                Rp {{ number_format($activity->price, 0, ',', '.') }}
                             </div>
                         @endif
                         <div class="text-sm text-gray-600">per peserta</div>

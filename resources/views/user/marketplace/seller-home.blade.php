@@ -159,7 +159,7 @@
                                 @endif
                                 <div>
                                     <p class="font-medium text-gray-900 text-sm">{{ Str::limit($product->name, 25) }}</p>
-                                    <p class="text-xs text-gray-500">Rp {{ number_format($product->price) }}</p>
+                                    <p class="text-xs text-gray-500">Rp {{ number_format($product->price, 0, ',', '.') }}</p>
                                 </div>
                             </div>
                             <span class="px-2 py-1 rounded-full text-xs font-medium

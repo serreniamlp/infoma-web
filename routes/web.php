@@ -25,6 +25,8 @@ use App\Http\Controllers\Admin\MarketplaceManagementController as AdminMarketpla
 use App\Http\Controllers\MarketplaceController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationTermsController;  // ← TAMBAH
+use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\RoleSwitchController;
 
 
 // ============================================================
@@ -64,8 +66,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/list',     [App\Http\Controllers\NotificationController::class, 'list'])->name('list');
         Route::get('/{id}/read', [App\Http\Controllers\NotificationController::class, 'markRead'])->name('markRead');
         Route::patch('/read-all',  [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('markAllRead');
-        // Syarat & Ketentuan Verifikasi
-        });
+    });
+
+    // Syarat & Ketentuan Verifikasi
     Route::get('/verification/terms/{type}',  [VerificationTermsController::class, 'show'])->name('verification.terms');
     Route::post('/verification/accept-terms', [VerificationTermsController::class, 'accept'])->name('verification.accept-terms');
 
@@ -124,6 +127,14 @@ Route::middleware('auth')->group(function () {
             Route::get('/sell', [\App\Http\Controllers\User\SellerController::class, 'index'])->name('sell');
             Route::post('/sell/activate', [\App\Http\Controllers\User\SellerController::class, 'activate'])->name('sell.activate');
 
+            // FJB — Keranjang Belanja
+            Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
+            Route::post('/cart/{product}', [CartController::class, 'add'])->name('cart.add');
+            Route::patch('/cart/item/{cartItem}', [CartController::class, 'update'])->name('cart.update');
+            Route::delete('/cart/item/{cartItem}', [CartController::class, 'remove'])->name('cart.remove');
+            Route::delete('/cart', [CartController::class, 'clear'])->name('cart.clear');
+            Route::get('/cart/count', [CartController::class, 'count'])->name('cart.count');
+
             // FJB — Seller area
             Route::prefix('seller')->name('seller.')->group(function () {
                 Route::get('/home', [\App\Http\Controllers\User\SellerController::class, 'home'])->name('home');
@@ -141,6 +152,16 @@ Route::middleware('auth')->group(function () {
                 Route::get('/report', [\App\Http\Controllers\User\SellerController::class, 'report'])->name('report');
             });
         });
+    });
+
+    // --------------------------------------------------------
+    // Role Switch — user bisa daftar/switch ke role provider
+    // --------------------------------------------------------
+    Route::prefix('role-switch')->name('role.switch.')->group(function () {
+        Route::get('/become-provider-event', [RoleSwitchController::class, 'becomeProviderEventForm'])->name('become.provider_event');
+        Route::post('/become-provider-event', [RoleSwitchController::class, 'becomeProviderEventSubmit'])->name('become.provider_event.submit');
+        Route::get('/become-provider-residence', [RoleSwitchController::class, 'becomeProviderResidenceForm'])->name('become.provider_residence');
+        Route::post('/become-provider-residence', [RoleSwitchController::class, 'becomeProviderResidenceSubmit'])->name('become.provider_residence.submit');
     });
 
     // --------------------------------------------------------

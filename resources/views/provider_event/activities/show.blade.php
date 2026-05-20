@@ -170,7 +170,7 @@
                     <div class="space-y-3">
                         <div class="flex justify-between">
                             <span class="text-gray-600">Harga Dasar</span>
-                            <span class="font-medium">Rp {{ number_format($activity->price) }}</span>
+                            <span class="font-medium">Rp {{ number_format($activity->price, 0, ',', '.') }}</span>
                         </div>
 
                         @if($activity->discount_type && $activity->discount_value)
@@ -180,7 +180,7 @@
                                     @if($activity->discount_type === 'percentage')
                                         {{ $activity->discount_value }}%
                                     @else
-                                        Rp {{ number_format($activity->discount_value) }}
+                                        Rp {{ number_format($activity->discount_value, 0, ',', '.') }}
                                     @endif
                                 </span>
                             </div>

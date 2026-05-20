@@ -106,14 +106,14 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-4">
                                         <span class="text-2xl font-bold text-blue-600">
-                                            Rp {{ number_format($residence->price_per_month) }}/bulan
+                                            Rp {{ number_format($residence->price_per_month, 0, ',', '.') }}/bulan
                                         </span>
                                         @if($residence->discount_type && $residence->discount_value)
                                             <span class="text-sm text-green-600 font-medium">
                                                 @if($residence->discount_type === 'percentage')
                                                     {{ $residence->discount_value }}% off
                                                 @else
-                                                    Rp {{ number_format($residence->discount_value) }} off
+                                                    Rp {{ number_format($residence->discount_value, 0, ',', '.') }} off
                                                 @endif
                                             </span>
                                         @endif
@@ -204,14 +204,14 @@
                                 <div class="flex items-center justify-between">
                                     <div class="flex items-center space-x-4">
                                         <span class="text-2xl font-bold text-green-600">
-                                            Rp {{ number_format($activity->price) }}
+                                            Rp {{ number_format($activity->price, 0, ',', '.') }}
                                         </span>
                                         @if($activity->discount_type && $activity->discount_value)
                                             <span class="text-sm text-green-600 font-medium">
                                                 @if($activity->discount_type === 'percentage')
                                                     {{ $activity->discount_value }}% off
                                                 @else
-                                                    Rp {{ number_format($activity->discount_value) }} off
+                                                    Rp {{ number_format($activity->discount_value, 0, ',', '.') }} off
                                                 @endif
                                             </span>
                                         @endif
