@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Provider\DashboardController as ProviderDashboardCo
 use App\Http\Controllers\Api\Provider\ResidenceController as ProviderResidenceController;
 use App\Http\Controllers\Api\Provider\ActivityController as ProviderActivityController;
 use App\Http\Controllers\Api\Provider\BookingManagementController as ProviderBookingController;
+use Illuminate\Support\Facades\Storage;
 
 Route::prefix('v1')->group(function () {
 
@@ -25,7 +26,7 @@ Route::prefix('v1')->group(function () {
     // ================================================================
     Route::get('/',          [HomeController::class, 'index']);
     Route::get('/search',    [HomeController::class, 'search']);
-    Route::get('/categories',[HomeController::class, 'categories']);
+    Route::get('/categories', [HomeController::class, 'categories']);
 
     Route::get('/residences',        [ResidenceApiController::class, 'index']);
     Route::get('/residences/{residence}', [ResidenceApiController::class, 'show']);
@@ -48,6 +49,114 @@ Route::prefix('v1')->group(function () {
             Route::post('/refresh', [AuthController::class, 'refresh']);
         });
     });
+
+    // Route serve gambar dengan kompresi otomatis untuk mobile
+    Route::get('/file/{path}', function (string $path) {
+        $decodedPath = urldecode($path);
+
+        if (!Storage::disk('public')->exists($decodedPath)) {
+            abort(404);
+        }
+
+        $fullPath  = storage_path('app/public/' . $decodedPath);
+        $ext       = strtolower(pathinfo($fullPath, PATHINFO_EXTENSION));
+        $maxDim    = 800; // Max dimensi untuk mobile
+        $quality   = 75;  // Kualitas JPEG (lebih kecil = lebih ringan)
+
+        // Kompres gambar jika GD tersedia
+        if (extension_loaded('gd') && in_array($ext, ['jpg', 'jpeg', 'png'])) {
+            [$origW, $origH] = getimagesize($fullPath);
+
+            // Hitung dimensi baru
+            if ($origW > $maxDim || $origH > $maxDim) {
+                if ($origW >= $origH) {
+                    $newW = $maxDim;
+                    $newH = (int) round($origH * $maxDim / $origW);
+                } else {
+                    $newH = $maxDim;
+                    $newW = (int) round($origW * $maxDim / $origH);
+                }
+            } else {
+                $newW = $origW;
+                $newH = $origH;
+            }
+
+            // Load source image
+            $src = ($ext === 'png')
+                ? imagecreatefrompng($fullPath)
+                : imagecreatefromjpeg($fullPath);
+
+            if (!$src) {
+                abort(500, 'Gagal membaca gambar');
+            }
+
+            $dst = imagecreatetruecolor($newW, $newH);
+
+            // Preserve transparency untuk PNG
+            if ($ext === 'png') {
+                imagealphablending($dst, false);
+                imagesavealpha($dst, true);
+                $transparent = imagecolorallocatealpha(
+                    $dst,
+                    255,
+                    255,
+                    255,
+                    127
+                );
+                imagefilledrectangle($dst, 0, 0, $newW, $newH, $transparent);
+            }
+
+            imagecopyresampled(
+                $dst,
+                $src,
+                0,
+                0,
+                0,
+                0,
+                $newW,
+                $newH,
+                $origW,
+                $origH
+            );
+
+            // Output image ke buffer
+            ob_start();
+            if ($ext === 'png') {
+                imagepng($dst, null, 7);
+                $mime = 'image/png';
+            } else {
+                imagejpeg($dst, null, $quality);
+                $mime = 'image/jpeg';
+            }
+            $imageData = ob_get_clean();
+
+            imagedestroy($src);
+            imagedestroy($dst);
+
+            return response($imageData, 200, [
+                'Content-Type'                => $mime,
+                'Cache-Control'               => 'public, max-age=86400',
+                'Access-Control-Allow-Origin' => '*',
+            ]);
+        }
+
+        // Fallback jika GD tidak tersedia
+        $mimeType = mime_content_type($fullPath) ?: 'image/jpeg';
+        return response()->stream(function () use ($fullPath) {
+            $handle = fopen($fullPath, 'rb');
+            while (!feof($handle)) {
+                echo fread($handle, 8192);
+                if (ob_get_level() > 0) ob_flush();
+                flush();
+            }
+            fclose($handle);
+        }, 200, [
+            'Content-Type'                => $mimeType,
+            'Content-Length'              => filesize($fullPath),
+            'Cache-Control'               => 'public, max-age=3600',
+            'Access-Control-Allow-Origin' => '*',
+        ]);
+    })->where('path', '.*');
 
     // ================================================================
     // AUTHENTICATED
@@ -85,7 +194,7 @@ Route::prefix('v1')->group(function () {
             // Rating
             Route::post('/ratings',           [UserRatingController::class, 'store']);
             Route::put('/ratings/{rating}',   [UserRatingController::class, 'update']);
-            Route::delete('/ratings/{rating}',[UserRatingController::class, 'destroy']);
+            Route::delete('/ratings/{rating}', [UserRatingController::class, 'destroy']);
 
             // Transaksi Marketplace — sisi buyer
             Route::get('/transactions',                              [MarketplaceTransactionController::class, 'index']);
