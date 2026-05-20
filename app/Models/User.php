@@ -37,6 +37,7 @@ class User extends Authenticatable
         'ban_reason',
         'banned_by',
         'banned_at',
+        'pending_role',
     ];
 
     protected $casts = [

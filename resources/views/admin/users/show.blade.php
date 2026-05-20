@@ -187,6 +187,13 @@
                         <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                             <h3 class="font-semibold text-gray-900 flex items-center gap-2">
                                 <i class="fas fa-user-tie text-blue-500"></i>Pengajuan Provider
+                                @if($user->pending_role)
+                                <span class="ml-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-semibold
+                                    {{ $user->pending_role === 'provider_event' ? 'bg-purple-100 text-purple-700' : 'bg-teal-100 text-teal-700' }}">
+                                    <i class="fas {{ $user->pending_role === 'provider_event' ? 'fa-calendar-alt' : 'fa-home' }} text-xs"></i>
+                                    {{ $user->pending_role === 'provider_event' ? 'Penjual Event' : 'Penjual Kos' }}
+                                </span>
+                                @endif
                             </h3>
                             @php
                                 $pc = match($user->provider_status) {

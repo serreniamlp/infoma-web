@@ -254,7 +254,7 @@
                             @if($residence->discount_type === 'percentage')
                             -{{ $residence->discount_value }}%
                             @else
-                            -{{ number_format($residence->discount_value/1000) }}K
+                            -Rp{{ number_format($residence->discount_value, 0, ',', '.') }}
                             @endif
                         </div>
                         @endif
@@ -270,11 +270,11 @@
                         <div class="space-y-2">
                             <div>
                                 <span class="text-sm font-bold text-blue-600">
-                                    Rp {{ number_format($residence->getDiscountedPrice()/1000) }}K
+                                    Rp {{ number_format($residence->getDiscountedPrice(), 0, ',', '.') }}
                                 </span>
                                 @if($residence->discount_value)
                                 <span class="text-xs text-gray-500 line-through ml-1">
-                                    {{ number_format($residence->price/1000) }}K
+                                    Rp {{ number_format($residence->price, 0, ',', '.') }}
                                 </span>
                                 @endif
                                 <span class="text-xs text-gray-500">/bulan</span>
@@ -319,7 +319,7 @@
                             @if($activity->discount_type === 'percentage')
                             -{{ $activity->discount_value }}%
                             @else
-                            -{{ number_format($activity->discount_value/1000) }}K
+                            -Rp{{ number_format($activity->discount_value, 0, ',', '.') }}
                             @endif
                         </div>
                         @endif
@@ -339,11 +339,11 @@
                         <div class="space-y-2">
                             <div>
                                 <span class="text-sm font-bold text-green-600">
-                                    Rp {{ number_format($activity->getDiscountedPrice()/1000) }}K
+                                    Rp {{ number_format($activity->getDiscountedPrice(), 0, ',', '.') }}
                                 </span>
                                 @if($activity->discount_value)
                                 <span class="text-xs text-gray-500 line-through ml-1">
-                                    {{ number_format($activity->price/1000) }}K
+                                    Rp {{ number_format($activity->price, 0, ',', '.') }}
                                 </span>
                                 @endif
                             </div>
@@ -403,7 +403,7 @@
                         <div class="space-y-2">
                             <div>
                                 <span class="text-sm font-bold text-orange-600">
-                                    Rp {{ number_format($product->price/1000) }}K
+                                    Rp {{ number_format($product->price, 0, ',', '.') }}
                                 </span>
                                 <div class="text-xs text-gray-500">
                                     Stok: {{ $product->stock_quantity }}

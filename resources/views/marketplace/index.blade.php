@@ -68,6 +68,13 @@
                     <span>{{ session('success') }}</span>
                 </div>
             @endif
+            @if (session('error'))
+                <div
+                    class="mb-4 flex items-center gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg">
+                    <i class="fas fa-exclamation-circle text-red-500"></i>
+                    <span>{{ session('error') }}</span>
+                </div>
+            @endif
 
             <div class="flex flex-col lg:flex-row gap-8">
 
@@ -220,6 +227,18 @@
                                         <i class="fas fa-plus"></i> Jual Produk
                                     </a>
                                 @endif
+                                @if (auth()->user()->hasRole('user'))
+                                    @php $cartCount = \App\Models\CartItem::where('user_id', auth()->id())->sum('quantity'); @endphp
+                                    <a href="{{ route('user.marketplace.cart.index') }}"
+                                        class="relative inline-flex items-center gap-2 border border-orange-300 text-orange-600 hover:bg-orange-50 font-semibold px-4 py-2 rounded-lg text-sm transition-colors">
+                                        <i class="fas fa-shopping-cart"></i> Keranjang
+                                        @if($cartCount > 0)
+                                        <span class="bg-orange-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+                                            {{ $cartCount }}
+                                        </span>
+                                        @endif
+                                    </a>
+                                @endif
                             @endauth
                         </div>
                     </div>
@@ -271,11 +290,19 @@
                                                 class="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300">
                                         </a>
                                         {{-- Condition badge --}}
-                                        <div class="absolute top-3 left-3">
+                                        <div class="absolute top-3 left-3 flex flex-col gap-1">
                                             <span
                                                 class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold {{ $cond['bg'] }} {{ $cond['text'] }}">
                                                 {{ $cond['label'] }}
                                             </span>
+                                            {{-- "Produk Anda" badge --}}
+                                            @auth
+                                                @if(auth()->id() === $product->seller_id)
+                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-600 text-white shadow-sm">
+                                                    <i class="fas fa-tag text-xs"></i> Produk Anda
+                                                </span>
+                                                @endif
+                                            @endauth
                                         </div>
                                         {{-- Bookmark button --}}
                                         @auth
@@ -327,11 +354,24 @@
                                     </div>
 
                                     {{-- CTA --}}
-                                    <div class="px-4 pb-4">
+                                    <div class="px-4 pb-4 flex gap-2">
                                         <a href="{{ route('marketplace.show', $product) }}"
-                                            class="block w-full text-center py-2 rounded-lg bg-orange-50 hover:bg-orange-500 text-orange-600 hover:text-white border border-orange-200 hover:border-orange-500 text-sm font-semibold transition-all duration-200">
+                                            class="flex-1 text-center py-2 rounded-lg bg-orange-50 hover:bg-orange-500 text-orange-600 hover:text-white border border-orange-200 hover:border-orange-500 text-sm font-semibold transition-all duration-200">
                                             Lihat Detail
                                         </a>
+                                        @auth
+                                            @if(auth()->user()->hasRole('user') && auth()->id() !== $product->seller_id && $product->stock_quantity > 0)
+                                            <form method="POST" action="{{ route('user.marketplace.cart.add', $product) }}">
+                                                @csrf
+                                                <input type="hidden" name="quantity" value="1">
+                                                <button type="submit"
+                                                    title="Tambah ke Keranjang"
+                                                    class="w-9 h-9 flex-shrink-0 flex items-center justify-center rounded-lg bg-gray-100 hover:bg-orange-500 text-gray-500 hover:text-white border border-gray-200 hover:border-orange-500 transition-all duration-200">
+                                                    <i class="fas fa-cart-plus text-sm"></i>
+                                                </button>
+                                            </form>
+                                            @endif
+                                        @endauth
                                     </div>
                                 </div>
                             @endforeach

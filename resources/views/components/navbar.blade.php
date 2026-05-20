@@ -196,6 +196,23 @@
                     {{-- Bell notifikasi --}}
                     <x-notification-dropdown />
 
+                    {{-- Keranjang Belanja — hanya muncul di halaman marketplace --}}
+                    @if(auth()->user()->hasRole('user') && request()->routeIs('marketplace.*'))
+                    <a href="{{ route('user.marketplace.cart.index') }}"
+                       class="relative flex items-center justify-center w-9 h-9 rounded-full text-gray-500 hover:text-orange-600 hover:bg-orange-50 transition-colors"
+                       title="Keranjang Belanja">
+                        <i class="fas fa-shopping-cart text-base"></i>
+                        @php
+                            $cartCount = \App\Models\CartItem::where('user_id', auth()->id())->sum('quantity');
+                        @endphp
+                        @if($cartCount > 0)
+                        <span class="absolute -top-1 -right-1 bg-orange-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center px-1 leading-none">
+                            {{ $cartCount > 99 ? '99+' : $cartCount }}
+                        </span>
+                        @endif
+                    </a>
+                    @endif
+
                     {{-- Avatar dropdown --}}
                     <div class="ml-3 relative" x-data="{ open: false }">
                         <button @click="open = !open"
@@ -272,6 +289,26 @@
                                     <i class="fas fa-store mr-2 w-4"></i>
                                     {{ auth()->user()->isSeller() ? 'Mode Penjual' : 'Mulai Berjualan' }}
                                 </a>
+                                <div class="border-t border-gray-100 my-1"></div>
+                                {{-- Switch Role shortcuts --}}
+                                @if(auth()->user()->hasRole('provider_event'))
+                                <a href="{{ route('provider.event.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-purple-700 hover:bg-purple-50">
+                                    <i class="fas fa-calendar-alt mr-2 w-4"></i>Dashboard Event
+                                </a>
+                                @else
+                                <a href="{{ route('role.switch.become.provider_event') }}" class="flex items-center px-4 py-2 text-sm text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-calendar-plus mr-2 w-4 text-purple-400"></i>Jadi Penjual Event
+                                </a>
+                                @endif
+                                @if(auth()->user()->hasRole('provider_residence'))
+                                <a href="{{ route('provider.residence.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-teal-700 hover:bg-teal-50">
+                                    <i class="fas fa-home mr-2 w-4"></i>Dashboard Kos
+                                </a>
+                                @else
+                                <a href="{{ route('role.switch.become.provider_residence') }}" class="flex items-center px-4 py-2 text-sm text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-home mr-2 w-4 text-teal-400"></i>Jadi Penjual Kos
+                                </a>
+                                @endif
                             @endif
 
                             <div class="border-t border-gray-100 my-1"></div>
@@ -385,6 +422,30 @@
                                 <a href="{{ route('user.marketplace.sell') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
                                     <i class="fas fa-store mr-2"></i>{{ auth()->user()->isSeller() ? 'Produk Saya' : 'Mulai Berjualan' }}
                                 </a>
+                            @endif
+
+                            {{-- Switch Role Mobile --}}
+                            @if(auth()->user()->hasRole('user'))
+                            <div class="border-t border-gray-200 my-2"></div>
+                            <p class="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Switch Peran</p>
+                            @if(auth()->user()->hasRole('provider_event'))
+                            <a href="{{ route('provider.event.dashboard') }}" class="text-purple-700 hover:text-purple-900 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-calendar-alt mr-2"></i>Dashboard Event
+                            </a>
+                            @else
+                            <a href="{{ route('role.switch.become.provider_event') }}" class="text-gray-500 hover:text-purple-600 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-calendar-plus mr-2 text-purple-400"></i>Jadi Penjual Event
+                            </a>
+                            @endif
+                            @if(auth()->user()->hasRole('provider_residence'))
+                            <a href="{{ route('provider.residence.dashboard') }}" class="text-teal-700 hover:text-teal-900 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-home mr-2"></i>Dashboard Kos
+                            </a>
+                            @else
+                            <a href="{{ route('role.switch.become.provider_residence') }}" class="text-gray-500 hover:text-teal-600 block px-3 py-2 rounded-md text-base font-medium">
+                                <i class="fas fa-home mr-2 text-teal-400"></i>Jadi Penjual Kos
+                            </a>
+                            @endif
                             @endif
 
                             <div class="border-t border-gray-200 my-2"></div>

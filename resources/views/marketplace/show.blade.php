@@ -16,6 +16,18 @@
     <div class="min-h-screen bg-gray-50">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
+            {{-- Flash Messages --}}
+            @if(session('success'))
+            <div class="mb-4 flex items-center gap-3 bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl">
+                <i class="fas fa-check-circle text-green-500"></i> {{ session('success') }}
+            </div>
+            @endif
+            @if(session('error'))
+            <div class="mb-4 flex items-center gap-3 bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-xl">
+                <i class="fas fa-exclamation-circle text-red-500"></i> {{ session('error') }}
+            </div>
+            @endif
+
             {{-- Breadcrumb --}}
             <nav class="mb-6">
                 <ol class="flex items-center flex-wrap gap-1 text-sm text-gray-500">
@@ -323,14 +335,24 @@
                                             class="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-sm mb-3">
                                             <i class="fas fa-shopping-cart"></i> Beli Sekarang
                                         </a>
+                                        @if(auth()->user()->hasRole('user'))
+                                        <form method="POST" action="{{ route('user.marketplace.cart.add', $product) }}" class="mb-3">
+                                            @csrf
+                                            <input type="hidden" name="quantity" value="1">
+                                            <button type="submit"
+                                                class="w-full border border-orange-300 text-orange-600 hover:bg-orange-50 font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm">
+                                                <i class="fas fa-cart-plus"></i> Tambah ke Keranjang
+                                            </button>
+                                        </form>
+                                        @endif
                                         <a href="#ulasan"
                                             class="w-full border border-orange-200 text-orange-600 hover:bg-orange-50 font-semibold py-2.5 rounded-xl flex items-center justify-center gap-2 transition-colors text-sm">
                                             <i class="fas fa-star"></i> Lihat Ulasan
                                         </a>
                                     @else
                                         <div
-                                            class="bg-orange-50 border border-orange-200 text-orange-800 px-4 py-3 rounded-xl text-sm text-center mb-3">
-                                            <i class="fas fa-info-circle mr-2"></i> Ini adalah produk Anda
+                                            class="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded-xl text-sm text-center mb-3 flex items-center justify-center gap-2 font-semibold">
+                                            <i class="fas fa-tag"></i> Ini adalah produk Anda
                                         </div>
                                         <div class="flex gap-2">
                                             <a href="{{ route('user.marketplace.seller.edit', $product) }}"

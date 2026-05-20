@@ -226,13 +226,28 @@ class UserManagementController extends Controller
 
         $user->update(['provider_status' => 'approved']);
 
-        $roleLabel = $user->roles
-            ->whereIn('name', ['provider_residence', 'provider_event'])
-            ->map(fn($r) => match($r->name) {
+        // Jika user daftar via role-switch (pending_role ada), assign role tersebut
+        if ($user->pending_role) {
+            $role = \App\Models\Role::where('name', $user->pending_role)->first();
+            if ($role) {
+                $user->roles()->syncWithoutDetaching([$role->id]);
+            }
+            $roleLabel = match($user->pending_role) {
                 'provider_residence' => 'hunian',
                 'provider_event'     => 'event',
-                default              => $r->name,
-            })->join(' & ');
+                default              => $user->pending_role,
+            };
+            $user->update(['pending_role' => null]);
+        } else {
+            // Fallback: assign berdasarkan role existing
+            $roleLabel = $user->roles
+                ->whereIn('name', ['provider_residence', 'provider_event'])
+                ->map(fn($r) => match($r->name) {
+                    'provider_residence' => 'hunian',
+                    'provider_event'     => 'event',
+                    default              => $r->name,
+                })->join(' & ');
+        }
 
         NotificationService::providerDisetujui($user->id, $roleLabel);
 

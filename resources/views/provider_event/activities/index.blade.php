@@ -167,14 +167,14 @@
                             <div>
                                 @if($activity->discount_type && $activity->discount_value)
                                     <div class="text-sm text-gray-500 line-through">
-                                        Rp {{ number_format($activity->price) }}
+                                        Rp {{ number_format($activity->price, 0, ',', '.') }}
                                     </div>
                                     <div class="text-xl font-bold text-green-600">
                                         Rp {{ number_format($activity->getDiscountedPrice()) }}
                                     </div>
                                 @else
                                     <div class="text-xl font-bold text-green-600">
-                                        Rp {{ number_format($activity->price) }}
+                                        Rp {{ number_format($activity->price, 0, ',', '.') }}
                                     </div>
                                 @endif
                             </div>
