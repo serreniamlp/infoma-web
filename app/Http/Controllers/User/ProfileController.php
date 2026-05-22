@@ -12,14 +12,12 @@ class ProfileController extends Controller
     public function show(Request $request)
     {
         $user = $request->user();
-
         return view('user.profile.show', compact('user'));
     }
 
     public function edit(Request $request)
     {
         $user = $request->user();
-
         return view('user.profile.edit', compact('user'));
     }
 
@@ -28,27 +26,41 @@ class ProfileController extends Controller
         $user = $request->user();
 
         $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'address' => ['nullable', 'string'],
+            'name'            => ['required', 'string', 'max:255'],
+            'email'           => ['required', 'string', 'email', 'max:255', Rule::unique('users')->ignore($user->id)],
+            'phone'           => ['nullable', 'string', 'max:20'],
+            'address'         => ['nullable', 'string'],
             'profile_picture' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg', 'max:2048'],
         ]);
 
         if ($request->hasFile('profile_picture')) {
-            // Delete old profile picture
             if ($user->profile_picture && Storage::disk('public')->exists($user->profile_picture)) {
                 Storage::disk('public')->delete($user->profile_picture);
             }
-
             $path = $request->file('profile_picture')->store('profiles', 'public');
             $validated['profile_picture'] = $path;
         }
 
         $user->update($validated);
 
-        return redirect()->route('user.profile.show')->with('success', 'Profile updated successfully.');
+        // ── Cek apakah ada redirect setelah save (dari cek profil lengkap) ──
+        $redirectAfterSave = $request->input('redirect_after_save');
+
+        if ($redirectAfterSave) {
+            // Cek apakah profil sekarang sudah lengkap
+            if (!empty($user->fresh()->phone) && !empty($user->fresh()->address)) {
+                return redirect($redirectAfterSave)
+                    ->with('success', 'Profil berhasil dilengkapi! Kamu sekarang bisa melanjutkan.');
+            }
+
+            // Masih ada yang kurang — tetap di halaman edit dengan pesan
+            return redirect()->route('user.profile.edit')
+                ->with('success', 'Profil berhasil diperbarui.')
+                ->with('profile_incomplete', 'Masih ada data yang belum diisi. Lengkapi nomor telepon dan alamat kamu.')
+                ->with('redirect_after_profile', $redirectAfterSave);
+        }
+
+        return redirect()->route('user.profile.show')
+            ->with('success', 'Profil berhasil diperbarui.');
     }
 }
-
-

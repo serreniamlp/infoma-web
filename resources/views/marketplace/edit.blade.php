@@ -221,6 +221,20 @@
                 <div id="preview-container" class="grid grid-cols-3 md:grid-cols-5 gap-3 mt-4 hidden"></div>
             </div>
 
+            {{-- Step 4: Metode Pengambilan --}}
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+                <div class="px-6 py-4 border-b border-gray-100 bg-gray-50">
+                    <h2 class="font-semibold text-gray-800 flex items-center gap-2">
+                        <span class="w-7 h-7 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold">4</span>
+                        Metode Pengambilan <span class="text-red-500 ml-1">*</span>
+                    </h2>
+                    <p class="text-xs text-gray-500 mt-1 ml-9">Tentukan bagaimana pembeli bisa mendapatkan barangmu</p>
+                </div>
+                <div class="p-6">
+                    @include('marketplace._pickup-methods-section')
+                </div>
+            </div>
+
             <!-- Tombol Aksi -->
             <div class="flex items-center justify-between bg-white rounded-xl shadow-sm p-6">
                 <a href="{{ route('user.marketplace.seller.my-products') }}"

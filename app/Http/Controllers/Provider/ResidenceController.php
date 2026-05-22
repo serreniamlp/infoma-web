@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Provider;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\CheckProfileComplete;
 use App\Http\Requests\UpdateResidenceRequest;
 use App\Models\Residence;
 use App\Models\Category;
@@ -11,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 
 class ResidenceController extends Controller
 {
+    use CheckProfileComplete;
     public function index(Request $request)
     {
         $query = Residence::where('provider_id', auth()->id())
@@ -56,6 +58,7 @@ class ResidenceController extends Controller
     public function create()
     {
         if ($redirect = $this->checkProviderApproved()) return $redirect;
+        if ($redirect = $this->checkProfileComplete(route('provider.residence.residences.create'))) return $redirect;
         $categories = Category::where('type', 'residence')->get();
         return view('provider_residence.residences.create', compact('categories'));
     }
@@ -63,6 +66,7 @@ class ResidenceController extends Controller
     public function store(Request $request)
     {
         if ($redirect = $this->checkProviderApproved()) return $redirect;
+        if ($redirect = $this->checkProfileComplete()) return $redirect;
 
         try {
             // ── Validasi umum (semua tipe) ────────────────────────────
@@ -230,6 +234,7 @@ class ResidenceController extends Controller
                 'longitude'         => 'nullable|numeric|between:-180,180',
                 'price_per_month'   => 'required|numeric|min:0',
                 'capacity'          => 'required|integer|min:1',
+                'available_slots'   => 'required|integer|min:0',
                 'furnish_status'    => 'nullable|in:unfurnished,semi_furnished,full_furnished',
                 'discount_type'     => 'nullable|in:percentage,flat',
                 'discount_value'    => 'nullable|numeric|min:0',
@@ -271,6 +276,7 @@ class ResidenceController extends Controller
                 'rental_period'  => $request->rental_period,
                 'price'          => (float) $request->price_per_month,
                 'capacity'       => (int) $request->capacity,
+                'available_slots'=> min((int) $request->available_slots, (int) $request->capacity),  // ← TAMBAH
                 'furnish_status' => $request->furnish_status,
                 'is_active'      => $request->boolean('is_active', $residence->is_active),
                 'discount_type'  => $request->discount_type ?: null,
