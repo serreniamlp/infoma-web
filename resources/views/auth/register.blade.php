@@ -277,7 +277,7 @@
                 {{-- END SECTION PROVIDER --}}
 
                 {{-- Terms --}}
-                <div class="flex items-start mb-6">
+                <!-- <div class="flex items-start mb-6">
                     <input id="terms" name="terms" type="checkbox" required
                            class="h-4 w-4 text-blue-600 border-gray-300 rounded mt-0.5">
                     <label for="terms" class="ml-3 text-sm text-gray-700">
@@ -290,7 +290,7 @@
                 </div>
                 @error('terms')
                     <p class="mb-4 text-sm text-red-600">{{ $message }}</p>
-                @enderror
+                @enderror -->
 
                 {{-- Submit --}}
                 <button type="button" onclick="submitForm()" id="submit-btn"
@@ -460,6 +460,9 @@ function retakePhoto() {
 
 // ---- Submit dengan validasi ----
 function submitForm() {
+    const terms = document.getElementById('terms');
+    console.log('terms checked:', terms ? terms.checked : 'element not found');
+    console.log('isProvider:', isProvider);
     if (!checkPasswordMatch()) return;
 
     if (isProvider) {

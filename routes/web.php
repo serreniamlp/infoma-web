@@ -52,8 +52,21 @@ Route::middleware('guest')->group(function () {
     Route::get('/register', [RegisterController::class, 'showRegistrationForm'])->name('register');
     Route::post('/register', [RegisterController::class, 'register']);
 });
+Route::get('/register/cancel', function () {
+    $pending = session('pending_provider');
+    if ($pending) {
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($pending['provider_ktp'] ?? '');
+        \Illuminate\Support\Facades\Storage::disk('public')->delete($pending['provider_selfie'] ?? '');
+        session()->forget('pending_provider');
+    }
+    return redirect()->route('register');
+})->name('register.cancel');
 
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
+
+// Syarat & Ketentuan Verifikasi
+Route::get('/verification/terms/{type}',  [VerificationTermsController::class, 'show'])->name('verification.terms');
+Route::post('/verification/accept-terms', [VerificationTermsController::class, 'accept'])->name('verification.accept-terms');
 
 // ============================================================
 // Authenticated Routes
@@ -68,9 +81,7 @@ Route::middleware('auth')->group(function () {
         Route::patch('/read-all',  [App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('markAllRead');
     });
 
-    // Syarat & Ketentuan Verifikasi
-    Route::get('/verification/terms/{type}',  [VerificationTermsController::class, 'show'])->name('verification.terms');
-    Route::post('/verification/accept-terms', [VerificationTermsController::class, 'accept'])->name('verification.accept-terms');
+
 
     // Profile (semua user yang login bisa akses)
     Route::get('/profile', [ProfileController::class, 'show'])->name('user.profile.show');

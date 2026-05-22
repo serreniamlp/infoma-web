@@ -67,6 +67,7 @@ class ActivityController extends Controller
     public function create()
     {
         if ($redirect = $this->checkProviderApproved()) return $redirect;
+        if ($redirect = $this->checkProfileComplete(route('provider.event.activities.create'))) return $redirect;
         $categories = Category::where('type', 'activity')->get();
         return view('provider_event.activities.create', compact('categories'));
         // return view('provider_event.activities.create');

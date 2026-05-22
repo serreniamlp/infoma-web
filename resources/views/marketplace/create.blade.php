@@ -27,7 +27,7 @@
 
             {{-- Step Indicator --}}
             <div class="flex items-center justify-center mb-8">
-                @php $steps = ['Informasi Produk', 'Tags', 'Foto Produk']; @endphp
+                @php $steps = ['Informasi Produk', 'Tags', 'Foto Produk', 'Pengambilan']; @endphp
                 @foreach ($steps as $idx => $label)
                     <div class="flex items-center {{ $idx < count($steps) - 1 ? 'flex-1' : '' }}">
                         <div class="flex flex-col items-center">
@@ -294,9 +294,27 @@
 
                     {{-- Photo count info --}}
                     <p class="text-xs text-gray-400 mb-6" id="photoCount">0 foto dipilih</p>
-
                     <div class="flex justify-between">
-                        <button type="button" onclick="prevStep(2)"
+                        <button type="button" onclick="prevStep(2)" class="border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
+                            <i class="fas fa-arrow-left"></i> Kembali
+                        </button>
+                        <button type="button" onclick="nextStep(4)" class="bg-orange-500 hover:bg-orange-600 text-white font-semibold px-6 py-2.5 rounded-xl transition-colors flex items-center gap-2"> {{-- ← ubah dari submitForm() ke nextStep(4) --}}
+                            Lanjut <i class="fas fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </div>
+                {{-- ======================= STEP 4 ======================= --}}
+                <div id="step4" class="p-6 sm:p-8 hidden">
+                    <h2 class="text-lg font-bold text-gray-900 mb-1 flex items-center gap-2">
+                        <span class="w-6 h-6 bg-orange-100 text-orange-600 rounded-full text-xs font-bold flex items-center justify-center">4</span>
+                        Metode Pengambilan
+                    </h2>
+                    <p class="text-sm text-gray-500 mb-6">Tentukan bagaimana pembeli bisa mendapatkan barangmu</p>
+
+                    @include('marketplace._pickup-methods-section')
+
+                    <div class="flex justify-between mt-8">
+                        <button type="button" onclick="prevStep(3)"
                             class="border border-gray-200 text-gray-700 hover:bg-gray-50 font-semibold px-5 py-2.5 rounded-xl transition-colors flex items-center gap-2">
                             <i class="fas fa-arrow-left"></i> Kembali
                         </button>
@@ -320,7 +338,7 @@
 
         // ==================== STEP NAVIGATION ====================
         function goToStep(n) {
-            for (let i = 1; i <= 3; i++) {
+            for (let i = 1; i <= 4; i++) {
                 const el = document.getElementById('step' + i);
                 el.classList.toggle('hidden', i !== n);
             }
@@ -342,7 +360,7 @@
         }
 
         function updateStepDots(active) {
-            for (let i = 1; i <= 3; i++) {
+            for (let i = 1; i <= 4; i++) {
                 const dot = document.getElementById('stepDot' + i);
                 const label = document.getElementById('stepLabel' + i);
                 if (i < active) {
@@ -361,7 +379,7 @@
                     dot.innerHTML = i;
                     label.className = 'text-xs mt-1.5 font-medium hidden sm:block text-gray-400';
                 }
-                if (i < 3) {
+                if (i < 4) {
                     const line = document.getElementById('stepLine' + i);
                     line.className = i < active ?
                         'flex-1 h-0.5 bg-orange-400 mx-2 transition-colors duration-300' :
@@ -548,9 +566,23 @@
             fd.append('location', document.getElementById('location').value);
             fd.append('description', document.getElementById('description').value);
             fd.append('tags', document.getElementById('tagsHidden').value);
+            document.querySelectorAll('input[name="pickup_methods[]"]:checked').forEach(cb => {
+                fd.append('pickup_methods[]', cb.value);
+            });
+
+            // ← TAMBAH: pickup address (jika metode "Ambil Sendiri" dipilih)
+            const pickupAddress = document.getElementById('pickup_address');
+            if (pickupAddress && pickupAddress.value.trim()) {
+                fd.append('pickup_address', pickupAddress.value.trim());
+            }
             selectedFiles.forEach(file => fd.append('images[]', file));
 
-            fetch('{{ route('user.marketplace.seller.store') }}', {
+            // Tambah sebelum fetch
+            for (let pair of fd.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
+            }
+
+            fetch("{{ route('user.marketplace.seller.store') }}", {
                     method: 'POST',
                     body: fd,
                 })
@@ -558,7 +590,7 @@
                     if (res.redirected) {
                         window.location.href = res.url;
                     } else if (res.ok) {
-                        window.location.href = '{{ route('user.marketplace.seller.my-products') }}';
+                        window.location.href = "{{ route('user.marketplace.seller.my-products') }}";
                     } else {
                         return res.text().then(html => {
                             btn.disabled = false;

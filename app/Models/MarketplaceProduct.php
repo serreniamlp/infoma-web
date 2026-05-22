@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -9,305 +10,295 @@ use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class MarketplaceProduct extends Model
 {
-use HasFactory;
+    use HasFactory;
 
-protected $fillable = [
-'seller_id',
-'category_id',
-'name',
-'description',
-'condition',
-'price',
-'stock_quantity',
-'available_slots',
-'location',
-'latitude',
-'longitude',
-'images',
-'tags',
-'status',
-'views_count',
-'sold_at'
-];
+    protected $fillable = [
+        'seller_id',
+        'category_id',
+        'name',
+        'description',
+        'condition',
+        'price',
+        'stock_quantity',
+        'available_slots',
+        'location',
+        'latitude',
+        'longitude',
+        'images',
+        'tags',
+        'status',
+        'views_count',
+        'sold_at',
+        'pickup_methods',    // ← BARU: array metode yang seller aktifkan
+        'pickup_address',    // ← BARU: alamat pickup jika metode "ambil sendiri" aktif
+    ];
 
-protected $casts = [
-'price' => 'decimal:2',
-'latitude' => 'decimal:8',
-'longitude' => 'decimal:8',
-'images' => 'array',
-'tags' => 'array',
-'sold_at' => 'datetime'
-];
+    protected $casts = [
+        'price'          => 'decimal:2',
+        'latitude'       => 'decimal:8',
+        'longitude'      => 'decimal:8',
+        'images'         => 'array',
+        'tags'           => 'array',
+        'sold_at'        => 'datetime',
+        'pickup_methods' => 'array',   // ← BARU
+    ];
 
-protected $appends = [
-'condition_label',
-'status_label',
-'main_image',
-'rating_average',
-'is_available',
-'discount_percentage'
-];
+    protected $appends = [
+        'condition_label',
+        'status_label',
+        'main_image',
+        'rating_average',
+        'is_available',
+        'discount_percentage',
+    ];
 
-/**
-* Relationship with seller (User).
-*/
-public function seller(): BelongsTo
-{
-return $this->belongsTo(User::class, 'seller_id');
-}
+    // ── PICKUP METHOD HELPERS (BARU) ─────────────────────────────────────
 
-/**
-* Relationship with category.
-*/
-public function category(): BelongsTo
-{
-return $this->belongsTo(ProductCategory::class, 'category_id');
-}
-
-/**
-* Relationship with transactions.
-*/
-public function transactions(): HasMany
-{
-return $this->hasMany(MarketplaceTransaction::class, 'product_id');
-}
-
-/**
-* Polymorphic relationship with bookmarks.
-*/
-public function bookmarks(): MorphMany
-{
-return $this->morphMany(Bookmark::class, 'bookmarkable');
-}
-
-/**
-* Polymorphic relationship with ratings.
-*/
-public function ratings(): MorphMany
-{
-return $this->morphMany(Rating::class, 'rateable');
-}
-
-/**
-* Get product views.
-*/
-public function views(): HasMany
-{
-return $this->hasMany(MarketplaceProductView::class, 'product_id');
-}
-
-/**
-* Scope for active products.
-*/
-public function scopeActive($query)
-{
-return $query->where('status', 'active');
-}
-
-/**
-* Scope for available products.
-*/
-public function scopeAvailable($query)
-{
-return $query->where('status', 'active')
-->where('stock_quantity', '>', 0);
-}
-
-/**
-* Scope for products by seller.
-*/
-public function scopeBySeller($query, $sellerId)
-{
-return $query->where('seller_id', $sellerId);
-}
-
-/**
-* Scope for search functionality.
-*/
-public function scopeSearch($query, $search)
-{
-return $query->where(function($q) use ($search) {
-$q->where('name', 'like', '%' . $search . '%')
-->orWhere('description', 'like', '%' . $search . '%')
-->orWhereJsonContains('tags', $search);
-});
-}
-
-/**
-* Scope for filtering by condition.
-*/
-public function scopeByCondition($query, $condition)
-{
-return $query->where('condition', $condition);
-}
-
-/**
-* Scope for filtering by price range.
-*/
-public function scopePriceRange($query, $minPrice = null, $maxPrice = null)
-{
-if ($minPrice !== null) {
-$query->where('price', '>=', $minPrice);
-}
-
-if ($maxPrice !== null) {
-$query->where('price', '<=', $maxPrice); } return $query; } /** * Scope for filtering by location. */ public function
-    scopeByLocation($query, $location) { return $query->where('location', 'like', '%' . $location . '%');
+    /**
+     * Daftar semua metode yang tersedia di sistem beserta labelnya.
+     */
+    public static function availablePickupMethods(): array
+    {
+        return [
+            'cod'      => [
+                'label'       => 'COD (Bayar di Tempat)',
+                'icon'        => 'fa-money-bill-wave',
+                'color'       => 'green',
+                'description' => 'Pembeli bertemu dengan penjual, bayar langsung saat menerima barang.',
+                'need_address'=> false, // buyer tidak perlu isi alamat tujuan
+            ],
+            'delivery' => [
+                'label'       => 'Diantar Seller',
+                'icon'        => 'fa-motorcycle',
+                'color'       => 'blue',
+                'description' => 'Penjual mengantar barang ke alamat pembeli. Pembeli transfer terlebih dahulu.',
+                'need_address'=> true,  // buyer wajib isi alamat tujuan
+            ],
+            'pickup'   => [
+                'label'       => 'Ambil Sendiri',
+                'icon'        => 'fa-walking',
+                'color'       => 'orange',
+                'description' => 'Pembeli datang langsung ke lokasi penjual untuk mengambil barang.',
+                'need_address'=> false, // buyer tidak perlu isi alamat tujuan
+            ],
+        ];
     }
 
     /**
-    * Get condition label.
-    */
+     * Ambil metode yang seller aktifkan untuk produk ini.
+     * Return array of ['cod' => [...], 'delivery' => [...], ...]
+     */
+    public function getActivePickupMethods(): array
+    {
+        $all     = self::availablePickupMethods();
+        $active  = $this->pickup_methods ?? [];
+
+        return array_filter($all, fn($key) => in_array($key, $active), ARRAY_FILTER_USE_KEY);
+    }
+
+    /**
+     * Apakah metode tertentu tersedia untuk produk ini?
+     */
+    public function hasPickupMethod(string $method): bool
+    {
+        return in_array($method, $this->pickup_methods ?? []);
+    }
+
+    /**
+     * Apakah ada metode yang butuh alamat tujuan dari buyer?
+     */
+    public function hasDeliveryMethod(): bool
+    {
+        return $this->hasPickupMethod('delivery');
+    }
+
+    /**
+     * Apakah COD tersedia?
+     */
+    public function hasCod(): bool
+    {
+        return $this->hasPickupMethod('cod');
+    }
+
+    /**
+     * Label pickup methods yang aktif untuk ditampilkan.
+     */
+    public function getPickupMethodsLabelAttribute(): string
+    {
+        $active = $this->getActivePickupMethods();
+        if (empty($active)) return '-';
+
+        return implode(', ', array_column($active, 'label'));
+    }
+
+    // ── RELATIONS ────────────────────────────────────────────────────────
+
+    public function seller(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'seller_id');
+    }
+
+    public function category(): BelongsTo
+    {
+        return $this->belongsTo(ProductCategory::class, 'category_id');
+    }
+
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(MarketplaceTransaction::class, 'product_id');
+    }
+
+    public function bookmarks(): MorphMany
+    {
+        return $this->morphMany(Bookmark::class, 'bookmarkable');
+    }
+
+    public function ratings(): MorphMany
+    {
+        return $this->morphMany(Rating::class, 'rateable');
+    }
+
+    public function views(): HasMany
+    {
+        return $this->hasMany(MarketplaceProductView::class, 'product_id');
+    }
+
+    // ── SCOPES ───────────────────────────────────────────────────────────
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', 'active');
+    }
+
+    public function scopeAvailable($query)
+    {
+        return $query->where('status', 'active')->where('stock_quantity', '>', 0);
+    }
+
+    public function scopeBySeller($query, $sellerId)
+    {
+        return $query->where('seller_id', $sellerId);
+    }
+
+    public function scopeSearch($query, $search)
+    {
+        return $query->where(function ($q) use ($search) {
+            $q->where('name', 'like', '%' . $search . '%')
+                ->orWhere('description', 'like', '%' . $search . '%')
+                ->orWhereJsonContains('tags', $search);
+        });
+    }
+
+    public function scopeByCondition($query, $condition)
+    {
+        return $query->where('condition', $condition);
+    }
+
+    public function scopePriceRange($query, $minPrice = null, $maxPrice = null)
+    {
+        if ($minPrice !== null) $query->where('price', '>=', $minPrice);
+        if ($maxPrice !== null) $query->where('price', '<=', $maxPrice);
+        return $query;
+    }
+
+    public function scopeByLocation($query, $location)
+    {
+        return $query->where('location', 'like', '%' . $location . '%');
+    }
+
+    // ── ACCESSORS ────────────────────────────────────────────────────────
+
     public function getConditionLabelAttribute()
     {
-    $conditions = [
-    'new' => 'Baru',
-    'like_new' => 'Seperti Baru',
-    'good' => 'Baik',
-    'fair' => 'Cukup',
-    'needs_repair' => 'Perlu Perbaikan'
-    ];
-
-    return $conditions[$this->condition] ?? $this->condition;
+        return [
+            'new'          => 'Baru',
+            'like_new'     => 'Seperti Baru',
+            'good'         => 'Baik',
+            'fair'         => 'Cukup',
+            'needs_repair' => 'Perlu Perbaikan',
+        ][$this->condition] ?? $this->condition;
     }
 
-    /**
-    * Get status label.
-    */
     public function getStatusLabelAttribute()
     {
-    $statuses = [
-    'draft' => 'Draft',
-    'active' => 'Aktif',
-    'sold' => 'Terjual',
-    'inactive' => 'Tidak Aktif',
-    'pending_approval' => 'Menunggu Persetujuan'
-    ];
-
-    return $statuses[$this->status] ?? $this->status;
+        return [
+            'draft'            => 'Draft',
+            'active'           => 'Aktif',
+            'sold'             => 'Terjual',
+            'inactive'         => 'Tidak Aktif',
+            'pending_approval' => 'Menunggu Persetujuan',
+        ][$this->status] ?? $this->status;
     }
 
-    /**
-    * Get main image URL.
-    */
     public function getMainImageAttribute()
     {
-    if (!empty($this->images)) {
-    return asset('storage/' . $this->images[0]);
+        if (!empty($this->images)) {
+            return asset('storage/' . $this->images[0]);
+        }
+        return asset('images/no-image.png');
     }
 
-    return asset('images/no-image.png');
-    }
-
-    /**
-    * Get all image URLs.
-    */
     public function getImageUrlsAttribute()
     {
-    if (!empty($this->images)) {
-    return collect($this->images)->map(function($image) {
-    return asset('storage/' . $image);
-    })->toArray();
+        if (!empty($this->images)) {
+            return collect($this->images)->map(fn($img) => asset('storage/' . $img))->toArray();
+        }
+        return [asset('images/no-image.png')];
     }
 
-    return [asset('images/no-image.png')];
-    }
-
-    /**
-    * Get average rating.
-    */
     public function getRatingAverageAttribute()
     {
-    return $this->ratings()->avg('rating') ?? 0;
+        return $this->ratings()->avg('rating') ?? 0;
     }
 
-    /**
-    * Get total ratings count.
-    */
     public function getRatingsCountAttribute()
     {
-    return $this->ratings()->count();
+        return $this->ratings()->count();
     }
 
-    /**
-    * Check if product is available.
-    */
     public function getIsAvailableAttribute()
     {
-    return $this->status === 'active' && $this->stock_quantity > 0;
+        return $this->status === 'active' && $this->stock_quantity > 0;
     }
 
-    /**
-    * Get discount percentage.
-    */
     public function getDiscountPercentageAttribute()
     {
-    if ($this->original_price && $this->original_price > $this->price) {
-    return round((($this->original_price - $this->price) / $this->original_price) * 100);
+        if ($this->original_price && $this->original_price > $this->price) {
+            return round((($this->original_price - $this->price) / $this->original_price) * 100);
+        }
+        return 0;
     }
 
-    return 0;
-    }
+    // ── METHODS ──────────────────────────────────────────────────────────
 
-    /**
-    * Check if user has bookmarked this product.
-    */
     public function isBookmarkedBy($userId)
     {
-    return $this->bookmarks()->where('user_id', $userId)->exists();
+        return $this->bookmarks()->where('user_id', $userId)->exists();
     }
 
-    /**
-    * Check if user has bought this product.
-    */
     public function isBoughtBy($userId)
     {
-    return $this->transactions()
-    ->where('buyer_id', $userId)
-    ->where('status', 'completed')
-    ->exists();
+        return $this->transactions()->where('buyer_id', $userId)->where('status', 'completed')->exists();
     }
 
-    /**
-    * Get sold quantity.
-    */
     public function getSoldQuantityAttribute()
     {
-    return $this->transactions()
-    ->where('status', 'completed')
-    ->sum('quantity');
+        return $this->transactions()->where('status', 'completed')->sum('quantity');
     }
 
-    /**
-    * Mark product as sold.
-    */
     public function markAsSold()
     {
-    $this->update([
-    'status' => 'sold',
-    'sold_at' => now(),
-    'stock_quantity' => 0,
-    'available_slots' => 0
-    ]);
+        $this->update(['status' => 'sold', 'sold_at' => now(), 'stock_quantity' => 0, 'available_slots' => 0]);
     }
 
-    /**
-    * Increment views count with duplicate prevention.
-    */
     public function incrementViews($userId = null, $ipAddress = null)
     {
-    // Create view record for analytics
-    if (class_exists(MarketplaceProductView::class)) {
-    MarketplaceProductView::firstOrCreate([
-    'product_id' => $this->id,
-    'user_id' => $userId,
-    'ip_address' => $ipAddress,
-    ], [
-    'viewed_at' => now(),
-    'user_agent' => request()->userAgent()
-    ]);
+        if (class_exists(MarketplaceProductView::class)) {
+            MarketplaceProductView::firstOrCreate(
+                ['product_id' => $this->id, 'user_id' => $userId, 'ip_address' => $ipAddress],
+                ['viewed_at' => now(), 'user_agent' => request()->userAgent()]
+            );
+        }
+        $this->increment('views_count');
     }
-
-    $this->increment('views_count');
-    }
-    }
+}
