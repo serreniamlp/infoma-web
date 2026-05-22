@@ -21,6 +21,8 @@ class ActivityResource extends JsonResource
             'capacity' => $this->capacity,
             'available_slots' => $this->available_slots,
             'images' => $this->images,
+            'speakers' => $this->speakers ?? [],
+            'benefits' => $this->benefits ?? [],
             'discount_type' => $this->discount_type,
             'discount_value' => $this->discount_value,
             'discounted_price' => $this->getDiscountedPrice(),
@@ -43,4 +45,3 @@ class ActivityResource extends JsonResource
         ];
     }
 }
-

@@ -119,7 +119,7 @@ class ResidenceController extends Controller
                 'residence_type.required' => 'Tipe hunian wajib dipilih.',
                 'rental_period.required'  => 'Periode sewa wajib dipilih.',
                 'address.required'        => 'Alamat wajib diisi.',
-                'price_per_month.required'=> 'Harga sewa wajib diisi.',
+                'price_per_month.required' => 'Harga sewa wajib diisi.',
                 'capacity.required'       => 'Jumlah kamar/unit tersedia wajib diisi.',
                 'kos_type.required'       => 'Jenis kos (putra/putri/campur) wajib dipilih.',
                 'bedroom_count.required'  => 'Jumlah kamar tidur wajib diisi.',
@@ -145,7 +145,7 @@ class ResidenceController extends Controller
                 'rental_period'  => $request->rental_period,
                 'price'          => (float) $request->price_per_month,
                 'capacity'       => (int) $request->capacity,
-                'available_slots'=> (int) $request->capacity,
+                'available_slots' => (int) $request->capacity,
                 'furnish_status' => $request->furnish_status,
                 'is_active'      => $request->boolean('is_active', true),
                 'discount_type'  => $request->discount_type ?: null,
@@ -195,7 +195,6 @@ class ResidenceController extends Controller
 
             return redirect()->route('provider.residence.residences.show', $residence)
                 ->with('success', 'Hunian berhasil ditambahkan!');
-
         } catch (\Illuminate\Validation\ValidationException $e) {
             return redirect()->back()->withErrors($e->errors())->withInput();
         } catch (\Exception $e) {
@@ -340,7 +339,6 @@ class ResidenceController extends Controller
 
             return redirect()->route('provider.residence.residences.show', $residence)
                 ->with('success', 'Hunian berhasil diperbarui!');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal memperbarui hunian: ' . $e->getMessage())
@@ -370,7 +368,6 @@ class ResidenceController extends Controller
 
             return redirect()->route('provider.residence.residences.index')
                 ->with('success', 'Hunian berhasil dihapus.');
-
         } catch (\Exception $e) {
             return redirect()->back()
                 ->with('error', 'Gagal menghapus hunian: ' . $e->getMessage());

@@ -26,6 +26,8 @@ class ResidenceResource extends JsonResource
             'discounted_price' => $this->getDiscountedPrice(),
             'average_rating' => round($this->ratings_avg_rating ?? 0, 1),
             'is_active' => $this->is_active,
+            'residence_type' => $this->residence_type,
+            'kos_type'       => $this->kos_type,
             'provider' => [
                 'id' => $this->provider->id,
                 'name' => $this->provider->name,
@@ -42,4 +44,3 @@ class ResidenceResource extends JsonResource
         ];
     }
 }
-
