@@ -15,6 +15,13 @@ class ResidenceApiController extends Controller
             ->where('is_active', true)
             ->withAvg('ratings', 'rating');
 
+        if ($request->filled('search')) {
+            $keyword = $request->search;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', "%{$keyword}%")
+                    ->orWhere('address', 'like', "%{$keyword}%");
+            });
+        }
         // Apply filters
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
@@ -32,6 +39,7 @@ class ResidenceApiController extends Controller
             $query->where('available_slots', '>', 0);
         }
 
+        $query->orderBy('created_at', 'desc');
         $residences = $query->paginate(12);
 
         return ResidenceResource::collection($residences);
@@ -44,4 +52,3 @@ class ResidenceApiController extends Controller
         return new ResidenceResource($residence);
     }
 }
-

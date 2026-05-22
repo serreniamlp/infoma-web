@@ -16,7 +16,7 @@ class UserResource extends JsonResource
             'phone'            => $this->phone,
             'address'          => $this->address,
             'profile_picture'  => $this->profile_picture
-                ? asset('storage/' . $this->profile_picture)
+                ? url('/api/v1/file/' . $this->profile_picture)
                 : null,
             'roles'            => $this->roles->pluck('name'),
             'is_seller'        => $this->is_seller,
