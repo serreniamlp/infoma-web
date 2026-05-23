@@ -108,36 +108,39 @@ class BookingController extends Controller
         $this->authorize('view', $booking);
 
         if ($booking->status !== 'approved') {
-            return redirect()->back()->with('error', 'Booking belum disetujui');
+            return redirect()->back()->with('error', 'Booking belum disetujui.');
         }
 
         if ($booking->transaction && $booking->transaction->payment_status === 'paid') {
-            return redirect()->back()->with('error', 'Pembayaran sudah selesai');
+            return redirect()->route('user.bookings.show', $booking)
+                ->with('info', 'Pembayaran untuk booking ini sudah selesai.');
         }
-
-        return view('user.bookings.payment', compact('booking'));
-    }
-
-    public function processPayment(Request $request, Booking $booking)
-    {
-        $request->validate([
-            'payment_method' => 'required|string',
-            'payment_proof' => 'nullable|image|max:2048'
-        ]);
-
-        $this->authorize('update', $booking);
 
         try {
-            $this->bookingService->processPayment($booking, $request->all());
-
-            return redirect()->route('user.bookings.show', $booking)
-                ->with('success', 'Pembayaran berhasil diproses');
-
+            $snapToken = $this->bookingService->getOrCreateSnapToken($booking);
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->with('error', 'Gagal memproses pembayaran: ' . $e->getMessage())
-                ->withInput();
+            return redirect()->route('user.bookings.show', $booking)
+                ->with('error', 'Gagal menghubungi payment gateway: ' . $e->getMessage());
         }
+
+        $snapUrl    = config('midtrans.snap_url');
+        $clientKey  = config('midtrans.client_key');
+
+        return view('user.bookings.payment', compact('booking', 'snapToken', 'snapUrl', 'clientKey'));
+    }
+
+    /**
+     * processPayment() tidak lagi digunakan untuk flow Midtrans.
+     * Konfirmasi pembayaran sekarang masuk via webhook (MidtransController::callback).
+     *
+     * Method ini dipertahankan agar route tidak error selama masa transisi.
+     */
+    public function processPayment(Request $request, Booking $booking)
+    {
+        $this->authorize('update', $booking);
+
+        return redirect()->route('user.bookings.payment', $booking)
+            ->with('info', 'Gunakan tombol Bayar di halaman pembayaran.');
     }
 }
 

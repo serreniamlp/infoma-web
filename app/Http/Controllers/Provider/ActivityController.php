@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Provider;
 
+use App\Http\Controllers\Concerns\CheckProfileComplete;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreActivityRequest;
 use App\Http\Requests\UpdateActivityRequest;
@@ -12,6 +13,8 @@ use Illuminate\Support\Facades\Storage;
 
 class ActivityController extends Controller
 {
+    use CheckProfileComplete;
+
     public function index(Request $request)
     {
         $query = Activity::where('provider_id', auth()->id())

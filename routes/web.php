@@ -1,7 +1,9 @@
 <?php
 
+use App\Http\Controllers\User\UserAddressController;  // ← TAMBAH
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
+use App\Http\Controllers\MidtransController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\User\ResidenceController as UserResidenceController;
@@ -117,6 +119,13 @@ Route::middleware('auth')->group(function () {
         Route::post('/bookmarks', [BookmarkController::class, 'store'])->name('bookmarks.store');
         Route::delete('/bookmarks', [BookmarkController::class, 'destroy'])->name('bookmarks.destroy');
 
+        // Alamat ← TAMBAH INI
+        Route::get('/addresses',                     [UserAddressController::class, 'index'])->name('addresses.index');
+        Route::post('/addresses',                    [UserAddressController::class, 'store'])->name('addresses.store');
+        Route::put('/addresses/{address}',           [UserAddressController::class, 'update'])->name('addresses.update');
+        Route::delete('/addresses/{address}',        [UserAddressController::class, 'destroy'])->name('addresses.destroy');
+        Route::patch('/addresses/{address}/default', [UserAddressController::class, 'setDefault'])->name('addresses.setDefault');
+
         // Ratings
         Route::get('/ratings', [RatingController::class, 'show'])->name('ratings.show');
         Route::post('/ratings', [RatingController::class, 'store'])->name('ratings.store');
@@ -129,6 +138,9 @@ Route::middleware('auth')->group(function () {
                 Route::post('/store/{product}', [UserMarketplaceTransactionController::class, 'store'])->name('store');
                 Route::get('/', [UserMarketplaceTransactionController::class, 'index'])->name('index');
                 Route::get('/{transaction}', [UserMarketplaceTransactionController::class, 'show'])->name('show');
+                // [MIDTRANS] Route halaman pembayaran Midtrans Snap (non-COD)
+                Route::get('/{transaction}/payment', [UserMarketplaceTransactionController::class, 'initiatePayment'])->name('payment');
+                // [MIDTRANS-END]
                 Route::post('/{transaction}/upload-payment-proof', [UserMarketplaceTransactionController::class, 'uploadPaymentProof'])->name('upload-payment-proof');
                 Route::post('/{transaction}/rate', [UserMarketplaceTransactionController::class, 'rate'])->name('rate');
                 Route::patch('/{transaction}/cancel', [UserMarketplaceTransactionController::class, 'cancel'])->name('cancel');
@@ -267,3 +279,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/marketplace/report', [AdminMarketplaceController::class, 'report'])->name('marketplace.report');
     });
 });
+
+// ============================================================
+// MIDTRANS WEBHOOK — Tidak perlu auth, diakses server Midtrans
+// Keamanan dijaga via verifikasi signature_key di controller
+// ============================================================
+Route::post('/payment/midtrans/callback', [MidtransController::class, 'callback'])
+    ->name('midtrans.callback')
+    ->withoutMiddleware([\App\Http\Middleware\VerifyCsrfToken::class]);

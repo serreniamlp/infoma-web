@@ -83,6 +83,16 @@ class User extends Authenticatable
         return $this->hasMany(Bookmark::class);
     }
 
+    public function addresses()
+    {
+        return $this->hasMany(\App\Models\UserAddress::class);
+    }
+
+    public function defaultAddress()
+    {
+        return $this->hasOne(\App\Models\UserAddress::class)->where('is_default', true);
+    }
+
     public function marketplaceProducts() {
         return $this->hasMany(MarketplaceProduct::class, 'seller_id');
     }

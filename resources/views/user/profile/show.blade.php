@@ -286,6 +286,7 @@
                 </div>
             </a>
         </div>
+        @include('user.addresses._profile-card')
     </div>
 </div>
 @endsection

@@ -43,11 +43,13 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="flex-1">
-                    <h3 class="font-semibold text-amber-800 text-base">Segera Upload Bukti Pembayaran!</h3>
+                    {{-- [MIDTRANS] Teks diubah: tidak lagi minta upload bukti, tapi minta bayar via Midtrans --}}
+                    <h3 class="font-semibold text-amber-800 text-base">Segera Selesaikan Pembayaran!</h3>
                     <p class="text-amber-700 text-sm mt-1">
-                        Pesanan kamu sudah dibuat. Upload bukti pembayaran sebelum batas waktu habis,
+                        Pesanan kamu sudah dibuat. Selesaikan pembayaran sebelum batas waktu habis,
                         atau pesanan akan dibatalkan otomatis.
                     </p>
+                    {{-- [MIDTRANS-END] --}}
                     <div class="mt-3 flex items-center gap-3">
                         <span class="text-amber-700 text-sm font-medium">Sisa waktu:</span>
                         <span id="paymentCountdown"
@@ -59,10 +61,12 @@
                         Batas akhir: {{ $transaction->payment_deadline->format('d M Y, H:i') }} WIB
                     </p>
                 </div>
-                <a href="#upload-payment"
+                {{-- [MIDTRANS] Link diubah ke halaman payment Midtrans --}}
+                <a href="{{ route('user.marketplace.transactions.payment', $transaction) }}"
                    class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors">
-                    Upload Sekarang
+                    Bayar Sekarang
                 </a>
+                {{-- [MIDTRANS-END] --}}
             </div>
             @else
             {{-- Deadline sudah lewat, tapi command belum jalan — tampilkan pesan --}}
@@ -206,7 +210,10 @@
                             </div>
                             <div class="md:col-span-2">
                                 <label class="block text-sm font-medium text-gray-700 mb-1">Alamat</label>
+                                {{-- [REVISI-3-ZONE] Setelah Revisi 3 selesai, ini mungkin
+                                     menampilkan data dari user_addresses, bukan teks bebas --}}
                                 <p class="text-gray-900">{{ $transaction->buyer_address }}</p>
+                                {{-- [REVISI-3-ZONE-END] --}}
                             </div>
                         </div>
                     </div>
@@ -231,28 +238,55 @@
 
             <!-- Sidebar -->
             <div class="space-y-8">
-                <!-- Upload Payment Proof -->
+                <!-- [MIDTRANS] Blok pembayaran — menggantikan form upload bukti manual -->
                 @if($transaction->status === 'pending' && $transaction->payment_status === 'pending' && !$transaction->isPaymentExpired())
                 <div id="upload-payment" class="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
-                        <h2 class="text-xl font-bold text-gray-900">Upload Bukti Pembayaran</h2>
+                    <div class="px-6 py-4 bg-green-50 border-b border-green-200">
+                        <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i class="fas fa-credit-card text-green-600"></i>
+                            Selesaikan Pembayaran
+                        </h2>
+                    </div>
+                    <div class="p-6 space-y-4">
+                        <p class="text-sm text-gray-600">
+                            Klik tombol di bawah untuk membuka halaman pembayaran.
+                            Tersedia berbagai metode — transfer bank, e-wallet, QRIS, dan lainnya.
+                        </p>
+                        <a href="{{ route('user.marketplace.transactions.payment', $transaction) }}"
+                           class="block w-full text-center bg-green-600 hover:bg-green-700 text-white
+                                  py-3 px-4 rounded-lg font-semibold transition-colors">
+                            <i class="fas fa-credit-card mr-2"></i>
+                            Bayar Sekarang
+                            — Rp {{ number_format($transaction->total_amount) }}
+                        </a>
+                        <p class="text-xs text-gray-400 text-center">
+                            <i class="fas fa-lock mr-1"></i>
+                            Pembayaran diproses aman via Midtrans
+                        </p>
+                    </div>
+                </div>
+
+                @elseif($transaction->status === 'pending' && $transaction->payment_method === 'cod')
+                {{-- [MIDTRANS] COD: tidak perlu bayar online --}}
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                    <div class="px-6 py-4 bg-green-50 border-b border-green-200">
+                        <h2 class="text-xl font-bold text-gray-900">Pembayaran COD</h2>
                     </div>
                     <div class="p-6">
-                        <form action="{{ route('user.marketplace.transactions.upload-payment-proof', $transaction) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-                            @csrf
-                            <div>
-                                <label for="payment_proof" class="block text-sm font-medium text-gray-700 mb-2">Bukti Pembayaran</label>
-                                <input type="file" id="payment_proof" name="payment_proof" accept="image/*" required
-                                       class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <p class="text-xs text-gray-500 mt-1">Format: JPG, PNG, GIF. Maksimal 2MB</p>
-                            </div>
-                            <button type="submit" class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200">
-                                Upload Bukti Pembayaran
-                            </button>
-                        </form>
+                        <div class="flex items-start gap-3 text-sm text-green-800">
+                            <i class="fas fa-check-circle text-green-500 mt-0.5 text-lg"></i>
+                            <p>
+                                Pesanan ini menggunakan metode <strong>bayar di tempat (COD)</strong>.
+                                Siapkan uang tunai saat menerima barang dari penjual.
+                            </p>
+                        </div>
                     </div>
                 </div>
                 @endif
+                <!-- [MIDTRANS-END] -->
+
+                {{-- [REVISI-3-ZONE] Blok ini mungkin perlu penyesuaian setelah
+                     Revisi 3 selesai jika ada perubahan pada tampilan alamat pembeli --}}
 
                 <!-- Cancel Transaction -->
                 @if($transaction->canBeCancelled() && !$transaction->isPaymentExpired())
