@@ -32,6 +32,10 @@ class MarketplaceController extends Controller
             $query->where('price', '<=', $request->max_price);
         }
 
+        if ($request->filled('condition')) {
+            $query->where('condition', $request->condition);
+        }
+
         $products = $query->orderBy('created_at', 'desc')->paginate(15);
 
         return MarketplaceProductResource::collection($products);
