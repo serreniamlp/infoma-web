@@ -131,22 +131,18 @@
                                         @error('buyer_phone')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
                                     </div>
 
-                                    <div>
-                                        <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                            Metode Pembayaran <span class="text-red-500">*</span>
-                                        </label>
-                                        <select name="payment_method" required
-                                                class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500
-                                                       @error('payment_method') border-red-500 @enderror">
-                                            <option value="">-- Pilih --</option>
-                                            <option value="Bank Transfer" {{ old('payment_method') == 'Bank Transfer' ? 'selected' : '' }}>Bank Transfer</option>
-                                            <option value="E-Wallet"      {{ old('payment_method') == 'E-Wallet'      ? 'selected' : '' }}>E-Wallet</option>
-                                            @if($product->hasCod())
-                                            <option value="Cash"          {{ old('payment_method') == 'Cash'          ? 'selected' : '' }}>Cash (COD)</option>
-                                            @endif
-                                        </select>
-                                        @error('payment_method')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                    {{-- [MIDTRANS] Dropdown payment_method dihapus.
+                                         Metode pembayaran dipilih langsung di popup Midtrans Snap
+                                         setelah pesanan dibuat. COD ditentukan otomatis dari pickup_method. --}}
+                                    <div class="md:col-span-2">
+                                        <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700 flex items-center gap-2">
+                                            <i class="fas fa-info-circle text-blue-500"></i>
+                                            Metode pembayaran dipilih di langkah berikutnya.
+                                            Tersedia transfer bank, GoPay, OVO, QRIS, dan lainnya.
+                                            Pilih <strong>COD</strong> di metode pengambilan jika ingin bayar di tempat.
+                                        </div>
                                     </div>
+                                    {{-- [MIDTRANS-END] --}}
                                 </div>
                             </div>
 
@@ -170,12 +166,13 @@
                                         <i class="fas fa-exclamation-triangle mr-1.5"></i>
                                         Penjual belum mengatur metode pengambilan. Hubungi penjual untuk informasi lebih lanjut.
                                     </div>
-                                    {{-- Fallback ke select biasa --}}
-                                    <select name="pickup_method" required class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                                    {{-- Fallback ke select biasa jika seller belum set metode --}}
+                                    <select name="pickup_method" required
+                                            class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                                         <option value="">-- Pilih Metode --</option>
                                         <option value="pickup"   {{ old('pickup_method') == 'pickup'   ? 'selected' : '' }}>Ambil Sendiri</option>
-                                        <option value="delivery" {{ old('pickup_method') == 'delivery' ? 'selected' : '' }}>Diantar</option>
-                                        <option value="meetup"   {{ old('pickup_method') == 'meetup'   ? 'selected' : '' }}>COD/Bertemu</option>
+                                        <option value="delivery" {{ old('pickup_method') == 'delivery' ? 'selected' : '' }}>Diantar Seller</option>
+                                        <option value="cod"      {{ old('pickup_method') == 'cod'      ? 'selected' : '' }}>COD (Bayar di Tempat)</option>
                                     </select>
                                 @else
                                     {{-- Tampilkan hanya metode yang seller aktifkan --}}
@@ -240,18 +237,109 @@
                                 @endif
 
                                 {{-- Alamat tujuan — muncul hanya jika metode "Diantar" dipilih --}}
+                                {{-- [REVISI-3] Alamat tujuan — dengan pilihan alamat tersimpan --}}
+                                @php
+                                    $savedAddresses = auth()->user()->addresses()
+                                        ->orderByDesc('is_default')
+                                        ->orderBy('label')
+                                        ->get();
+                                    $showDelivery = old('pickup_method') === 'delivery'
+                                        || (count($activeMethods) === 1 && array_key_first($activeMethods) === 'delivery');
+                                @endphp
+
                                 <div id="deliveryAddressField"
-                                     class="{{ old('pickup_method') === 'delivery' || (count($activeMethods) === 1 && array_key_first($activeMethods) === 'delivery') ? '' : 'hidden' }} mt-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
-                                        <i class="fas fa-map-marker-alt text-blue-500 mr-1"></i>
-                                        Alamat Tujuan Pengiriman <span class="text-red-500">*</span>
-                                    </label>
-                                    <textarea name="buyer_address" id="buyer_address" rows="3"
-                                              placeholder="Isi alamat lengkap tujuan pengiriman"
-                                              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500
-                                                     @error('buyer_address') border-red-500 @enderror">{{ old('buyer_address', auth()->user()->address) }}</textarea>
-                                    @error('buyer_address')<p class="mt-1 text-sm text-red-600">{{ $message }}</p>@enderror
+                                     class="{{ $showDelivery ? '' : 'hidden' }} mt-5 space-y-4">
+                                    <div class="border-t border-green-100 pt-4">
+                                        <label class="block text-sm font-semibold text-gray-800 mb-3">
+                                            <i class="fas fa-map-marker-alt text-blue-500 mr-1.5"></i>
+                                            Alamat Tujuan Pengiriman <span class="text-red-500">*</span>
+                                        </label>
+
+                                        @if($savedAddresses->isNotEmpty())
+                                        {{-- Pilih dari alamat tersimpan --}}
+                                        <div class="mb-3">
+                                            <p class="text-xs text-gray-500 mb-2">Pilih dari alamat tersimpan:</p>
+                                            <div class="space-y-2" id="savedAddressList">
+                                                @foreach($savedAddresses as $saved)
+                                                <div class="saved-address-card border-2 rounded-xl p-3 cursor-pointer transition-all
+                                                            {{ old('selected_address_id') == $saved->id ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-gray-300' }}"
+                                                     data-id="{{ $saved->id }}"
+                                                     data-name="{{ $saved->recipient_name }}"
+                                                     data-phone="{{ $saved->phone }}"
+                                                     data-address="{{ $saved->address }}"
+                                                     onclick="pilihAlamatTersimpan({{ $saved->id }}, '{{ addslashes($saved->recipient_name) }}', '{{ addslashes($saved->phone) }}', '{{ addslashes($saved->address) }}')">
+                                                    <div class="flex items-start justify-between gap-2">
+                                                        <div>
+                                                            <div class="flex items-center gap-2 mb-0.5">
+                                                                <span class="text-xs font-semibold text-gray-700">{{ $saved->label }}</span>
+                                                                @if($saved->is_default)
+                                                                    <span class="text-xs bg-blue-600 text-white px-1.5 py-0.5 rounded-full">Default</span>
+                                                                @endif
+                                                            </div>
+                                                            <p class="text-sm font-medium text-gray-900">{{ $saved->recipient_name }}</p>
+                                                            <p class="text-xs text-gray-500">{{ $saved->phone }}</p>
+                                                            <p class="text-xs text-gray-600 mt-0.5">{{ Str::limit($saved->address, 60) }}</p>
+                                                        </div>
+                                                        <div class="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 mt-0.5 flex items-center justify-center
+                                                                    {{ old('selected_address_id') == $saved->id ? 'border-blue-500 bg-blue-500' : '' }}"
+                                                             id="radio-addr-{{ $saved->id }}">
+                                                            @if(old('selected_address_id') == $saved->id)
+                                                                <div class="w-2 h-2 rounded-full bg-white"></div>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                @endforeach
+
+                                                {{-- Opsi isi manual --}}
+                                                <div class="saved-address-card border-2 rounded-xl p-3 cursor-pointer transition-all
+                                                            {{ old('selected_address_id') === 'manual' ? 'border-blue-400 bg-blue-50' : 'border-dashed border-gray-300 hover:border-gray-400' }}"
+                                                     data-id="manual"
+                                                     onclick="pilihAlamatManual()">
+                                                    <div class="flex items-center gap-2">
+                                                        <div class="w-5 h-5 rounded-full border-2 border-gray-300 shrink-0 flex items-center justify-center
+                                                                    {{ old('selected_address_id') === 'manual' ? 'border-blue-500 bg-blue-500' : '' }}"
+                                                             id="radio-addr-manual">
+                                                            @if(old('selected_address_id') === 'manual')
+                                                                <div class="w-2 h-2 rounded-full bg-white"></div>
+                                                            @endif
+                                                        </div>
+                                                        <span class="text-sm text-gray-600 font-medium">
+                                                            <i class="fas fa-pen text-xs mr-1.5 text-gray-400"></i>Isi alamat manual
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endif
+
+                                        {{-- Hidden input untuk track pilihan --}}
+                                        <input type="hidden" name="selected_address_id" id="selectedAddressId"
+                                               value="{{ old('selected_address_id') }}">
+
+                                        {{-- Field alamat manual --}}
+                                        <div id="manualAddressField"
+                                             class="{{ $savedAddresses->isEmpty() || old('selected_address_id') === 'manual' ? '' : 'hidden' }} space-y-2">
+                                            @if($savedAddresses->isNotEmpty())
+                                            <p class="text-xs text-gray-500 font-medium">Isi alamat baru:</p>
+                                            @endif
+                                            <textarea name="buyer_address" id="buyer_address" rows="3"
+                                                      placeholder="Alamat lengkap tujuan pengiriman"
+                                                      class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm
+                                                             @error('buyer_address') border-red-500 @enderror">{{ old('buyer_address', $savedAddresses->isEmpty() ? auth()->user()->address : '') }}</textarea>
+                                            @error('buyer_address')<p class="text-sm text-red-600">{{ $message }}</p>@enderror
+                                            @if($savedAddresses->isNotEmpty())
+                                            <p class="text-xs text-blue-600">
+                                                <i class="fas fa-info-circle mr-1"></i>
+                                                Ingin simpan alamat ini?
+                                                <a href="{{ route('user.addresses.index') }}" target="_blank"
+                                                   class="underline hover:text-blue-800">Tambah di Alamat Saya</a>
+                                            </p>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </div>
+                                {{-- [REVISI-3-END] --}}
 
                                 {{-- Catatan ke seller --}}
                                 <div class="mt-4">
@@ -369,6 +457,65 @@ function pilihMetode(key, needAddress, color) {
     }
 }
 
+// ── Pilih alamat tersimpan ────────────────────────────────────────────────
+function pilihAlamatTersimpan(id, name, phone, address) {
+    document.getElementById('selectedAddressId').value = id;
+
+    document.querySelectorAll('.saved-address-card').forEach(card => {
+        const isThis = card.dataset.id == id;
+        card.classList.toggle('border-blue-400', isThis);
+        card.classList.toggle('bg-blue-50', isThis);
+        card.classList.remove('border-gray-200', 'border-dashed', 'border-gray-300');
+        if (!isThis) card.classList.add('border-gray-200');
+
+        const radio = card.querySelector('[id^="radio-addr-"]');
+        if (radio) {
+            if (isThis) {
+                radio.classList.add('border-blue-500', 'bg-blue-500');
+                radio.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
+            } else {
+                radio.classList.remove('border-blue-500', 'bg-blue-500');
+                radio.innerHTML = '';
+            }
+        }
+    });
+
+    // Isi textarea & sembunyikan field manual
+    const textarea  = document.getElementById('buyer_address');
+    const manualDiv = document.getElementById('manualAddressField');
+    if (textarea)  textarea.value = address;
+    if (manualDiv) manualDiv.classList.add('hidden');
+}
+
+// ── Pilih isi manual ──────────────────────────────────────────────────────
+function pilihAlamatManual() {
+    document.getElementById('selectedAddressId').value = 'manual';
+
+    document.querySelectorAll('.saved-address-card').forEach(card => {
+        const isManual = card.dataset.id === 'manual';
+        card.classList.toggle('border-blue-400', isManual);
+        card.classList.toggle('bg-blue-50', isManual);
+        card.classList.remove('border-gray-200', 'border-dashed', 'border-gray-300');
+        if (!isManual) card.classList.add('border-gray-200');
+
+        const radio = card.querySelector('[id^="radio-addr-"]');
+        if (radio) {
+            if (isManual) {
+                radio.classList.add('border-blue-500', 'bg-blue-500');
+                radio.innerHTML = '<div class="w-2 h-2 rounded-full bg-white"></div>';
+            } else {
+                radio.classList.remove('border-blue-500', 'bg-blue-500');
+                radio.innerHTML = '';
+            }
+        }
+    });
+
+    const manualDiv = document.getElementById('manualAddressField');
+    const textarea  = document.getElementById('buyer_address');
+    if (manualDiv) manualDiv.classList.remove('hidden');
+    if (textarea)  { textarea.value = ''; textarea.focus(); }
+}
+
 // ── Update ringkasan harga ─────────────────────────────────────────────────
 document.getElementById('quantity').addEventListener('input', function () {
     const qty   = parseInt(this.value) || 1;
@@ -391,7 +538,7 @@ document.getElementById('checkoutForm').addEventListener('submit', function (e) 
 document.addEventListener('DOMContentLoaded', function () {
     const options = document.querySelectorAll('.pickup-option');
     if (options.length === 1) {
-        const key        = options[0].dataset.method;
+        const key         = options[0].dataset.method;
         const needAddress = options[0].dataset.needAddress === 'true';
         pilihMetode(key, needAddress, options[0].dataset.color);
     } else {
@@ -403,6 +550,19 @@ document.addEventListener('DOMContentLoaded', function () {
                 pilihMetode(saved, savedOption.dataset.needAddress === 'true', savedOption.dataset.color);
             }
         }
+    }
+
+    // Auto-pilih alamat default jika ada saved addresses & belum ada pilihan
+    const savedCards      = document.querySelectorAll('.saved-address-card[data-id]:not([data-id="manual"])');
+    const currentSelected = document.getElementById('selectedAddressId')?.value;
+    if (savedCards.length > 0 && !currentSelected) {
+        const firstCard = savedCards[0];
+        pilihAlamatTersimpan(
+            firstCard.dataset.id,
+            firstCard.dataset.name,
+            firstCard.dataset.phone,
+            firstCard.dataset.address
+        );
     }
 });
 </script>

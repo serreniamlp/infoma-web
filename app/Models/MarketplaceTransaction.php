@@ -32,7 +32,10 @@ class MarketplaceTransaction extends Model
         'cancellation_reason',
         'completed_at',
         'cancelled_at',
-        'payment_deadline',      // ← BARU: deadline upload bukti bayar (1 jam dari created_at)
+        'payment_deadline',          // ← v3: deadline upload bukti bayar (1 jam dari created_at)
+        'snap_token',               // ← Midtrans: token untuk Snap popup
+        'midtrans_transaction_id',  // ← Midtrans: ID transaksi dari Midtrans
+        'midtrans_payment_type',    // ← Midtrans: tipe pembayaran (bank_transfer, gopay, dll)
     ];
 
     protected $casts = [

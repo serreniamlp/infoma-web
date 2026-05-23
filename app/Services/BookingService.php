@@ -150,28 +150,58 @@ class BookingService
         });
     }
 
+    /**
+     * Generate Snap token Midtrans untuk pembayaran booking.
+     *
+     * Token disimpan di tabel transactions agar tidak perlu request ulang
+     * jika user refresh halaman (sebelum expired dalam 1 jam).
+     *
+     * @throws \Exception jika Midtrans gagal generate token
+     */
+    public function getOrCreateSnapToken(Booking $booking): string
+    {
+        $transaction = $booking->transaction;
+
+        if (! $transaction) {
+            throw new \Exception('Transaction tidak ditemukan.');
+        }
+
+        // Pakai token lama jika masih ada & belum bayar
+        if ($transaction->snap_token && $transaction->payment_status === 'pending') {
+            return $transaction->snap_token;
+        }
+
+        $midtrans = app(\App\Services\MidtransService::class);
+        $token    = $midtrans->createSnapTokenForBooking($booking);
+
+        $transaction->update(['snap_token' => $token]);
+
+        return $token;
+    }
+
+    /**
+     * processPayment() sekarang tidak digunakan untuk flow online.
+     * Pembayaran dikonfirmasi via webhook Midtrans (MidtransController::callback).
+     *
+     * Method ini dipertahankan untuk kompatibilitas jika ada kode lain yang memanggilnya,
+     * atau untuk skenario pembayaran manual oleh admin di masa depan.
+     *
+     * @deprecated Gunakan getOrCreateSnapToken() + webhook Midtrans
+     */
     public function processPayment(Booking $booking, array $paymentData)
     {
         return DB::transaction(function () use ($booking, $paymentData) {
             $transaction = $booking->transaction;
 
-            if (!$transaction) {
+            if (! $transaction) {
                 throw new \Exception('Transaction tidak ditemukan');
             }
 
-            $updateData = [
-                'payment_method' => $paymentData['payment_method'],
+            $transaction->update([
+                'payment_method' => $paymentData['payment_method'] ?? 'manual',
                 'payment_status' => 'paid',
-            ];
+            ]);
 
-            if (isset($paymentData['payment_proof'])) {
-                $path = $paymentData['payment_proof']->store('payment_proofs', 'public');
-                $updateData['payment_proof'] = $path;
-            }
-
-            $transaction->update($updateData);
-
-            // ← BARU: clear payment_deadline setelah berhasil bayar
             $booking->update(['payment_deadline' => null]);
 
             $this->notificationService->sendBookingNotification($booking, 'payment_received');

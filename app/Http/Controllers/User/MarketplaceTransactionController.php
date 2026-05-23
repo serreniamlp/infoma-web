@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\ProductCategory;
 use App\Models\MarketplaceProduct;
 use App\Models\MarketplaceTransaction;
+use App\Services\MidtransService;
 use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -86,14 +87,23 @@ class MarketplaceTransactionController extends Controller
             'quantity'       => 'required|integer|min:1|max:' . $product->stock_quantity,
             'buyer_name'     => 'required|string|max:255',
             'buyer_phone'    => 'required|string|max:20',
-            'buyer_address'  => 'required|string',
-            'pickup_method'  => 'required|in:pickup,delivery,meetup',
-            'pickup_address' => 'nullable|string',
+            // [REVISI-3-ZONE] buyer_address: saat Revisi 3 selesai, validasi ini
+            // mungkin berubah menjadi address_id (FK ke user_addresses).
+            // Untuk sementara tetap terima string bebas.
+            'buyer_address'  => 'nullable|string',
+            // [REVISI-3-ZONE-END]
+            'pickup_method'  => 'required|in:cod,delivery,pickup,meetup',
             'pickup_notes'   => 'nullable|string',
-            'payment_method' => 'required|string|max:100',
+            // [MIDTRANS] payment_method dihapus dari validasi form —
+            // ditentukan oleh Midtrans Snap saat checkout, bukan dari input user.
+            // Khusus COD diisi manual di bawah.
         ]);
 
         $totalAmount = $product->price * $request->quantity;
+
+        // [MIDTRANS] COD dan meetup = bayar di tempat, tidak perlu Midtrans
+        $isCashOnDelivery = in_array($request->pickup_method, ['cod', 'meetup']);
+        $paymentMethod    = $isCashOnDelivery ? 'cod' : 'midtrans';
 
         $transaction = MarketplaceTransaction::create([
             'buyer_id'       => Auth::id(),
@@ -104,16 +114,20 @@ class MarketplaceTransactionController extends Controller
             'total_amount'   => $totalAmount,
             'buyer_name'     => $request->buyer_name,
             'buyer_phone'    => $request->buyer_phone,
+            // [REVISI-3-ZONE] buyer_address: setelah Revisi 3 selesai,
+            // ini mungkin diisi dari user_addresses berdasarkan address_id.
             'buyer_address'  => $request->buyer_address,
+            // [REVISI-3-ZONE-END]
             'pickup_method'  => $request->pickup_method,
-            'pickup_address' => $request->pickup_address,
             'pickup_notes'   => $request->pickup_notes,
-            'payment_method' => $request->payment_method,
+            'payment_method' => $paymentMethod,
             'status'         => 'pending',
-            'payment_status' => 'pending',
+            // [MIDTRANS] COD tidak perlu pembayaran online — langsung set paid
+            'payment_status' => $isCashOnDelivery ? 'cod_pending' : 'pending',
+            'payment_deadline' => $isCashOnDelivery ? null : now()->addHour(),
         ]);
 
-        // Kirim notifikasi ke seller bahwa ada pesanan baru
+        // Notifikasi ke seller
         NotificationService::pesananBaru(
             $transaction->seller_id,
             Auth::user()->name,
@@ -121,16 +135,79 @@ class MarketplaceTransactionController extends Controller
             route('user.marketplace.seller.orders.show', $transaction->id)
         );
 
-        return redirect()->route('user.marketplace.transactions.show', $transaction)
-            ->with('success', 'Transaksi berhasil dibuat! Silakan lakukan pembayaran.');
+        // [MIDTRANS] COD/meetup: tidak perlu halaman pembayaran
+        if ($isCashOnDelivery) {
+            return redirect()->route('user.marketplace.transactions.show', $transaction)
+                ->with('success', 'Pesanan berhasil dibuat! Bayar langsung saat barang diterima.');
+        }
+
+        // Non-COD: redirect ke halaman pembayaran Midtrans
+        return redirect()->route('user.marketplace.transactions.payment', $transaction)
+            ->with('info', 'Pesanan dibuat. Selesaikan pembayaran sebelum batas waktu.');
     }
 
+    // [MIDTRANS] Method baru — generate Snap token dan tampilkan halaman pembayaran.
+    // Menggantikan uploadPaymentProof() yang lama untuk transaksi non-COD.
+    public function initiatePayment(MarketplaceTransaction $transaction)
+    {
+        if ($transaction->buyer_id !== Auth::id()) {
+            abort(403, 'Unauthorized');
+        }
+
+        if (in_array($transaction->pickup_method, ['cod', 'meetup'])) {
+            return redirect()->route('user.marketplace.transactions.show', $transaction)
+                ->with('info', 'Transaksi COD/meetup tidak memerlukan pembayaran online.');
+        }
+
+        if ($transaction->payment_status === 'paid') {
+            return redirect()->route('user.marketplace.transactions.show', $transaction)
+                ->with('info', 'Pembayaran untuk transaksi ini sudah selesai.');
+        }
+
+        if ($transaction->isPaymentExpired()) {
+            return redirect()->route('user.marketplace.transactions.show', $transaction)
+                ->with('error', 'Batas waktu pembayaran sudah habis.');
+        }
+
+        try {
+            // Pakai snap_token lama jika masih ada & masih pending
+            $snapToken = $transaction->snap_token;
+            if (! $snapToken) {
+                $midtrans  = app(MidtransService::class);
+                $snapToken = $midtrans->createSnapTokenForMarketplace($transaction);
+                $transaction->update(['snap_token' => $snapToken]);
+            }
+        } catch (\Exception $e) {
+            return redirect()->route('user.marketplace.transactions.show', $transaction)
+                ->with('error', 'Gagal menghubungi payment gateway: ' . $e->getMessage());
+        }
+
+        $snapUrl   = config('midtrans.snap_url');
+        $clientKey = config('midtrans.client_key');
+
+        return view('user.marketplace.transactions.payment', compact(
+            'transaction', 'snapToken', 'snapUrl', 'clientKey'
+        ));
+    }
+
+    /**
+     * uploadPaymentProof() dipertahankan untuk kompatibilitas route yang sudah ada.
+     * Untuk transaksi baru, pembayaran dikonfirmasi via webhook Midtrans.
+     *
+     * @deprecated Gunakan initiatePayment() + webhook Midtrans
+     */
     public function uploadPaymentProof(Request $request, MarketplaceTransaction $transaction)
     {
         if ($transaction->buyer_id !== Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
+        // Arahkan ke halaman pembayaran Midtrans jika belum punya bukti lama
+        if (! $transaction->payment_proof) {
+            return redirect()->route('user.marketplace.transactions.payment', $transaction);
+        }
+
+        // Fallback: jika ada bukti lama (transaksi sebelum Midtrans), tetap proses
         $request->validate([
             'payment_proof' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
@@ -148,6 +225,7 @@ class MarketplaceTransactionController extends Controller
 
         return redirect()->back()->with('success', 'Bukti pembayaran berhasil diupload!');
     }
+    // [MIDTRANS-END]
 
     public function rate(Request $request, MarketplaceTransaction $transaction)
     {
