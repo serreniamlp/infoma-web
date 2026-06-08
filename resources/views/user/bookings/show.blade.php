@@ -263,6 +263,18 @@
                             </form>
                         @endif
 
+                        @if($booking->status === 'approved' && $booking->bookable_type === 'App\Models\Residence')
+                            @php
+                                $daysUntilCheckout = now()->diffInDays($booking->check_out_date, false);
+                            @endphp
+                            @if($daysUntilCheckout <= 30 && $daysUntilCheckout >= 0)
+                            <a href="{{ route('user.bookings.renew', $booking) }}"
+                               class="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg font-medium transition-colors text-center block">
+                                <i class="fas fa-redo mr-2"></i>Perpanjang Sewa
+                            </a>
+                            @endif
+                        @endif
+
                         @if($booking->status === 'approved' && $booking->transaction && $booking->transaction->payment_status === 'pending')
                             @if(!$booking->isPaymentExpired())
                             <a href="{{ route('user.bookings.payment', $booking) }}"

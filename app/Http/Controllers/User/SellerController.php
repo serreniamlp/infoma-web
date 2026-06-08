@@ -320,6 +320,7 @@ class SellerController extends Controller
             'pending_orders'   => $pendingOrders,
             'completed_orders' => $completedOrders,
             'cancelled_orders' => $cancelledOrders,
+            'confirmed_orders' => (clone $baseQuery)->where('status', 'confirmed')->count(),
         ];
 
         return view('user.marketplace.seller-report', compact(

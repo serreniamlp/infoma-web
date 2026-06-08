@@ -72,6 +72,18 @@ class NotificationService
     // MARKETPLACE — PESANAN
     // -------------------------------------------------------
 
+    public static function perpanjangSewa(int $userId, string $bookableName, string $checkOutDate, string $bookingUrl): void
+    {
+        self::send(
+            $userId,
+            'sewa.perpanjang',
+            "Masa sewa \"{$bookableName}\" akan berakhir pada {$checkOutDate}. Ingin perpanjang?",
+            $bookingUrl,
+            'fa-calendar-alt',
+            'yellow'
+        );
+    }
+
     public static function pesananBaru(int $sellerId, string $buyerName, string $productName, string $orderUrl): void
     {
         self::send(

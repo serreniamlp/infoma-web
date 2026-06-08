@@ -1,6 +1,5 @@
 <?php
 
-use App\Http\Controllers\User\UserAddressController;  // ← TAMBAH
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\MidtransController;
@@ -111,6 +110,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/bookings', [UserBookingController::class, 'store'])->name('bookings.store');
         Route::get('/bookings/{booking}', [UserBookingController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/cancel', [UserBookingController::class, 'cancel'])->name('bookings.cancel');
+        Route::get('/bookings/{booking}/renew', [UserBookingController::class, 'renewForm'])->name('bookings.renew');
+        Route::post('/bookings/{booking}/renew', [UserBookingController::class, 'renew'])->name('bookings.renew.store');
         Route::get('/bookings/{booking}/payment', [UserBookingController::class, 'payment'])->name('bookings.payment');
         Route::post('/bookings/{booking}/payment', [UserBookingController::class, 'processPayment'])->name('bookings.processPayment');
 
@@ -118,13 +119,6 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookmarks', [BookmarkController::class, 'index'])->name('bookmarks.index');
         Route::post('/bookmarks', [BookmarkController::class, 'store'])->name('bookmarks.store');
         Route::delete('/bookmarks', [BookmarkController::class, 'destroy'])->name('bookmarks.destroy');
-
-        // Alamat ← TAMBAH INI
-        Route::get('/addresses',                     [UserAddressController::class, 'index'])->name('addresses.index');
-        Route::post('/addresses',                    [UserAddressController::class, 'store'])->name('addresses.store');
-        Route::put('/addresses/{address}',           [UserAddressController::class, 'update'])->name('addresses.update');
-        Route::delete('/addresses/{address}',        [UserAddressController::class, 'destroy'])->name('addresses.destroy');
-        Route::patch('/addresses/{address}/default', [UserAddressController::class, 'setDefault'])->name('addresses.setDefault');
 
         // Ratings
         Route::get('/ratings', [RatingController::class, 'show'])->name('ratings.show');

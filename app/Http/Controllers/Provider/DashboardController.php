@@ -425,6 +425,44 @@ class DashboardController extends Controller
                 ->get();
         }
 
+        if ($isResidence) {
+            $dailyRevenue = DB::table('transactions')
+                ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
+                ->join('residences', function ($join) use ($providerId) {
+                    $join->on('bookings.bookable_id', '=', 'residences.id')
+                        ->where('bookings.bookable_type', 'like', '%Residence%')
+                        ->where('residences.provider_id', $providerId);
+                })
+                ->where('transactions.payment_status', 'paid')
+                ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
+                ->select(
+                    DB::raw('DATE(transactions.created_at) as date'),
+                    DB::raw('SUM(transactions.final_amount) as revenue'),
+                    DB::raw('COUNT(*) as count')
+                )
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+        } else {
+            $dailyRevenue = DB::table('transactions')
+                ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
+                ->join('activities', function ($join) use ($providerId) {
+                    $join->on('bookings.bookable_id', '=', 'activities.id')
+                        ->where('bookings.bookable_type', 'like', '%Activity%')
+                        ->where('activities.provider_id', $providerId);
+                })
+                ->where('transactions.payment_status', 'paid')
+                ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
+                ->select(
+                    DB::raw('DATE(transactions.created_at) as date'),
+                    DB::raw('SUM(transactions.final_amount) as revenue'),
+                    DB::raw('COUNT(*) as count')
+                )
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+        }
+
         $summary = [
             'total_revenue'      => $totalRevenue,
             'booking_revenue'    => $bookingRevenue,
@@ -435,6 +473,7 @@ class DashboardController extends Controller
             'pending_bookings'   => $pendingBookings,
             'completed_bookings' => $completedBookings,
             'marketplace_orders' => $marketplaceOrders,
+            'cancelled_bookings' => (clone $bookingsQuery)->where('status', 'cancelled')->count(),
         ];
 
         $viewName = $isResidence
@@ -443,7 +482,8 @@ class DashboardController extends Controller
 
         return view($viewName, compact(
             'summary', 'bookingDetails', 'revenuePerItem',
-            'period', 'dateFrom', 'dateTo'
+            'dailyRevenue', 'period', 'dateFrom', 'dateTo'  
         ));
+
     }
 }

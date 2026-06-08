@@ -35,6 +35,10 @@ class UpdateBookingStatusCommand extends Command
         $completedBookings = $this->bookingService->updateExpiredBookings();
         $this->info("Updated {$completedBookings} booking(s) to completed status.");
 
+        // 4. Kirim notifikasi pengingat perpanjang sewa H-7
+        $reminderCount = $this->bookingService->sendRenewalReminders();
+        $this->info("Sent {$reminderCount} renewal reminder(s) for leases expiring in 7 days.");
+
         // 4. Nonaktifkan event yang sudah lewat registration_deadline-nya
         $expiredActivities = Activity::where('is_active', true)
             ->where('registration_deadline', '<', now())

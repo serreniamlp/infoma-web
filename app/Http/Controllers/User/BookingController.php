@@ -103,6 +103,45 @@ class BookingController extends Controller
         return redirect()->back()->with('success', 'Booking berhasil dibatalkan');
     }
 
+    public function renewForm(Booking $booking)
+    {
+        $this->authorize('view', $booking);
+
+        if ($booking->bookable_type !== \App\Models\Residence::class) {
+            return redirect()->route('user.bookings.show', $booking)
+                ->with('error', 'Perpanjang sewa hanya tersedia untuk hunian.');
+        }
+
+        if ($booking->status !== 'approved') {
+            return redirect()->route('user.bookings.show', $booking)
+                ->with('error', 'Hanya booking yang aktif yang bisa diperpanjang.');
+        }
+
+        $residence = $booking->bookable;
+        return view('user.bookings.renew', compact('booking', 'residence'));
+    }
+
+    public function renew(Request $request, Booking $booking)
+    {
+        $this->authorize('update', $booking);
+
+        $request->validate([
+            'duration_months' => 'required|integer|min:1',
+        ]);
+
+        try {
+            $newBooking = $this->bookingService->renewBooking($booking, (int) $request->duration_months);
+
+            return redirect()->route('user.bookings.show', $newBooking)
+                ->with('success', 'Perpanjang sewa berhasil diajukan! Menunggu persetujuan penyedia.');
+
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'Gagal mengajukan perpanjangan: ' . $e->getMessage())
+                ->withInput();
+        }
+    }
+
     public function payment(Booking $booking)
     {
         $this->authorize('view', $booking);

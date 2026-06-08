@@ -51,12 +51,22 @@ class BookingService
             $checkInDate = $data['check_in_date'];
 
             if ($bookable instanceof Residence) {
-                $durationMonths = max(1, (int) ($data['duration_months'] ?? 1));
+                $isYearly       = $bookable->rental_period === 'yearly';
+                $durationMonths = max(1, (int) ($data['duration_months'] ?? ($isYearly ? 12 : 1)));
+
                 $checkOutDate = \Carbon\Carbon::parse($checkInDate)
                     ->addMonths($durationMonths)
                     ->toDateString();
-                $pricePerMonth = $bookable->getDiscountedPrice();
-                $totalPrice = $pricePerMonth * $durationMonths;
+
+                // Untuk hunian tahunan: harga yang diinput adalah harga/tahun,
+                // dan duration_months selalu kelipatan 12. Total = (harga/tahun) × (durasi/12).
+                // Untuk hunian bulanan: total = harga/bulan × durasi_bulan.
+                $discountedPrice = $bookable->getDiscountedPrice();
+                if ($isYearly) {
+                    $totalPrice = $discountedPrice * ($durationMonths / 12);
+                } else {
+                    $totalPrice = $discountedPrice * $durationMonths;
+                }
             } else {
                 $durationMonths = 0;
                 $checkOutDate   = $data['check_out_date'] ?? $checkInDate;
@@ -211,6 +221,96 @@ class BookingService
     }
 
     /**
+     * Perpanjang sewa — buat booking baru dengan check_in = check_out lama.
+     *
+     * @throws \Exception
+     */
+    public function renewBooking(Booking $booking, int $durationMonths): Booking
+    {
+        return DB::transaction(function () use ($booking, $durationMonths) {
+            $residence = $booking->bookable;
+
+            if (! ($residence instanceof \App\Models\Residence)) {
+                throw new \Exception('Perpanjang sewa hanya tersedia untuk hunian.');
+            }
+
+            // Untuk hunian tahunan, durasi harus kelipatan 12
+            $isYearly = $residence->rental_period === 'yearly';
+            if ($isYearly && $durationMonths % 12 !== 0) {
+                throw new \Exception('Durasi untuk hunian tahunan harus kelipatan 12 bulan.');
+            }
+
+            $newCheckIn  = $booking->check_out_date->toDateString();
+            $newCheckOut = $booking->check_out_date->addMonths($durationMonths)->toDateString();
+
+            $discountedPrice = $residence->getDiscountedPrice();
+            $totalPrice      = $isYearly
+                ? $discountedPrice * ($durationMonths / 12)
+                : $discountedPrice * $durationMonths;
+
+            $newBooking = Booking::create([
+                'user_id'         => $booking->user_id,
+                'bookable_type'   => \App\Models\Residence::class,
+                'bookable_id'     => $residence->id,
+                'booking_code'    => $this->generateBookingCode(),
+                'check_in_date'   => $newCheckIn,
+                'check_out_date'  => $newCheckOut,
+                'duration_months' => $durationMonths,
+                'total_price'     => $totalPrice,
+                'documents'       => $booking->documents ?? [],
+                'status'          => 'pending',
+                'notes'           => 'Perpanjangan dari booking #' . $booking->booking_code,
+            ]);
+
+            // Notifikasi ke provider
+            $this->notificationService->sendBookingNotification($newBooking, 'new_booking');
+
+            return $newBooking;
+        });
+    }
+
+    /**
+     * Kirim notifikasi pengingat perpanjang sewa H-7.
+     *
+     * Dipanggil dari scheduler tiap hari.
+     * Hanya untuk booking hunian (Residence) yang status 'approved' dan belum dapat notif hari ini.
+     *
+     * @return int Jumlah notifikasi yang dikirim
+     */
+    public function sendRenewalReminders(): int
+    {
+        $targetDate = now()->addDays(7)->toDateString();
+
+        $bookings = Booking::where('status', 'approved')
+            ->where('bookable_type', \App\Models\Residence::class)
+            ->whereDate('check_out_date', $targetDate)
+            ->whereNull('renewal_reminder_sent_at')   // belum pernah dapat notif
+            ->with(['user', 'bookable'])
+            ->get();
+
+        $count = 0;
+
+        foreach ($bookings as $booking) {
+            $checkOutFormatted = \Carbon\Carbon::parse($booking->check_out_date)
+                ->translatedFormat('d F Y');
+
+            NotificationService::perpanjangSewa(
+                $booking->user_id,
+                $booking->bookable->name ?? 'hunian',
+                $checkOutFormatted,
+                '/user/bookings/' . $booking->id
+            );
+
+            // Tandai sudah dikirim agar tidak spam
+            $booking->update(['renewal_reminder_sent_at' => now()]);
+
+            $count++;
+        }
+
+        return $count;
+    }
+
+    /**
      * Auto-cancel booking yang melewati payment_deadline.
      *
      * Dipanggil dari UpdateBookingStatusCommand (scheduled tiap menit).
@@ -328,33 +428,29 @@ class BookingService
     {
         $bookable = $booking->bookable;
 
-        if ($booking->total_price > 0) {
-            $durationMonths  = max(1, $booking->duration_months ?: 1);
-            $pricePerMonth   = $bookable->price;
-            $originalAmount  = $pricePerMonth * $durationMonths;
+        $isYearly       = ($bookable instanceof Residence) && $bookable->rental_period === 'yearly';
+        $durationMonths = max(1, $booking->duration_months ?: 1);
 
-            $discountAmount = 0;
-            if ($bookable->discount_type && $bookable->discount_value) {
-                if ($bookable->discount_type === 'percentage') {
-                    $discountAmount = $originalAmount * ($bookable->discount_value / 100);
-                } else {
-                    $discountAmount = $bookable->discount_value * $durationMonths;
-                }
-            }
-
-            $finalAmount = $booking->total_price;
+        // Harga dasar: untuk tahunan = harga/tahun × (durasi/12), untuk bulanan = harga/bulan × durasi
+        if ($isYearly) {
+            $originalAmount = $bookable->price * ($durationMonths / 12);
         } else {
-            $originalAmount = $bookable->price;
-            $discountAmount = 0;
-            if ($bookable->discount_type && $bookable->discount_value) {
-                if ($bookable->discount_type === 'percentage') {
-                    $discountAmount = $originalAmount * ($bookable->discount_value / 100);
-                } else {
-                    $discountAmount = $bookable->discount_value;
-                }
-            }
-            $finalAmount = max(0, $originalAmount - $discountAmount);
+            $originalAmount = $bookable->price * $durationMonths;
         }
+
+        $discountAmount = 0;
+        if ($bookable->discount_type && $bookable->discount_value) {
+            if ($bookable->discount_type === 'percentage') {
+                $discountAmount = $originalAmount * ($bookable->discount_value / 100);
+            } else {
+                // Nominal discount: per-tahun untuk yearly, per-bulan untuk monthly
+                $discountAmount = $isYearly
+                    ? $bookable->discount_value * ($durationMonths / 12)
+                    : $bookable->discount_value * $durationMonths;
+            }
+        }
+
+        $finalAmount = max(0, $originalAmount - $discountAmount);
 
         return Transaction::create([
             'booking_id'       => $booking->id,

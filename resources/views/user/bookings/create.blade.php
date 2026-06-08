@@ -108,16 +108,30 @@
                                     <label for="duration_months" class="block text-sm font-medium text-gray-700 mb-2">
                                         Durasi Sewa <span class="text-red-500">*</span>
                                     </label>
-                                    <select name="duration_months" id="duration_months" required
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('duration_months') border-red-500 @enderror">
-                                        @foreach([1,2,3,4,5,6,7,8,9,10,11,12] as $m)
-                                            <option value="{{ $m }}" {{ old('duration_months', 1) == $m ? 'selected' : '' }}>
-                                                {{ $m }} Bulan
-                                            </option>
-                                        @endforeach
-                                        <option value="18" {{ old('duration_months') == 18 ? 'selected' : '' }}>18 Bulan</option>
-                                        <option value="24" {{ old('duration_months') == 24 ? 'selected' : '' }}>24 Bulan</option>
-                                    </select>
+                                    @if($bookable->rental_period === 'yearly')
+                                        {{-- Hunian tahunan: dropdown dalam satuan tahun --}}
+                                        <select name="duration_months" id="duration_months" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('duration_months') border-red-500 @enderror">
+                                            @foreach([12, 24, 36] as $m)
+                                                <option value="{{ $m }}" {{ old('duration_months', 12) == $m ? 'selected' : '' }}>
+                                                    {{ $m / 12 }} Tahun
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                        <p class="text-xs text-gray-400 mt-1">Hunian ini disewakan per tahun</p>
+                                    @else
+                                        {{-- Hunian bulanan: dropdown dalam satuan bulan --}}
+                                        <select name="duration_months" id="duration_months" required
+                                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent @error('duration_months') border-red-500 @enderror">
+                                            @foreach([1,2,3,4,5,6,7,8,9,10,11,12] as $m)
+                                                <option value="{{ $m }}" {{ old('duration_months', 1) == $m ? 'selected' : '' }}>
+                                                    {{ $m }} Bulan
+                                                </option>
+                                            @endforeach
+                                            <option value="18" {{ old('duration_months') == 18 ? 'selected' : '' }}>18 Bulan</option>
+                                            <option value="24" {{ old('duration_months') == 24 ? 'selected' : '' }}>24 Bulan</option>
+                                        </select>
+                                    @endif
                                     @error('duration_months')
                                         <p class="mt-1 text-sm text-red-600">{{ $message }}</p>
                                     @enderror
@@ -294,7 +308,9 @@
 
                     <div class="space-y-3 text-sm" id="price-summary">
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Harga per Bulan</span>
+                            <span class="text-gray-500">
+                                Harga per {{ $type === 'residence' && $bookable->rental_period === 'yearly' ? 'Tahun' : 'Bulan' }}
+                            </span>
                             <span class="font-medium">Rp {{ number_format($bookable->price ?? $bookable->price_per_month, 0, ',', '.') }}</span>
                         </div>
 
@@ -305,12 +321,12 @@
                                     @if($bookable->discount_type === 'percentage')
                                         &minus;{{ $bookable->discount_value }}%
                                     @else
-                                        &minus;Rp {{ number_format($bookable->discount_value, 0, ',', '.') }}/bln
+                                        &minus;Rp {{ number_format($bookable->discount_value, 0, ',', '.') }}/{{ $bookable->rental_period === 'yearly' ? 'thn' : 'bln' }}
                                     @endif
                                 </span>
                             </div>
                             <div class="flex justify-between text-gray-500">
-                                <span>Harga per Bulan (setelah diskon)</span>
+                                <span>Harga setelah diskon</span>
                                 <span>Rp {{ number_format($bookable->getDiscountedPrice(), 0, ',', '.') }}</span>
                             </div>
                         @endif
@@ -318,7 +334,9 @@
                         @if($type === 'residence')
                             <div class="flex justify-between text-gray-500">
                                 <span>Durasi</span>
-                                <span id="summary-duration">1 bulan</span>
+                                <span id="summary-duration">
+                                    {{ $bookable->rental_period === 'yearly' ? '1 tahun' : '1 bulan' }}
+                                </span>
                             </div>
                         @endif
 
@@ -360,7 +378,8 @@
 <script>
 @if($type === 'residence')
 // ── Data dari server ─────────────────────────────────────────────────────────
-const PRICE_PER_MONTH = {{ $bookable->getDiscountedPrice() }};
+const DISCOUNTED_PRICE = {{ $bookable->getDiscountedPrice() }};
+const IS_YEARLY        = {{ $bookable->rental_period === 'yearly' ? 'true' : 'false' }};
 
 // ── Format Rupiah ─────────────────────────────────────────────────────────────
 function formatRupiah(amount) {
@@ -378,22 +397,31 @@ function formatTanggal(date) {
 // ── Kalkulasi utama ───────────────────────────────────────────────────────────
 function updateCalculation() {
     const checkInVal     = document.getElementById('check_in_date').value;
-    const durationMonths = parseInt(document.getElementById('duration_months').value) || 1;
+    const durationMonths = parseInt(document.getElementById('duration_months').value) || (IS_YEARLY ? 12 : 1);
 
-    // Hitung total harga
-    const total = PRICE_PER_MONTH * durationMonths;
-    document.getElementById('summary-total').textContent    = formatRupiah(total);
-    document.getElementById('summary-duration').textContent = durationMonths + ' bulan';
+    // Hitung total:
+    // - Tahunan: DISCOUNTED_PRICE = harga/tahun → total = harga × (bulan/12)
+    // - Bulanan: DISCOUNTED_PRICE = harga/bulan → total = harga × bulan
+    const total = IS_YEARLY
+        ? DISCOUNTED_PRICE * (durationMonths / 12)
+        : DISCOUNTED_PRICE * durationMonths;
+
+    document.getElementById('summary-total').textContent = formatRupiah(total);
+
+    // Label durasi
+    if (IS_YEARLY) {
+        const years = durationMonths / 12;
+        document.getElementById('summary-duration').textContent = years + (years > 1 ? ' tahun' : ' tahun');
+    } else {
+        document.getElementById('summary-duration').textContent = durationMonths + ' bulan';
+    }
 
     // Hitung & tampilkan tanggal keluar
     if (checkInVal) {
-        // Pakai UTC supaya tidak kena offset timezone
         const parts    = checkInVal.split('-');
         const checkIn  = new Date(Date.UTC(+parts[0], +parts[1] - 1, +parts[2]));
         const checkOut = new Date(checkIn);
         checkOut.setUTCMonth(checkOut.getUTCMonth() + durationMonths);
-
-        // Tampilkan ke info bar
         document.getElementById('checkout-display').textContent = formatTanggal(checkOut);
     } else {
         document.getElementById('checkout-display').textContent = '-';

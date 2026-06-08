@@ -22,7 +22,8 @@ class Booking extends Model
         'status',
         'rejection_reason',
         'notes',
-        'payment_deadline',          // ← BARU: deadline pembayaran (1 jam setelah approved)
+        'payment_deadline',          // ← deadline pembayaran (1 jam setelah approved)
+        'renewal_reminder_sent_at',  // ← kapan notif perpanjang sewa terakhir dikirim
         // Field pendaftaran event (dari update sebelumnya)
         'participant_name',
         'participant_email',
@@ -35,7 +36,8 @@ class Booking extends Model
         'check_out_date'   => 'date',
         'duration_months'  => 'integer',
         'total_price'      => 'decimal:2',
-        'payment_deadline' => 'datetime',  // ← BARU: cast ke Carbon otomatis
+        'payment_deadline'          => 'datetime',
+        'renewal_reminder_sent_at'  => 'datetime',
     ];
 
     public function user() {
