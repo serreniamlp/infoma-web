@@ -102,18 +102,19 @@ class BookingService
     public function approveBooking(Booking $booking, $notes = null)
     {
         return DB::transaction(function () use ($booking, $notes) {
-            if ($booking->bookable->available_slots <= 0) {
-                throw new \Exception('Slot sudah tidak tersedia');
+            // Perpanjangan tidak butuh slot baru — user sudah menempati unit yang sama
+            if (! $booking->is_renewal) {
+                if ($booking->bookable->available_slots <= 0) {
+                    throw new \Exception('Slot sudah tidak tersedia');
+                }
+                $booking->bookable->decrement('available_slots');
             }
 
             $booking->update([
                 'status'           => 'approved',
                 'notes'            => $notes,
-                // ← BARU: set deadline pembayaran 1 jam dari sekarang
                 'payment_deadline' => now()->addHour(),
             ]);
-
-            $booking->bookable->decrement('available_slots');
 
             $this->createTransaction($booking);
 
@@ -150,7 +151,7 @@ class BookingService
                 'payment_deadline' => null,  // ← clear deadline saat dibatalkan manual
             ]);
 
-            if ($oldStatus === 'approved') {
+            if ($oldStatus === 'approved' && ! $booking->is_renewal) {
                 $booking->bookable->increment('available_slots');
             }
 
@@ -234,14 +235,13 @@ class BookingService
                 throw new \Exception('Perpanjang sewa hanya tersedia untuk hunian.');
             }
 
-            // Untuk hunian tahunan, durasi harus kelipatan 12
             $isYearly = $residence->rental_period === 'yearly';
             if ($isYearly && $durationMonths % 12 !== 0) {
                 throw new \Exception('Durasi untuk hunian tahunan harus kelipatan 12 bulan.');
             }
 
             $newCheckIn  = $booking->check_out_date->toDateString();
-            $newCheckOut = $booking->check_out_date->addMonths($durationMonths)->toDateString();
+            $newCheckOut = $booking->check_out_date->copy()->addMonths($durationMonths)->toDateString();
 
             $discountedPrice = $residence->getDiscountedPrice();
             $totalPrice      = $isYearly
@@ -260,9 +260,10 @@ class BookingService
                 'documents'       => $booking->documents ?? [],
                 'status'          => 'pending',
                 'notes'           => 'Perpanjangan dari booking #' . $booking->booking_code,
+                // Flag perpanjangan — saat approve, slot TIDAK dicek & TIDAK dikurangi
+                'is_renewal'      => true,
             ]);
 
-            // Notifikasi ke provider
             $this->notificationService->sendBookingNotification($newBooking, 'new_booking');
 
             return $newBooking;

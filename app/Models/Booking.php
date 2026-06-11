@@ -24,6 +24,7 @@ class Booking extends Model
         'notes',
         'payment_deadline',          // ← deadline pembayaran (1 jam setelah approved)
         'renewal_reminder_sent_at',  // ← kapan notif perpanjang sewa terakhir dikirim
+        'is_renewal',                // ← true jika ini booking perpanjangan (bukan booking baru)
         // Field pendaftaran event (dari update sebelumnya)
         'participant_name',
         'participant_email',
@@ -38,6 +39,7 @@ class Booking extends Model
         'total_price'      => 'decimal:2',
         'payment_deadline'          => 'datetime',
         'renewal_reminder_sent_at'  => 'datetime',
+        'is_renewal'                => 'boolean',
     ];
 
     public function user() {

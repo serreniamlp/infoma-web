@@ -28,6 +28,7 @@ use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\VerificationTermsController;  // ← TAMBAH
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\User\RoleSwitchController;
+use App\Http\Controllers\User\UserAddressController;
 
 
 // ============================================================
@@ -103,6 +104,13 @@ Route::middleware('auth')->group(function () {
         // Dashboard & History
         Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
         Route::get('/history', [UserDashboardController::class, 'history'])->name('history');
+
+        // User Addresses
+        Route::get('/addresses', [UserAddressController::class, 'index'])->name('addresses.index');
+        Route::post('/addresses', [UserAddressController::class, 'store'])->name('addresses.store');
+        Route::put('/addresses/{address}', [UserAddressController::class, 'update'])->name('addresses.update');
+        Route::delete('/addresses/{address}', [UserAddressController::class, 'destroy'])->name('addresses.destroy');
+        Route::post('/addresses/{address}/set-default', [UserAddressController::class, 'setDefault'])->name('addresses.setDefault');
 
         // Bookings
         Route::get('/bookings', [UserBookingController::class, 'index'])->name('bookings.index');
