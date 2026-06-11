@@ -14,8 +14,12 @@ class BookingResource extends JsonResource
             'booking_code'      => $this->booking_code,
             'status'            => $this->status,
             'payment_deadline'  => $this->payment_deadline,
-            'payment_expired'   => $this->isPaymentExpired(),
-            'payment_remaining' => $this->getPaymentDeadlineLabel(),
+            'payment_expired'   => $this->payment_deadline
+                ? now()->isAfter($this->payment_deadline)
+                : false,
+            'payment_remaining' => $this->payment_deadline && now()->isBefore($this->payment_deadline)
+                ? now()->diffForHumans($this->payment_deadline, true)
+                : null,
             'check_in_date'     => $this->check_in_date,
             'check_out_date'    => $this->check_out_date,
             'duration_months'   => $this->duration_months,
