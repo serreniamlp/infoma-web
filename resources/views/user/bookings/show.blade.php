@@ -68,10 +68,17 @@
                 <div>
                     <h3 class="font-semibold text-red-800">Booking Dibatalkan Otomatis</h3>
                     <p class="text-red-700 text-sm mt-1">{{ $booking->rejection_reason }}</p>
-                    <a href="{{ route('residences.index') }}"
-                       class="inline-block mt-3 text-sm text-red-700 underline hover:text-red-900">
-                        Cari hunian lain →
-                    </a>
+                    @if($booking->bookable_type === 'App\Models\Residence')
+                        <a href="{{ route('residences.index') }}"
+                           class="inline-block mt-3 text-sm text-red-700 underline hover:text-red-900">
+                            Cari hunian lain →
+                        </a>
+                    @else
+                        <a href="{{ route('activities.index') }}"
+                           class="inline-block mt-3 text-sm text-red-700 underline hover:text-red-900">
+                            Cari kegiatan lain →
+                        </a>
+                    @endif
                 </div>
             </div>
         @endif
@@ -131,24 +138,45 @@
                     <h2 class="text-lg font-semibold text-gray-900 mb-4">Detail Booking</h2>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div>
-                            <h3 class="text-sm font-medium text-gray-700 mb-2">Check-in</h3>
-                            <p class="text-lg font-semibold text-gray-900">{{ $booking->check_in_date->format('d M Y') }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-medium text-gray-700 mb-2">Check-out</h3>
-                            <p class="text-lg font-semibold text-gray-900">{{ $booking->check_out_date->format('d M Y') }}</p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-medium text-gray-700 mb-2">Durasi</h3>
-                            <p class="text-lg font-semibold text-gray-900">
-                                {{ $booking->check_in_date->diffInDays($booking->check_out_date) }} hari
-                            </p>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-medium text-gray-700 mb-2">Jumlah Peserta</h3>
-                            <p class="text-lg font-semibold text-gray-900">1 orang</p>
-                        </div>
+                        @if($booking->bookable_type === 'App\\Models\\Activity')
+                            {{-- Tampilan khusus booking acara --}}
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Tanggal Acara</h3>
+                                <p class="text-lg font-semibold text-gray-900">{{ $booking->check_in_date->format('d M Y') }}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Nama Peserta</h3>
+                                <p class="text-lg font-semibold text-gray-900">{{ $booking->participant_name ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Email Peserta</h3>
+                                <p class="text-lg font-semibold text-gray-900">{{ $booking->participant_email ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">No. Telepon Peserta</h3>
+                                <p class="text-lg font-semibold text-gray-900">{{ $booking->participant_phone ?? '-' }}</p>
+                            </div>
+                        @else
+                            {{-- Tampilan booking hunian --}}
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Check-in</h3>
+                                <p class="text-lg font-semibold text-gray-900">{{ $booking->check_in_date->format('d M Y') }}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Check-out</h3>
+                                <p class="text-lg font-semibold text-gray-900">{{ $booking->check_out_date->format('d M Y') }}</p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Durasi</h3>
+                                <p class="text-lg font-semibold text-gray-900">
+                                    {{ $booking->check_in_date->diffInDays($booking->check_out_date) }} hari
+                                </p>
+                            </div>
+                            <div>
+                                <h3 class="text-sm font-medium text-gray-700 mb-2">Jumlah Peserta</h3>
+                                <p class="text-lg font-semibold text-gray-900">1 orang</p>
+                            </div>
+                        @endif
                     </div>
 
                     @if($booking->notes)
@@ -329,8 +357,8 @@
 
         <form id="ratingForm" method="POST" action="{{ route('user.ratings.store') }}">
             @csrf
-            <input type="hidden" name="rateable_type" value="{{ $booking->bookable_type }}">
-            <input type="hidden" name="rateable_id" value="{{ $booking->bookable_id }}">
+            <input type="hidden" name="type" value="{{ $booking->bookable_type === 'App\\Models\\Residence' ? 'residence' : 'activity' }}">
+            <input type="hidden" name="id" value="{{ $booking->bookable_id }}">
 
             <div class="mb-4">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Rating</label>
