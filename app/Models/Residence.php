@@ -27,13 +27,13 @@ class Residence extends Model
         'discount_value',
         'is_active',
         // ── Tipe & field spesifik (baru) ───────────────────────────
-        'residence_type',   // kos | kontrakan | apartemen | rumah_sewa
+        'residence_type',   // kos | kontrakan | apartemen
         'kos_type',         // putra | putri | campur         → khusus kos
         'room_size',        // m²                             → kos & apartemen
-        'bedroom_count',    // jumlah kamar tidur             → kontrakan, rumah_sewa, apartemen
-        'bathroom_count',   // jumlah kamar mandi             → kontrakan, rumah_sewa, apartemen
-        'building_size',    // luas bangunan m²               → kontrakan & rumah_sewa
-        'land_size',        // luas tanah m²                  → kontrakan & rumah_sewa
+        'bedroom_count',    // jumlah kamar tidur             → kontrakan & apartemen
+        'bathroom_count',   // jumlah kamar mandi             → kontrakan & apartemen
+        'building_size',    // luas bangunan m²               → kontrakan
+        'land_size',        // luas tanah m²                  → kontrakan
         'unit_type',        // studio|1BR|2BR|3BR             → apartemen
         'floor_number',     // lantai                         → apartemen
         'tower_name',       // nama tower/gedung              → apartemen
@@ -71,22 +71,16 @@ class Residence extends Model
         return $this->residence_type === 'apartemen';
     }
 
-    public function isRumahSewa(): bool
-    {
-        return $this->residence_type === 'rumah_sewa';
-    }
-
     /**
      * Label tipe hunian untuk ditampilkan di UI.
      */
     public function getResidenceTypeLabelAttribute(): string
     {
         return match($this->residence_type) {
-            'kos'        => 'Kos',
-            'kontrakan'  => 'Kontrakan',
-            'apartemen'  => 'Apartemen',
-            'rumah_sewa' => 'Rumah Sewa',
-            default      => 'Hunian',
+            'kos'       => 'Kos',
+            'kontrakan' => 'Kontrakan',
+            'apartemen' => 'Apartemen',
+            default     => 'Hunian',
         };
     }
 

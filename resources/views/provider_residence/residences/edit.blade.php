@@ -89,7 +89,7 @@
                         <p class="text-xs text-red-600 mb-3">{{ $message }}</p>
                     @enderror
 
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         @php $currentType = old('residence_type', $residence->residence_type); @endphp
 
                         <div class="type-card {{ $currentType === 'kos' ? 'selected' : '' }}"
@@ -113,12 +113,6 @@
                             <div class="text-xs text-gray-400 mt-1">Per unit gedung<br>Studio/1BR/2BR</div>
                         </div>
 
-                        <div class="type-card {{ $currentType === 'rumah_sewa' ? 'selected' : '' }}"
-                             data-type="rumah_sewa" onclick="selectType('rumah_sewa')">
-                            <div class="type-icon"><i class="fas fa-house-user"></i></div>
-                            <div class="type-label font-semibold text-gray-700 text-sm">Rumah Sewa</div>
-                            <div class="text-xs text-gray-400 mt-1">Per rumah<br>Kapasitas bebas</div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -317,47 +311,6 @@
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1.5">Kamar Mandi</label>
                         <input type="number" name="bathroom_count" min="1" max="10" value="{{ old('bathroom_count', $residence->bathroom_count) }}"
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-            </div>
-
-            {{-- ── RUMAH SEWA ───────────────────────────────────── --}}
-            <div id="section-rumah_sewa" class="type-section {{ $currentType === 'rumah_sewa' ? 'active' : '' }}
-                 bg-white rounded-xl shadow-sm border border-orange-100 overflow-hidden">
-                <div class="px-6 py-4 border-b border-orange-100 bg-orange-50">
-                    <h2 class="font-semibold text-orange-800 flex items-center gap-2">
-                        <span class="step-dot bg-orange-500 text-white">3</span>
-                        <i class="fas fa-house-user mr-1"></i> Detail Rumah Sewa
-                    </h2>
-                </div>
-                <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Jumlah Unit <span class="text-red-500">*</span></label>
-                        <input type="number" name="capacity" min="1" value="{{ old('capacity', $residence->capacity) }}"
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 @error('capacity') border-red-400 @else border-gray-300 @enderror">
-                        @error('capacity')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Kamar Tidur <span class="text-red-500">*</span></label>
-                        <input type="number" name="bedroom_count" min="1" max="20" value="{{ old('bedroom_count', $residence->bedroom_count) }}"
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 @error('bedroom_count') border-red-400 @else border-gray-300 @enderror">
-                        @error('bedroom_count')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Kamar Mandi <span class="text-red-500">*</span></label>
-                        <input type="number" name="bathroom_count" min="1" max="20" value="{{ old('bathroom_count', $residence->bathroom_count) }}"
-                               class="w-full px-4 py-2.5 border rounded-lg text-sm focus:ring-2 focus:ring-blue-500 @error('bathroom_count') border-red-400 @else border-gray-300 @enderror">
-                        @error('bathroom_count')<p class="mt-1 text-xs text-red-600">{{ $message }}</p>@enderror
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Luas Bangunan (m²)</label>
-                        <input type="number" name="building_size" min="1" step="0.1" value="{{ old('building_size', $residence->building_size) }}"
-                               class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1.5">Luas Tanah (m²)</label>
-                        <input type="number" name="land_size" min="1" step="0.1" value="{{ old('land_size', $residence->land_size) }}"
                                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>

@@ -385,15 +385,24 @@
                                 <i class="fas fa-user-circle text-orange-400"></i> Informasi Penjual
                             </h3>
                             <div class="flex items-center gap-3">
-                                <div
-                                    class="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                                    {{ strtoupper(substr($product->seller->name ?? 'U', 0, 1)) }}
+                                <div class="relative flex-shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-orange-500 flex items-center justify-center text-white font-bold text-sm">
+                                        {{ strtoupper(substr($product->seller->name ?? 'U', 0, 1)) }}
+                                    </div>
+                                    @if($product->seller && $product->seller->isOnline())
+                                        <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>
+                                    @endif
                                 </div>
                                 <div>
                                     <p class="text-sm font-semibold text-gray-900">{{ $product->seller->name ?? '—' }}</p>
                                     <p class="text-xs text-gray-500">
                                         Anggota sejak {{ $product->seller?->created_at?->format('Y') ?? '—' }}
                                     </p>
+                                    @if($product->seller)
+                                        <p class="text-xs mt-0.5 {{ $product->seller->isOnline() ? 'text-green-600 font-medium' : 'text-gray-400' }}">
+                                            <i class="fas fa-circle text-[8px] mr-1"></i>{{ $product->seller->getLastSeenLabel() }}
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
                         </div>

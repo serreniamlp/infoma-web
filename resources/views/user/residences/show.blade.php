@@ -85,18 +85,16 @@
                                 @if($residence->residence_type)
                                     @php
                                         $typeColor = match($residence->residence_type) {
-                                            'kos'        => 'bg-blue-50 text-blue-700 border-blue-200',
-                                            'kontrakan'  => 'bg-green-50 text-green-700 border-green-200',
-                                            'apartemen'  => 'bg-purple-50 text-purple-700 border-purple-200',
-                                            'rumah_sewa' => 'bg-orange-50 text-orange-700 border-orange-200',
-                                            default      => 'bg-gray-50 text-gray-700 border-gray-200',
+                                            'kos'       => 'bg-blue-50 text-blue-700 border-blue-200',
+                                            'kontrakan' => 'bg-green-50 text-green-700 border-green-200',
+                                            'apartemen' => 'bg-purple-50 text-purple-700 border-purple-200',
+                                            default     => 'bg-gray-50 text-gray-700 border-gray-200',
                                         };
                                         $typeIcon = match($residence->residence_type) {
-                                            'kos'        => 'fa-door-open',
-                                            'kontrakan'  => 'fa-home',
-                                            'apartemen'  => 'fa-building',
-                                            'rumah_sewa' => 'fa-house-user',
-                                            default      => 'fa-bed',
+                                            'kos'       => 'fa-door-open',
+                                            'kontrakan' => 'fa-home',
+                                            'apartemen' => 'fa-building',
+                                            default     => 'fa-bed',
                                         };
                                     @endphp
                                     <span class="inline-flex items-center gap-1.5 border text-xs font-semibold px-3 py-1 rounded-full {{ $typeColor }}">
@@ -161,11 +159,10 @@
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     @php
                         $headerColor = match($residence->residence_type) {
-                            'kos'        => ['bg' => 'bg-blue-50',   'border' => 'border-blue-100',   'text' => 'text-blue-800',   'icon' => 'fa-door-open',   'badge' => 'bg-blue-600'],
-                            'kontrakan'  => ['bg' => 'bg-green-50',  'border' => 'border-green-100',  'text' => 'text-green-800',  'icon' => 'fa-home',        'badge' => 'bg-green-600'],
-                            'apartemen'  => ['bg' => 'bg-purple-50', 'border' => 'border-purple-100', 'text' => 'text-purple-800', 'icon' => 'fa-building',    'badge' => 'bg-purple-600'],
-                            'rumah_sewa' => ['bg' => 'bg-orange-50', 'border' => 'border-orange-100', 'text' => 'text-orange-800', 'icon' => 'fa-house-user',  'badge' => 'bg-orange-500'],
-                            default      => ['bg' => 'bg-gray-50',   'border' => 'border-gray-100',   'text' => 'text-gray-800',   'icon' => 'fa-bed',         'badge' => 'bg-gray-500'],
+                            'kos'       => ['bg' => 'bg-blue-50',   'border' => 'border-blue-100',   'text' => 'text-blue-800',   'icon' => 'fa-door-open',   'badge' => 'bg-blue-600'],
+                            'kontrakan' => ['bg' => 'bg-green-50',  'border' => 'border-green-100',  'text' => 'text-green-800',  'icon' => 'fa-home',        'badge' => 'bg-green-600'],
+                            'apartemen' => ['bg' => 'bg-purple-50', 'border' => 'border-purple-100', 'text' => 'text-purple-800', 'icon' => 'fa-building',    'badge' => 'bg-purple-600'],
+                            default     => ['bg' => 'bg-gray-50',   'border' => 'border-gray-100',   'text' => 'text-gray-800',   'icon' => 'fa-bed',         'badge' => 'bg-gray-500'],
                         };
                     @endphp
 
@@ -200,8 +197,8 @@
                             </div>
                             @endif
 
-                        {{-- ── KONTRAKAN / RUMAH SEWA ──────────────── --}}
-                        @elseif($residence->isKontrakan() || $residence->isRumahSewa())
+                        {{-- ── KONTRAKAN ────────────────────────── --}}
+                        @elseif($residence->isKontrakan())
                             <div class="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
                                 <i class="fas fa-home text-gray-500 text-xl mb-2"></i>
                                 <div class="text-xs text-gray-500 mb-0.5">Jumlah Unit</div>
@@ -500,12 +497,20 @@
                     <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
                         <h3 class="font-semibold text-gray-900 mb-4 text-sm">Penyedia Hunian</h3>
                         <div class="flex items-center gap-3">
-                            <div class="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span class="font-bold text-blue-600">{{ substr($residence->provider->name, 0, 1) }}</span>
+                            <div class="relative flex-shrink-0">
+                                <div class="w-11 h-11 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <span class="font-bold text-blue-600">{{ substr($residence->provider->name, 0, 1) }}</span>
+                                </div>
+                                @if($residence->provider->isOnline())
+                                    <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
+                                @endif
                             </div>
                             <div class="min-w-0">
                                 <p class="font-semibold text-gray-900 text-sm truncate">{{ $residence->provider->name }}</p>
                                 <p class="text-xs text-gray-500 truncate">{{ $residence->provider->email }}</p>
+                                <p class="text-xs mt-0.5 {{ $residence->provider->isOnline() ? 'text-green-600 font-medium' : 'text-gray-400' }}">
+                                    <i class="fas fa-circle text-[8px] mr-1"></i>{{ $residence->provider->getLastSeenLabel() }}
+                                </p>
                             </div>
                         </div>
                     </div>

@@ -22,18 +22,16 @@
                     @if($residence->residence_type)
                         @php
                             $typeColor = match($residence->residence_type) {
-                                'kos'        => 'bg-blue-100 text-blue-700',
-                                'kontrakan'  => 'bg-green-100 text-green-700',
-                                'apartemen'  => 'bg-purple-100 text-purple-700',
-                                'rumah_sewa' => 'bg-orange-100 text-orange-700',
-                                default      => 'bg-gray-100 text-gray-700',
+                                'kos'       => 'bg-blue-100 text-blue-700',
+                                'kontrakan' => 'bg-green-100 text-green-700',
+                                'apartemen' => 'bg-purple-100 text-purple-700',
+                                default     => 'bg-gray-100 text-gray-700',
                             };
                             $typeIcon = match($residence->residence_type) {
-                                'kos'        => 'fa-door-open',
-                                'kontrakan'  => 'fa-home',
-                                'apartemen'  => 'fa-building',
-                                'rumah_sewa' => 'fa-house-user',
-                                default      => 'fa-bed',
+                                'kos'       => 'fa-door-open',
+                                'kontrakan' => 'fa-home',
+                                'apartemen' => 'fa-building',
+                                default     => 'fa-bed',
                             };
                         @endphp
                         <span class="inline-flex items-center gap-1.5 {{ $typeColor }} text-xs font-semibold px-3 py-1 rounded-full">
@@ -129,18 +127,16 @@
                 <div class="bg-white rounded-xl shadow-sm p-6">
                     @php
                         $badgeColor = match($residence->residence_type) {
-                            'kos'        => 'bg-blue-600',
-                            'kontrakan'  => 'bg-green-600',
-                            'apartemen'  => 'bg-purple-600',
-                            'rumah_sewa' => 'bg-orange-500',
-                            default      => 'bg-gray-500',
+                            'kos'       => 'bg-blue-600',
+                            'kontrakan' => 'bg-green-600',
+                            'apartemen' => 'bg-purple-600',
+                            default     => 'bg-gray-500',
                         };
                         $badgeIcon = match($residence->residence_type) {
-                            'kos'        => 'fa-door-open',
-                            'kontrakan'  => 'fa-home',
-                            'apartemen'  => 'fa-building',
-                            'rumah_sewa' => 'fa-house-user',
-                            default      => 'fa-bed',
+                            'kos'       => 'fa-door-open',
+                            'kontrakan' => 'fa-home',
+                            'apartemen' => 'fa-building',
+                            default     => 'fa-bed',
                         };
                     @endphp
                     <h3 class="font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -179,8 +175,8 @@
                             </div>
                             @endif
 
-                        {{-- ── KONTRAKAN / RUMAH SEWA ───────────────── --}}
-                        @elseif($residence->isKontrakan() || $residence->isRumahSewa())
+                        {{-- ── KONTRAKAN ─────────────────────────────────── --}}
+                        @elseif($residence->isKontrakan())
                             <div class="bg-gray-50 rounded-xl p-4 text-center border border-gray-100">
                                 <i class="fas fa-home text-gray-400 text-xl mb-2"></i>
                                 <div class="text-xs text-gray-500 mb-0.5">Total Unit</div>

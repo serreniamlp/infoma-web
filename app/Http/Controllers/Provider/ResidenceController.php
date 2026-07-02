@@ -74,7 +74,7 @@ class ResidenceController extends Controller
                 'name'              => 'required|string|max:255',
                 'description'       => 'required|string',
                 'category_id'       => 'required|exists:categories,id',
-                'residence_type'    => 'required|in:kos,kontrakan,apartemen,rumah_sewa',
+                'residence_type'    => 'required|in:kos,kontrakan,apartemen',
                 'rental_period'     => 'required|in:monthly,yearly',
                 'address'           => 'required|string|max:500',
                 'latitude'          => 'nullable|numeric|between:-90,90',
@@ -100,7 +100,7 @@ class ResidenceController extends Controller
                 $rules['room_size']  = 'nullable|numeric|min:1|max:999';
             }
 
-            if (in_array($residenceType, ['kontrakan', 'rumah_sewa'])) {
+            if ($residenceType === 'kontrakan') {
                 $rules['bedroom_count']  = 'required|integer|min:1|max:20';
                 $rules['bathroom_count'] = 'required|integer|min:1|max:20';
                 $rules['building_size']  = 'nullable|numeric|min:1';
@@ -162,7 +162,7 @@ class ResidenceController extends Controller
                 $data['room_size'] = $request->room_size;
             }
 
-            if (in_array($residenceType, ['kontrakan', 'rumah_sewa'])) {
+            if ($residenceType === 'kontrakan') {
                 $data['bedroom_count']  = $request->bedroom_count;
                 $data['bathroom_count'] = $request->bathroom_count;
                 $data['building_size']  = $request->building_size;
@@ -226,7 +226,7 @@ class ResidenceController extends Controller
                 'name'              => 'required|string|max:255',
                 'description'       => 'required|string',
                 'category_id'       => 'required|exists:categories,id',
-                'residence_type'    => 'required|in:kos,kontrakan,apartemen,rumah_sewa',
+                'residence_type'    => 'required|in:kos,kontrakan,apartemen',
                 'rental_period'     => 'required|in:monthly,yearly',
                 'address'           => 'required|string|max:500',
                 'latitude'          => 'nullable|numeric|between:-90,90',
@@ -247,7 +247,7 @@ class ResidenceController extends Controller
                 $rules['kos_type']  = 'required|in:putra,putri,campur';
                 $rules['room_size'] = 'nullable|numeric|min:1';
             }
-            if (in_array($residenceType, ['kontrakan', 'rumah_sewa'])) {
+            if ($residenceType === 'kontrakan') {
                 $rules['bedroom_count']  = 'required|integer|min:1';
                 $rules['bathroom_count'] = 'required|integer|min:1';
                 $rules['building_size']  = 'nullable|numeric|min:1';
@@ -296,7 +296,7 @@ class ResidenceController extends Controller
                 $data['kos_type']  = $request->kos_type;
                 $data['room_size'] = $request->room_size;
             }
-            if (in_array($residenceType, ['kontrakan', 'rumah_sewa'])) {
+            if ($residenceType === 'kontrakan') {
                 $data['bedroom_count']  = $request->bedroom_count;
                 $data['bathroom_count'] = $request->bathroom_count;
                 $data['building_size']  = $request->building_size;
