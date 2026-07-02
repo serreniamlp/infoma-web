@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'check.ban' => \App\Http\Middleware\CheckBanStatus::class,  // ← TAMBAH
         ]);
         $middleware->appendToGroup('web', \App\Http\Middleware\CheckBanStatus::class);  // ← TAMBAH
+        $middleware->appendToGroup('web', \App\Http\Middleware\UpdateLastSeen::class);  // ← BARU: update last_seen_at
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

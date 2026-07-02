@@ -333,12 +333,20 @@
                 <div class="bg-white rounded-lg shadow-sm p-6 mt-6">
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Penyelenggara</h3>
                     <div class="flex items-center">
-                        <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                            <i class="fas fa-user text-green-600"></i>
+                        <div class="relative mr-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                                <i class="fas fa-user text-green-600"></i>
+                            </div>
+                            @if($activity->provider->isOnline())
+                                <span class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></span>
+                            @endif
                         </div>
                         <div>
                             <p class="font-medium text-gray-900">{{ $activity->provider->name }}</p>
                             <p class="text-sm text-gray-600">{{ $activity->provider->email }}</p>
+                            <p class="text-xs mt-0.5 {{ $activity->provider->isOnline() ? 'text-green-600 font-medium' : 'text-gray-400' }}">
+                                <i class="fas fa-circle text-[8px] mr-1"></i>{{ $activity->provider->getLastSeenLabel() }}
+                            </p>
                         </div>
                     </div>
                 </div>

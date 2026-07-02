@@ -38,6 +38,7 @@ class User extends Authenticatable
         'banned_by',
         'banned_at',
         'pending_role',
+        'last_seen_at',  // ← BARU: kapan user terakhir aktif
     ];
 
     protected $casts = [
@@ -46,6 +47,7 @@ class User extends Authenticatable
         'terms_accepted_at' => 'datetime',
         'banned_until'      => 'datetime',
         'banned_at'         => 'datetime',
+        'last_seen_at'      => 'datetime',  // ← BARU
     ];
 
     protected $hidden = [
@@ -133,6 +135,31 @@ class User extends Authenticatable
     public function isSeller(): bool
     {
         return (bool) $this->is_seller;
+    }
+
+    /**
+     * User dianggap "Online" jika aktif dalam 5 menit terakhir.
+     */
+    public function isOnline(): bool
+    {
+        return $this->last_seen_at && $this->last_seen_at->gt(now()->subMinutes(5));
+    }
+
+    /**
+     * Label status untuk ditampilkan di halaman detail hunian/event/produk.
+     * Contoh: "Online", "Terakhir online 2 jam yang lalu", "Belum pernah online".
+     */
+    public function getLastSeenLabel(): string
+    {
+        if ($this->isOnline()) {
+            return 'Online';
+        }
+
+        if (! $this->last_seen_at) {
+            return 'Belum pernah online';
+        }
+
+        return 'Terakhir online ' . $this->last_seen_at->diffForHumans();
     }
 
     public function isActive(): bool
