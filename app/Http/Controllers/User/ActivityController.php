@@ -17,54 +17,62 @@ class ActivityController extends Controller
             ->withAvg('ratings', 'rating')
             ->withCount('ratings');
 
-        // Filters
-        if ($request->filled('category_id')) {
-            $query->where('category_id', $request->category_id);
+        // Filter: kata kunci pencarian
+        if ($request->filled('search')) {
+            $query->where(function ($q) use ($request) {
+                $q->where('name', 'LIKE', '%' . $request->search . '%')
+                  ->orWhere('description', 'LIKE', '%' . $request->search . '%');
+            });
         }
 
+        // Filter: kategori — view mengirim 'category' (bukan 'category_id')
+        if ($request->filled('category')) {
+            $query->where('category_id', $request->category);
+        }
+
+        // Filter: harga
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
         }
-
         if ($request->filled('max_price')) {
             $query->where('price', '<=', $request->max_price);
         }
 
+        // Filter: lokasi
         if ($request->filled('location')) {
             $query->where('location', 'LIKE', '%' . $request->location . '%');
         }
 
-        if ($request->filled('date_from')) {
-            $query->where('event_date', '>=', $request->date_from);
+        // Filter: rentang tanggal — view mengirim 'start_date' dan 'end_date'
+        if ($request->filled('start_date')) {
+            $query->whereDate('event_date', '>=', $request->start_date);
+        }
+        if ($request->filled('end_date')) {
+            $query->whereDate('event_date', '<=', $request->end_date);
         }
 
-        if ($request->filled('date_to')) {
-            $query->where('event_date', '<=', $request->date_to);
-        }
-
+        // Filter: hanya yang masih tersedia
         if ($request->filled('available_only') && $request->available_only) {
             $query->where('available_slots', '>', 0);
         }
 
-        // Sorting
-        $sortBy = $request->get('sort', 'event_date');
-        $sortOrder = $request->get('order', 'asc');
-
-        switch ($sortBy) {
-            case 'price':
-                $query->orderBy('price', $sortOrder);
+        // Sorting — view mengirim nilai: date_asc, date_desc, price_low, price_high, rating
+        $sort = $request->get('sort', 'date_asc');
+        switch ($sort) {
+            case 'date_desc':
+                $query->orderBy('event_date', 'desc');
+                break;
+            case 'price_low':
+                $query->orderBy('price', 'asc');
+                break;
+            case 'price_high':
+                $query->orderBy('price', 'desc');
                 break;
             case 'rating':
-                $query->orderBy('ratings_avg_rating', $sortOrder);
+                $query->orderBy('ratings_avg_rating', 'desc');
                 break;
-            case 'name':
-                $query->orderBy('name', $sortOrder);
-                break;
-            case 'deadline':
-                $query->orderBy('registration_deadline', $sortOrder);
-                break;
-            default:
-                $query->orderBy('event_date', $sortOrder);
+            default: // date_asc
+                $query->orderBy('event_date', 'asc');
         }
 
         $activities = $query->paginate(12);

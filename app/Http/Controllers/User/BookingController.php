@@ -42,7 +42,13 @@ class BookingController extends Controller
 
         $booking->load(['bookable', 'transaction']);
 
-        return view('user.bookings.show', compact('booking'));
+        // Cek apakah user bisa memberi rating:
+        // booking harus completed dan transaksinya sudah paid
+        $canRate = $booking->status === 'completed'
+            && $booking->transaction
+            && $booking->transaction->payment_status === 'paid';
+
+        return view('user.bookings.show', compact('booking', 'canRate'));
     }
 
     public function create(Request $request)

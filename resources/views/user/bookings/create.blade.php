@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'Daftar Kegiatan - Infoma')
+@section('title', ($type === 'residence' ? 'Buat Booking Hunian' : 'Daftar Kegiatan') . ' - EduLiving')
 
 @section('content')
 <div class="min-h-screen bg-gray-50 py-8">
