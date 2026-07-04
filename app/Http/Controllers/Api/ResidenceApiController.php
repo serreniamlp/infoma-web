@@ -27,6 +27,14 @@ class ResidenceApiController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
+        if ($request->filled('residence_type')) {
+            $query->where('residence_type', $request->residence_type);
+        }
+
+        if ($request->filled('kos_type')) {
+            $query->where('kos_type', $request->kos_type);
+        }
+
         if ($request->filled('min_price')) {
             $query->where('price', '>=', $request->min_price);
         }
@@ -39,7 +47,21 @@ class ResidenceApiController extends Controller
             $query->where('available_slots', '>', 0);
         }
 
-        $query->orderBy('created_at', 'desc');
+        // Apply sorting
+        if ($request->filled('sort')) {
+            if ($request->sort === 'price_asc') {
+                $query->orderBy('price', 'asc');
+            } elseif ($request->sort === 'price_desc') {
+                $query->orderBy('price', 'desc');
+            } elseif ($request->sort === 'rating_desc') {
+                $query->orderBy('ratings_avg_rating', 'desc');
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
         $residences = $query->paginate(12);
 
         return ResidenceResource::collection($residences);

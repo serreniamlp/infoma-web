@@ -9,7 +9,7 @@ class Rating extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_id', 'rateable_type', 'rateable_id', 'rating', 'review'];
+    protected $fillable = ['user_id', 'rateable_type', 'rateable_id', 'rating', 'review', 'photo_path', 'provider_reply'];
 
     public function user() {
         return $this->belongsTo(User::class);

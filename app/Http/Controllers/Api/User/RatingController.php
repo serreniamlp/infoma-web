@@ -7,6 +7,7 @@ use App\Models\Rating;
 use App\Models\Residence;
 use App\Models\Activity;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class RatingController extends Controller
 {
@@ -21,7 +22,8 @@ class RatingController extends Controller
             'type' => 'required|in:residence,activity',
             'id' => 'required|integer',
             'rating' => 'required|integer|min:1|max:5',
-            'review' => 'nullable|string|max:1000'
+            'review' => 'nullable|string|max:1000',
+            'photo' => 'nullable|image|max:5120' // Max 5MB
         ]);
 
         $type = $request->type;
@@ -55,11 +57,21 @@ class RatingController extends Controller
             ->where('rateable_id', $id)
             ->first();
 
+        $photoPath = null;
+        if ($request->hasFile('photo')) {
+            $photoPath = $request->file('photo')->store('ratings', 'public');
+        }
+
         if ($existingRating) {
             // Update existing rating
+            if ($photoPath && $existingRating->photo_path) {
+                Storage::disk('public')->delete($existingRating->photo_path);
+            }
+
             $existingRating->update([
                 'rating' => $request->rating,
-                'review' => $request->review
+                'review' => $request->review,
+                'photo_path' => $photoPath ?? $existingRating->photo_path
             ]);
 
             return response()->json([
@@ -70,6 +82,8 @@ class RatingController extends Controller
                         'id' => $existingRating->id,
                         'rating' => $existingRating->rating,
                         'review' => $existingRating->review,
+                        'photo_path' => $existingRating->photo_path ? url('storage/' . $existingRating->photo_path) : null,
+                        'provider_reply' => $existingRating->provider_reply,
                         'created_at' => $existingRating->created_at,
                         'updated_at' => $existingRating->updated_at,
                     ]
@@ -83,7 +97,8 @@ class RatingController extends Controller
             'rateable_type' => $modelClass,
             'rateable_id' => $id,
             'rating' => $request->rating,
-            'review' => $request->review
+            'review' => $request->review,
+            'photo_path' => $photoPath
         ]);
 
         return response()->json([
@@ -94,6 +109,8 @@ class RatingController extends Controller
                     'id' => $rating->id,
                     'rating' => $rating->rating,
                     'review' => $rating->review,
+                    'photo_path' => $rating->photo_path ? url('storage/' . $rating->photo_path) : null,
+                    'provider_reply' => $rating->provider_reply,
                     'created_at' => $rating->created_at,
                     'updated_at' => $rating->updated_at,
                 ]
@@ -112,12 +129,22 @@ class RatingController extends Controller
 
         $request->validate([
             'rating' => 'required|integer|min:1|max:5',
-            'review' => 'nullable|string|max:1000'
+            'review' => 'nullable|string|max:1000',
+            'photo' => 'nullable|image|max:5120'
         ]);
+
+        $photoPath = $rating->photo_path;
+        if ($request->hasFile('photo')) {
+            if ($photoPath) {
+                Storage::disk('public')->delete($photoPath);
+            }
+            $photoPath = $request->file('photo')->store('ratings', 'public');
+        }
 
         $rating->update([
             'rating' => $request->rating,
-            'review' => $request->review
+            'review' => $request->review,
+            'photo_path' => $photoPath
         ]);
 
         return response()->json([
@@ -128,6 +155,8 @@ class RatingController extends Controller
                     'id' => $rating->id,
                     'rating' => $rating->rating,
                     'review' => $rating->review,
+                    'photo_path' => $rating->photo_path ? url('storage/' . $rating->photo_path) : null,
+                    'provider_reply' => $rating->provider_reply,
                     'created_at' => $rating->created_at,
                     'updated_at' => $rating->updated_at,
                 ]
@@ -157,6 +186,10 @@ class RatingController extends Controller
                 'status' => 'error',
                 'message' => 'Rating not found'
             ], 404);
+        }
+
+        if ($rating->photo_path) {
+            Storage::disk('public')->delete($rating->photo_path);
         }
 
         $rating->delete();
@@ -198,6 +231,8 @@ class RatingController extends Controller
                     'id' => $rating->id,
                     'rating' => $rating->rating,
                     'review' => $rating->review,
+                    'photo_path' => $rating->photo_path ? url('storage/' . $rating->photo_path) : null,
+                    'provider_reply' => $rating->provider_reply,
                     'created_at' => $rating->created_at,
                     'updated_at' => $rating->updated_at,
                 ]

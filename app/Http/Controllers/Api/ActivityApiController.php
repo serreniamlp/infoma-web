@@ -41,6 +41,29 @@ class ActivityApiController extends Controller
             $query->where('available_slots', '>', 0);
         }
 
+        if ($request->filled('search')) {
+            $keyword = $request->search;
+            $query->where(function ($q) use ($keyword) {
+                $q->where('name', 'like', "%{$keyword}%")
+                  ->orWhere('location', 'like', "%{$keyword}%");
+            });
+        }
+
+        // Apply sorting
+        if ($request->filled('sort')) {
+            if ($request->sort === 'price_asc') {
+                $query->orderBy('price', 'asc');
+            } elseif ($request->sort === 'price_desc') {
+                $query->orderBy('price', 'desc');
+            } elseif ($request->sort === 'rating_desc') {
+                $query->orderBy('ratings_avg_rating', 'desc');
+            } else {
+                $query->orderBy('created_at', 'desc');
+            }
+        } else {
+            $query->orderBy('created_at', 'desc');
+        }
+
         $activities = $query->paginate(12);
 
         return ActivityResource::collection($activities);
