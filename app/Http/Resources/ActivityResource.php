@@ -29,6 +29,7 @@ class ActivityResource extends JsonResource
             'average_rating' => round($this->ratings_avg_rating ?? 0, 1),
             'is_active' => $this->is_active,
             'registration_status' => $this->registration_deadline > now() ? 'open' : 'closed',
+            'ratings' => $this->whenLoaded('ratings'),
             'provider' => [
                 'id' => $this->provider->id,
                 'name' => $this->provider->name,
