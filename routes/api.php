@@ -174,11 +174,14 @@ Route::prefix('v1')->group(function () {
         // ============================================================
         // USER — BUYER
         // ============================================================
-        Route::middleware('role:user')->prefix('user')->group(function () {
-
-            // Profil
+       // Profile — semua role
+        Route::prefix('user')->group(function () {
             Route::get('/profile',  [UserProfileController::class, 'show']);
             Route::put('/profile',  [UserProfileController::class, 'update']);
+            Route::post('/profile', [UserProfileController::class, 'update']);
+        });
+
+        Route::middleware('role:user')->prefix('user')->group(function () {
 
             // Booking
             Route::get('/bookings',                         [UserBookingController::class, 'index']);
