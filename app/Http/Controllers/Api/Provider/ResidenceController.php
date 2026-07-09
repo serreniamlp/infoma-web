@@ -62,7 +62,7 @@ class ResidenceController extends Controller
             'longitude'       => 'nullable|numeric',
             'price_per_month' => 'required|numeric|min:0',
             'capacity'        => 'required|integer|min:1',
-            'discount_type'   => 'nullable|in:percentage,fixed',
+            'discount_type'   => 'nullable|in:percentage,flat',
             'discount_value'  => 'nullable|numeric|min:0',
             'facilities'      => 'nullable|array',
             'images'          => 'nullable|array|max:10',

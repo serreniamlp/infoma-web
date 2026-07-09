@@ -127,12 +127,22 @@ class SellerController extends Controller
             'condition'      => 'nullable|in:new,used',
             'images'         => 'nullable|array|max:5',
             'images.*'       => 'image|mimes:jpg,jpeg,png|max:2048',
-        ]);
+            'pickup_methods'    => 'required|array|min:1',
+            'pickup_methods.*'  => 'in:cod,delivery,pickup',
+            'pickup_address'    => 'required_if:pickup_methods.*,pickup|nullable|string|max:500',], 
+            ['pickup_methods.required'    => 'Pilih minimal satu metode pengambilan.',
+            'pickup_methods.min'         => 'Pilih minimal satu metode pengambilan.',
+            'pickup_address.required_if' => 'Alamat pengambilan wajib diisi jika metode "Ambil Sendiri" dipilih.',
+            ]);
 
         $data = $request->except(['images']);
         $data['seller_id'] = Auth::id();
         $data['status']    = 'active';
 
+        if (!in_array('pickup', $request->input('pickup_methods', []))) {
+                $data['pickup_address'] = null;
+        }   
+        
         if ($request->hasFile('images')) {
             $images = [];
             foreach ($request->file('images') as $img) {
@@ -165,8 +175,20 @@ class SellerController extends Controller
             'category_id'    => 'sometimes|exists:categories,id',
             'condition'      => 'nullable|in:new,used',
             'status'         => 'sometimes|in:active,inactive',
-        ]);
+            'pickup_methods'    => 'sometimes|array|min:1',
+            'pickup_methods.*'  => 'in:cod,delivery,pickup',
+            'pickup_address'    => 'required_if:pickup_methods.*,pickup|nullable|string|max:500',], 
+            ['pickup_methods.min'         => 'Pilih minimal satu metode pengambilan.',
+            'pickup_address.required_if' => 'Alamat pengambilan wajib diisi jika metode "Ambil Sendiri" dipilih.',
+            ]); 
 
+            $data = $request->except(['images', '_method']);
+
+        // Pickup address hanya disimpan jika metode "pickup" aktif
+        if ($request->has('pickup_methods') && !in_array('pickup', $request->input('pickup_methods', []))) {
+            $data['pickup_address'] = null;
+        }
+        
         $product->update($request->except(['images', '_method']));
 
         return response()->json([
