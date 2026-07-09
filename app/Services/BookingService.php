@@ -137,9 +137,9 @@ class BookingService
         return $booking;
     }
 
-    public function cancelBooking(Booking $booking)
+    public function cancelBooking(Booking $booking, $reason = null)
     {
-        return DB::transaction(function () use ($booking) {
+        return DB::transaction(function () use ($booking, $reason) {
             if ($booking->status === 'approved' && $booking->check_in_date <= now()->toDateString()) {
                 throw new \Exception('Tidak dapat membatalkan booking yang sudah dimulai');
             }
@@ -148,6 +148,7 @@ class BookingService
 
             $booking->update([
                 'status'           => 'cancelled',
+                'rejection_reason' => $reason,
                 'payment_deadline' => null,  // ← clear deadline saat dibatalkan manual
             ]);
 

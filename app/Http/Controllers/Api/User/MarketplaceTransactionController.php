@@ -57,7 +57,7 @@ class MarketplaceTransactionController extends Controller
             'buyer_name'     => 'required|string|max:255',
             'buyer_phone'    => 'required|string|max:20',
             'buyer_address'  => 'required|string',
-            'pickup_method'  => 'required|in:pickup,delivery,meetup',
+            'pickup_method'  => 'required|in:cod,pickup,delivery,meetup',
             'pickup_address' => 'nullable|string',
             'pickup_notes'   => 'nullable|string',
             'payment_method' => 'required|string|max:100',

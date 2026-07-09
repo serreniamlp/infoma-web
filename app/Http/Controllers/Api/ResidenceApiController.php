@@ -71,6 +71,18 @@ class ResidenceApiController extends Controller
     {
         $residence->load(['provider', 'category', 'ratings.user']);
 
-        return new ResidenceResource($residence);
+        $hasActiveBooking = false;
+        if (auth()->check()) {
+            $hasActiveBooking = \App\Models\Booking::where('user_id', auth()->id())
+                ->where('bookable_type', \App\Models\Residence::class)
+                ->where('bookable_id', $residence->id)
+                ->whereIn('status', ['pending', 'approved'])
+                ->exists();
+        }
+
+        $data = (new \App\Http\Resources\ResidenceResource($residence))->toArray(request());
+        $data['has_active_booking'] = $hasActiveBooking;
+
+        return response()->json(['data' => $data]);
     }
 }

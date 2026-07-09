@@ -25,6 +25,11 @@ class ResidenceResource extends JsonResource
             'discount_value' => $this->discount_value,
             'discounted_price' => $this->getDiscountedPrice(),
             'average_rating' => round($this->ratings_avg_rating ?? 0, 1),
+            'has_active_booking' => auth('sanctum')->check() ? \App\Models\Booking::where('user_id', auth('sanctum')->id())
+                ->where('bookable_type', \App\Models\Residence::class)
+                ->where('bookable_id', $this->id)
+                ->whereIn('status', ['pending', 'approved'])
+                ->exists() : false,
             'is_active' => $this->is_active,
             'residence_type' => $this->residence_type,
             'kos_type'       => $this->kos_type,
