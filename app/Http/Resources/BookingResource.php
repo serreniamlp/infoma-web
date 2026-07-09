@@ -12,6 +12,7 @@ class BookingResource extends JsonResource
         return [
             'id'                => $this->id,
             'booking_code'      => $this->booking_code,
+            'bookable_id'       => $this->bookable_id,
             'status'            => $this->status,
             'payment_deadline'  => $this->payment_deadline,
             'payment_expired'   => $this->payment_deadline
@@ -33,6 +34,12 @@ class BookingResource extends JsonResource
                 'address' => $this->bookable->address ?? $this->bookable->location,
                 'images'  => $this->bookable->images,
                 'price'   => $this->bookable->price,
+                'provider' => $this->bookable->provider ? [
+                    'id' => $this->bookable->provider->id,
+                    'name' => $this->bookable->provider->name,
+                    'email' => $this->bookable->provider->email,
+                    'phone' => $this->bookable->provider->phone,
+                ] : null,
             ]),
             'user'              => $this->whenLoaded('user', fn() => [
                 'id'    => $this->user->id,

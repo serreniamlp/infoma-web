@@ -87,8 +87,12 @@ class BookingController extends Controller
             ], 422);
         }
 
+        $request->validate([
+            'reason' => 'nullable|string|max:1000',
+        ]);
+
         try {
-            $this->bookingService->cancelBooking($booking);
+            $this->bookingService->cancelBooking($booking, $request->reason);
 
             return response()->json([
                 'status'  => 'success',

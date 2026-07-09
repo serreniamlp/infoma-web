@@ -55,11 +55,18 @@ class MarketplaceController extends Controller
 
     public function show(MarketplaceProduct $product)
     {
+        $product->incrementViews(auth('sanctum')->id(), request()->ip());
         $product->load(['seller', 'category']);
+
+        $relatedProducts = MarketplaceProduct::with(['seller', 'category'])
+            ->where('category_id', $product->category_id)
+            ->where('id', '!=', $product->id)
+            ->active()->available()->limit(4)->get();
 
         return response()->json([
             'status' => 'success',
             'data'   => new MarketplaceProductResource($product),
+            'related_products' => MarketplaceProductResource::collection($relatedProducts),
         ]);
     }
 }

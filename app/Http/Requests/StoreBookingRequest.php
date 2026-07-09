@@ -25,7 +25,7 @@ class StoreBookingRequest extends FormRequest
 
         if (!$isActivity) {
             // Durasi sewa dalam bulan — wajib untuk residence
-            $rules['duration_months'] = 'required|integer|min:1|max:24';
+            $rules['duration_months'] = 'required|integer|min:1';
         }
 
         if ($isActivity) {
@@ -55,7 +55,6 @@ class StoreBookingRequest extends FormRequest
             'duration_months.required'  => 'Durasi sewa wajib diisi',
             'duration_months.integer'   => 'Durasi sewa harus berupa angka',
             'duration_months.min'       => 'Durasi minimal 1 bulan',
-            'duration_months.max'       => 'Durasi maksimal 24 bulan',
             'check_in_date.required'    => 'Tanggal check-in wajib diisi',
             'check_in_date.date'            => 'Tanggal check-in harus berupa tanggal yang valid',
             'check_in_date.after_or_equal'  => 'Tanggal check-in minimal hari ini',
@@ -133,6 +132,28 @@ class StoreBookingRequest extends FormRequest
 
         if ($item && $item->available_slots <= 0) {
             $validator->errors()->add('bookable_id', 'Tidak ada slot tersedia');
+            return;
+        }
+
+        // Cegah booking ganda: user tidak boleh punya booking aktif (pending/approved)
+        // untuk item yang sama
+        if ($item && auth()->check()) {
+            $bookableClass = $type === 'residence'
+                ? \App\Models\Residence::class
+                : \App\Models\Activity::class;
+
+            $hasActive = \App\Models\Booking::where('user_id', auth()->id())
+                ->where('bookable_type', $bookableClass)
+                ->where('bookable_id', $id)
+                ->whereIn('status', ['pending', 'approved'])
+                ->exists();
+
+            if ($hasActive) {
+                $validator->errors()->add(
+                    'bookable_id',
+                    'Anda sudah memiliki booking aktif untuk hunian ini. Selesaikan atau batalkan booking sebelumnya terlebih dahulu.'
+                );
+            }
         }
     }
 }
