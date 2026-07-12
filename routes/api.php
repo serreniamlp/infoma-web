@@ -17,6 +17,7 @@ use App\Http\Controllers\Api\Provider\DashboardController as ProviderDashboardCo
 use App\Http\Controllers\Api\Provider\ResidenceController as ProviderResidenceController;
 use App\Http\Controllers\Api\Provider\ActivityController as ProviderActivityController;
 use App\Http\Controllers\Api\Provider\BookingManagementController as ProviderBookingController;
+use App\Http\Controllers\Api\User\UserAddressApiController;
 use Illuminate\Support\Facades\Storage;
 
 Route::prefix('v1')->group(function () {
@@ -182,6 +183,12 @@ Route::prefix('v1')->group(function () {
         });
 
         Route::middleware('role:user')->prefix('user')->group(function () {
+            // Addresses
+            Route::get('/addresses',                        [UserAddressApiController::class, 'index']);
+            Route::post('/addresses',                       [UserAddressApiController::class, 'store']);
+            Route::put('/addresses/{address}',              [UserAddressApiController::class, 'update']);
+            Route::delete('/addresses/{address}',           [UserAddressApiController::class, 'destroy']);
+            Route::patch('/addresses/{address}/set-default',[UserAddressApiController::class, 'setDefault']);
 
             // Booking
             Route::get('/bookings',                         [UserBookingController::class, 'index']);
