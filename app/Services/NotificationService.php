@@ -4,6 +4,7 @@
 namespace App\Services;
 
 use App\Models\Notification;
+use App\Models\User;
 use Illuminate\Support\Str;
 use App\Models\Booking;
 
@@ -14,6 +15,7 @@ class NotificationService
      */
     public static function send(int $userId, string $type, string $message, string $url, string $icon = 'fa-bell', string $color = 'blue'): void
     {
+        // 1. Simpan ke database (notifikasi in-app — tetap seperti sebelumnya)
         Notification::create([
             'id'              => Str::uuid(),
             'type'            => $type,
@@ -26,6 +28,33 @@ class NotificationService
                 'color'   => $color,
             ],
         ]);
+
+        // 2. Kirim push notification via FCM (jika user punya device token Flutter)
+        // Fire-and-forget: gagal kirim FCM tidak mempengaruhi alur utama
+        $user = User::find($userId);
+
+        if ($user?->fcm_token) {
+            try {
+                app(FcmService::class)->send(
+                    token: $user->fcm_token,
+                    title: 'EduLiving',
+                    body:  $message,
+                    data:  [
+                        'type'  => $type,
+                        'url'   => $url,
+                        'color' => $color,
+                        'icon'  => $icon,
+                    ]
+                );
+            } catch (\Throwable $e) {
+                // Tidak lempar exception — notifikasi in-app sudah tersimpan
+                \Illuminate\Support\Facades\Log::warning('[FCM] Gagal kirim push notification.', [
+                    'user_id' => $userId,
+                    'type'    => $type,
+                    'error'   => $e->getMessage(),
+                ]);
+            }
+        }
     }
 
     // -------------------------------------------------------

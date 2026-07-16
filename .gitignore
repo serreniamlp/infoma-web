@@ -22,3 +22,6 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Firebase — JANGAN commit ke git!
+/storage/app/firebase-credentials.json

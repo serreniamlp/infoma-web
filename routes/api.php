@@ -13,6 +13,7 @@ use App\Http\Controllers\Api\User\BookmarkController as UserBookmarkController;
 use App\Http\Controllers\Api\User\RatingController as UserRatingController;
 use App\Http\Controllers\Api\User\MarketplaceTransactionController;
 use App\Http\Controllers\Api\User\SellerController as ApiSellerController;
+use App\Http\Controllers\Api\User\FcmTokenController;
 use App\Http\Controllers\Api\Provider\DashboardController as ProviderDashboardController;
 use App\Http\Controllers\Api\Provider\ResidenceController as ProviderResidenceController;
 use App\Http\Controllers\Api\Provider\ActivityController as ProviderActivityController;
