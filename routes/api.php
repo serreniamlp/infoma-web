@@ -18,6 +18,7 @@ use App\Http\Controllers\Api\Provider\ResidenceController as ProviderResidenceCo
 use App\Http\Controllers\Api\Provider\ActivityController as ProviderActivityController;
 use App\Http\Controllers\Api\Provider\BookingManagementController as ProviderBookingController;
 use App\Http\Controllers\Api\User\UserAddressApiController;
+use App\Http\Controllers\Api\User\FcmTokenController;
 use Illuminate\Support\Facades\Storage;
 
 Route::prefix('v1')->group(function () {
@@ -172,6 +173,11 @@ Route::prefix('v1')->group(function () {
             Route::patch('/read-all',    [NotificationController::class, 'markAllRead']);
         });
 
+        // --- FCM Token (semua role: user, provider_residence, provider_event) ---
+        // Flutter kirim token setelah login, hapus saat logout
+        Route::post('/fcm-token',   [FcmTokenController::class, 'update']);
+        Route::delete('/fcm-token', [FcmTokenController::class, 'destroy']);
+
         // ============================================================
         // USER — BUYER
         // ============================================================
@@ -189,7 +195,6 @@ Route::prefix('v1')->group(function () {
             Route::put('/addresses/{address}',              [UserAddressApiController::class, 'update']);
             Route::delete('/addresses/{address}',           [UserAddressApiController::class, 'destroy']);
             Route::patch('/addresses/{address}/set-default',[UserAddressApiController::class, 'setDefault']);
-
             // Booking
             Route::get('/bookings',                         [UserBookingController::class, 'index']);
             Route::post('/bookings',                        [UserBookingController::class, 'store']);

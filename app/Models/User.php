@@ -38,7 +38,8 @@ class User extends Authenticatable
         'banned_by',
         'banned_at',
         'pending_role',
-        'last_seen_at',  // ← BARU: kapan user terakhir aktif
+        'last_seen_at',
+        'fcm_token',     // ← Firebase Cloud Messaging device token
     ];
 
     protected $casts = [
