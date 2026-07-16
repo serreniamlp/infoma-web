@@ -19,8 +19,11 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->string('fcm_token', 500)->nullable()->after('last_seen_at')
-                ->comment('Firebase Cloud Messaging device token untuk push notification mobile');
+            // Cek dulu agar tidak error jika kolom sudah ada (idempotent)
+            if (!Schema::hasColumn('users', 'fcm_token')) {
+                $table->string('fcm_token', 500)->nullable()->after('last_seen_at')
+                    ->comment('Firebase Cloud Messaging device token untuk push notification mobile');
+            }
         });
     }
 
