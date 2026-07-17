@@ -17,6 +17,7 @@ use App\Http\Controllers\Provider\DashboardController as ProviderDashboardContro
 use App\Http\Controllers\Provider\ResidenceController as ProviderResidenceController;
 use App\Http\Controllers\Provider\ActivityController as ProviderActivityController;
 use App\Http\Controllers\Provider\BookingManagementController;
+use App\Http\Controllers\Provider\RatingReplyController;
 use App\Http\Controllers\Provider\MarketplaceTransactionController as ProviderMarketplaceTransactionController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\UserManagementController;
@@ -208,6 +209,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
         Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
+
+        // Balas Ulasan (reply) — provider bisa balas ulasan di huniannya
+        Route::post('/ratings/{rating}/reply',   [RatingReplyController::class, 'reply'])->name('ratings.reply');
+        Route::delete('/ratings/{rating}/reply', [RatingReplyController::class, 'deleteReply'])->name('ratings.deleteReply');
+
         // Laporan Provider Hunian
         Route::get('/report', [ProviderDashboardController::class, 'report'])->name('report');
     });
@@ -231,6 +237,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
         Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
+
+        // Balas Ulasan (reply) — provider event bisa balas ulasan di acaranya
+        Route::post('/ratings/{rating}/reply',   [RatingReplyController::class, 'reply'])->name('ratings.reply');
+        Route::delete('/ratings/{rating}/reply', [RatingReplyController::class, 'deleteReply'])->name('ratings.deleteReply');
+
         // Laporan Provider Event
         Route::get('/report', [ProviderDashboardController::class, 'report'])->name('report');
     });

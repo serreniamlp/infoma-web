@@ -198,6 +198,42 @@ class NotificationService
     }
 
     // -------------------------------------------------------
+    // RATING & ULASAN
+    // -------------------------------------------------------
+
+    /**
+     * Notifikasi ke provider saat customer memberikan ulasan baru.
+     * $itemUrl = URL halaman detail hunian/acara di sisi provider
+     */
+    public static function ulasanBaru(int $providerId, string $userName, string $itemName, string $itemUrl): void
+    {
+        self::send(
+            $providerId,
+            'ulasan.baru',
+            "{$userName} memberikan ulasan baru untuk \"{$itemName}\"",
+            $itemUrl,
+            'fa-star',
+            'yellow'
+        );
+    }
+
+    /**
+     * Notifikasi ke customer saat provider membalas ulasannya.
+     * $itemUrl = URL halaman detail hunian/acara di sisi user
+     */
+    public static function balasanUlasan(int $userId, string $providerName, string $itemName, string $itemUrl): void
+    {
+        self::send(
+            $userId,
+            'ulasan.dibalas',
+            "{$providerName} membalas ulasan kamu untuk \"{$itemName}\"",
+            $itemUrl,
+            'fa-reply',
+            'green'
+        );
+    }
+
+    // -------------------------------------------------------
     // UNIFIED BOOKING NOTIFICATION (dipakai BookingService)
     // -------------------------------------------------------
 
