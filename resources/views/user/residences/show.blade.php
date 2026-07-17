@@ -325,44 +325,121 @@
                 {{-- ULASAN --}}
                 @auth
                     @if($canRate)
-                    <div class="bg-white rounded-xl shadow-sm p-6">
-                        <h3 class="font-semibold text-gray-900 mb-4">
-                            <i class="fas fa-star text-yellow-400 mr-2"></i>Tulis Ulasan
-                        </h3>
-                        <form id="ratingForm" class="space-y-4">
-                            @csrf
-                            <input type="hidden" name="type" value="residence">
-                            <input type="hidden" name="id" value="{{ $residence->id }}">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Penilaian</label>
-                                <div class="flex gap-2" id="starContainer">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <label class="cursor-pointer">
-                                            <input type="radio" name="rating" value="{{ $i }}" class="hidden"
-                                                   {{ isset($userRating) && $userRating && $userRating->rating == $i ? 'checked' : '' }}>
-                                            <i class="fas fa-star text-2xl transition-colors {{ isset($userRating) && $userRating && $userRating->rating >= $i ? 'text-yellow-400' : 'text-gray-200' }}"
-                                               onclick="this.previousElementSibling.checked=true; tandaiBintang({{ $i }})"></i>
-                                        </label>
-                                    @endfor
+                    <div class="bg-white rounded-xl shadow-sm p-6" id="ratingCard">
+
+                        {{-- Mode: Sudah ada ulasan → tampil ulasan + tombol edit/hapus --}}
+                        @if(isset($userRating) && $userRating)
+                        <div id="ratingDisplay">
+                            <div class="flex items-center justify-between mb-3">
+                                <h3 class="font-semibold text-gray-900">
+                                    <i class="fas fa-star text-yellow-400 mr-2"></i>Ulasan Saya
+                                </h3>
+                                <div class="flex items-center gap-2">
+                                    <button onclick="tampilkanFormEdit()" class="text-xs text-blue-500 hover:text-blue-700 font-medium">
+                                        <i class="fas fa-pen mr-1"></i>Edit
+                                    </button>
+                                    <button onclick="hapusUlasan({{ $residence->id }}, 'residence')" class="text-xs text-red-400 hover:text-red-600 font-medium">
+                                        <i class="fas fa-trash-alt mr-1"></i>Hapus
+                                    </button>
                                 </div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">Komentar <span class="text-gray-400 font-normal">(opsional)</span></label>
-                                <textarea name="review" rows="3"
-                                          class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
-                                          placeholder="Bagikan pengalaman Anda...">{{ $userRating->review ?? '' }}</textarea>
+                            <div class="flex mb-2">
+                                @for($i = 1; $i <= 5; $i++)
+                                    <i class="fas fa-star text-lg {{ $i <= $userRating->rating ? 'text-yellow-400' : 'text-gray-200' }}"></i>
+                                @endfor
                             </div>
-                            <div class="flex items-center gap-3">
-                                <button type="button" onclick="kirimUlasan()"
-                                        class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors">
-                                    Simpan Ulasan
-                                </button>
-                                @if(isset($userRating) && $userRating)
-                                    <button type="button" onclick="hapusUlasan({{ $residence->id }}, 'residence')"
-                                            class="text-red-500 hover:text-red-600 text-sm font-medium">Hapus Ulasan</button>
-                                @endif
-                            </div>
-                        </form>
+                            @if($userRating->review)
+                                <p class="text-gray-700 text-sm leading-relaxed mb-2">{{ $userRating->review }}</p>
+                            @endif
+                            {{-- Foto ulasan yang sudah tersimpan --}}
+                            @if($userRating->photo_path)
+                                @php
+                                    $savedPhotos = is_array(json_decode($userRating->photo_path, true))
+                                        ? json_decode($userRating->photo_path, true)
+                                        : [$userRating->photo_path];
+                                @endphp
+                                <div class="flex gap-2 flex-wrap mt-2">
+                                    @foreach($savedPhotos as $foto)
+                                        <a href="{{ asset('storage/' . $foto) }}" target="_blank">
+                                            <img src="{{ asset('storage/' . $foto) }}" class="h-20 w-20 rounded-lg object-cover border border-gray-200 hover:opacity-80 transition-opacity cursor-zoom-in" alt="Foto ulasan">
+                                        </a>
+                                    @endforeach
+                                </div>
+                            @endif
+                            @if($userRating->provider_reply)
+                                <div class="mt-3 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                    <p class="text-xs font-semibold text-blue-700 mb-1"><i class="fas fa-reply mr-1"></i>Balasan Penyedia</p>
+                                    <p class="text-sm text-gray-700">{{ $userRating->provider_reply }}</p>
+                                </div>
+                            @endif
+                        </div>
+                        @endif
+
+                        {{-- Mode: Form tulis/edit ulasan --}}
+                        <div id="ratingForm" class="{{ isset($userRating) && $userRating ? 'hidden' : '' }}">
+                            <h3 class="font-semibold text-gray-900 mb-4">
+                                <i class="fas fa-star text-yellow-400 mr-2"></i>
+                                <span id="ratingFormTitle">{{ isset($userRating) && $userRating ? 'Edit Ulasan' : 'Tulis Ulasan' }}</span>
+                            </h3>
+                            <form id="ratingFormEl" class="space-y-4" enctype="multipart/form-data">
+                                @csrf
+                                <input type="hidden" name="type" value="residence">
+                                <input type="hidden" name="id" value="{{ $residence->id }}">
+
+                                {{-- Bintang --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Penilaian</label>
+                                    <div class="flex gap-2" id="starContainer">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <label class="cursor-pointer">
+                                                <input type="radio" name="rating" value="{{ $i }}" class="hidden"
+                                                       {{ isset($userRating) && $userRating && $userRating->rating == $i ? 'checked' : '' }}>
+                                                <i class="fas fa-star text-2xl transition-colors {{ isset($userRating) && $userRating && $userRating->rating >= $i ? 'text-yellow-400' : 'text-gray-200' }}"
+                                                   onclick="this.previousElementSibling.checked=true; tandaiBintang({{ $i }})"></i>
+                                            </label>
+                                        @endfor
+                                    </div>
+                                </div>
+
+                                {{-- Komentar --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">Komentar <span class="text-gray-400 font-normal">(opsional)</span></label>
+                                    <textarea name="review" rows="3"
+                                              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                                              placeholder="Bagikan pengalaman Anda...">{{ $userRating->review ?? '' }}</textarea>
+                                </div>
+
+                                {{-- Upload Foto (maks 5 foto) --}}
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Foto Bukti <span class="text-gray-400 font-normal">(opsional, maks 3 foto, tiap foto maks 5MB)</span>
+                                    </label>
+                                    <div class="flex items-center gap-3 mb-2">
+                                        <label for="fotoInput" class="cursor-pointer flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50 transition-colors">
+                                            <i class="fas fa-camera text-gray-400"></i> Pilih Foto
+                                        </label>
+                                        <span id="namaFile" class="text-xs text-gray-400">Belum ada file dipilih</span>
+                                    </div>
+                                    <input type="file" name="photos[]" id="fotoInput" accept="image/*" multiple class="hidden"
+                                           onchange="pratinjauFoto(this)">
+                                    {{-- Grid pratinjau foto baru --}}
+                                    <div id="previewGrid" class="flex gap-2 flex-wrap"></div>
+                                </div>
+
+                                {{-- Tombol --}}
+                                <div class="flex items-center gap-3">
+                                    <button type="button" id="btnSimpanUlasan" onclick="kirimUlasan()"
+                                            class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg font-medium transition-colors">
+                                        Simpan Ulasan
+                                    </button>
+                                    @if(isset($userRating) && $userRating)
+                                        <button type="button" onclick="batalkanEdit()"
+                                                class="text-sm text-gray-500 hover:text-gray-700">Batal</button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+
                     </div>
                     @endif
                 @endauth
@@ -374,23 +451,53 @@
                     </h3>
                     <div class="space-y-5">
                         @foreach($residence->ratings as $rating)
-                        <div class="flex gap-4 {{ !$loop->last ? 'pb-5 border-b border-gray-100' : '' }}">
-                            <div class="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                <span class="text-sm font-bold text-blue-600">{{ substr($rating->user->name, 0, 1) }}</span>
-                            </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex items-center justify-between mb-1">
-                                    <p class="font-semibold text-gray-900 text-sm">{{ $rating->user->name }}</p>
-                                    <span class="text-xs text-gray-400">{{ $rating->created_at->format('d M Y') }}</span>
+                        <div class="{{ !$loop->last ? 'pb-5 border-b border-gray-100' : '' }}">
+                            <div class="flex gap-4">
+                                <div class="w-9 h-9 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                                    <span class="text-sm font-bold text-blue-600">{{ substr($rating->user->name, 0, 1) }}</span>
                                 </div>
-                                <div class="flex mb-2">
-                                    @for($i = 1; $i <= 5; $i++)
-                                        <i class="fas fa-star text-xs {{ $i <= $rating->rating ? 'text-yellow-400' : 'text-gray-200' }}"></i>
-                                    @endfor
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-center justify-between mb-1">
+                                        <p class="font-semibold text-gray-900 text-sm">{{ $rating->user->name }}</p>
+                                        <span class="text-xs text-gray-400">{{ $rating->created_at->format('d M Y') }}</span>
+                                    </div>
+                                    <div class="flex mb-2">
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <i class="fas fa-star text-xs {{ $i <= $rating->rating ? 'text-yellow-400' : 'text-gray-200' }}"></i>
+                                        @endfor
+                                    </div>
+                                    @if($rating->review)
+                                        <p class="text-gray-600 text-sm leading-relaxed">{{ $rating->review }}</p>
+                                    @endif
+
+                                    {{-- Foto ulasan (support multiple/single) --}}
+                                    @if($rating->photo_path)
+                                        @php
+                                            $ratingPhotos = is_array(json_decode($rating->photo_path, true))
+                                                ? json_decode($rating->photo_path, true)
+                                                : [$rating->photo_path];
+                                        @endphp
+                                        <div class="flex gap-2 flex-wrap mt-3">
+                                            @foreach($ratingPhotos as $rFoto)
+                                                <a href="{{ asset('storage/' . $rFoto) }}" target="_blank">
+                                                    <img src="{{ asset('storage/' . $rFoto) }}"
+                                                         class="h-20 w-20 rounded-lg object-cover border border-gray-200 hover:opacity-90 transition-opacity cursor-zoom-in"
+                                                         alt="Foto ulasan {{ $rating->user->name }}">
+                                                </a>
+                                            @endforeach
+                                        </div>
+                                    @endif
+
+                                    {{-- Balasan Provider --}}
+                                    @if($rating->provider_reply)
+                                        <div class="mt-3 ml-0 bg-blue-50 border border-blue-100 rounded-lg p-3">
+                                            <p class="text-xs font-semibold text-blue-700 mb-1">
+                                                <i class="fas fa-reply mr-1"></i>Balasan Penyedia
+                                            </p>
+                                            <p class="text-sm text-gray-700 leading-relaxed">{{ $rating->provider_reply }}</p>
+                                        </div>
+                                    @endif
                                 </div>
-                                @if($rating->review)
-                                    <p class="text-gray-600 text-sm leading-relaxed">{{ $rating->review }}</p>
-                                @endif
                             </div>
                         </div>
                         @endforeach
@@ -580,17 +687,56 @@ function tandaiBintang(nilai) {
     });
 }
 
+function tampilkanFormEdit() {
+    document.getElementById('ratingDisplay')?.classList.add('hidden');
+    document.getElementById('ratingForm')?.classList.remove('hidden');
+    document.getElementById('ratingFormTitle').textContent = 'Edit Ulasan';
+}
+
+function batalkanEdit() {
+    document.getElementById('ratingForm')?.classList.add('hidden');
+    document.getElementById('ratingDisplay')?.classList.remove('hidden');
+}
+
 function kirimUlasan() {
-    const form = document.getElementById('ratingForm');
-    const btn = form.querySelector('button[onclick="kirimUlasan()"]');
+    const form = document.getElementById('ratingFormEl');
+    const btn = document.getElementById('btnSimpanUlasan');
     btn.textContent = 'Menyimpan...'; btn.disabled = true;
     fetch('{{ route('user.ratings.store') }}', {
         method: 'POST',
         headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
         body: new FormData(form)
-    }).then(r => r.json()).then(data => tampilToast(data.message || 'Ulasan disimpan', data.status === 'success' ? 'success' : 'error'))
-    .catch(() => tampilToast('Terjadi kesalahan.', 'error'))
-    .finally(() => { btn.textContent = 'Simpan Ulasan'; btn.disabled = false; });
+    }).then(r => r.json()).then(data => {
+        if (data.status === 'success') {
+            tampilToast(data.message || 'Ulasan disimpan', 'success');
+            // Reload halaman agar tampil ulasan terbaru
+            setTimeout(() => location.reload(), 800);
+        } else {
+            tampilToast(data.message || 'Gagal menyimpan ulasan', 'error');
+            btn.textContent = 'Simpan Ulasan'; btn.disabled = false;
+        }
+    })
+    .catch(() => { tampilToast('Terjadi kesalahan.', 'error'); btn.textContent = 'Simpan Ulasan'; btn.disabled = false; });
+}
+
+function pratinjauFoto(input) {
+    const grid = document.getElementById('previewGrid');
+    const namaFile = document.getElementById('namaFile');
+    grid.innerHTML = ''; // reset
+    const files = Array.from(input.files).slice(0, 3); // maks 3 foto
+    if (files.length === 0) { namaFile.textContent = 'Belum ada file dipilih'; return; }
+    namaFile.textContent = files.length + ' foto dipilih';
+    files.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'h-20 w-20 rounded-lg object-cover border border-gray-200';
+            img.alt = 'Pratinjau foto';
+            grid.appendChild(img);
+        };
+        reader.readAsDataURL(file);
+    });
 }
 
 function hapusUlasan(id, type) {
