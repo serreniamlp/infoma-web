@@ -131,4 +131,53 @@ class BookingManagementController extends Controller
             return redirect()->back()->with('error', 'Gagal menolak booking: ' . $e->getMessage());
         }
     }
+
+    /**
+     * Memverifikasi pembayaran manual transfer bank dari mahasiswa.
+     */
+    public function verifyPayment(Booking $booking)
+    {
+        if ($booking->bookable->provider_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($booking->status !== 'approved' || !$booking->transaction || $booking->transaction->payment_status === 'paid') {
+            return redirect()->back()->with('error', 'Transaksi tidak dapat diverifikasi.');
+        }
+
+        try {
+            $this->bookingService->confirmManualPayment($booking);
+            return redirect()->back()->with('success', 'Pembayaran manual berhasil diverifikasi & disetujui!');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal memverifikasi pembayaran: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Menolak bukti pembayaran manual transfer bank dari mahasiswa.
+     */
+    public function rejectPayment(Request $request, Booking $booking)
+    {
+        $request->validate([
+            'payment_rejection_reason' => 'required|string|max:500',
+        ], [
+            'payment_rejection_reason.required' => 'Alasan penolakan pembayaran wajib diisi.',
+            'payment_rejection_reason.max'      => 'Alasan penolakan pembayaran maksimal 500 karakter.',
+        ]);
+
+        if ($booking->bookable->provider_id !== auth()->id()) {
+            abort(403);
+        }
+
+        if ($booking->status !== 'approved' || !$booking->transaction || $booking->transaction->payment_status === 'paid') {
+            return redirect()->back()->with('error', 'Transaksi tidak dapat ditolak.');
+        }
+
+        try {
+            $this->bookingService->rejectManualPayment($booking, $request->payment_rejection_reason);
+            return redirect()->back()->with('success', 'Bukti pembayaran berhasil ditolak dan mahasiswa telah dinotifikasi.');
+        } catch (\Exception $e) {
+            return redirect()->back()->with('error', 'Gagal menolak pembayaran: ' . $e->getMessage());
+        }
+    }
 }

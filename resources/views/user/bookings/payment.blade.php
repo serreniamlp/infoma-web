@@ -33,42 +33,101 @@
             {{-- Panel kiri: tombol bayar --}}
             <div class="lg:col-span-2 space-y-6">
 
-                <div class="bg-white rounded-xl shadow-sm p-8 text-center">
-                    <div class="mb-6">
-                        <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-                            <i class="fas fa-shield-alt text-green-600 text-2xl"></i>
+                {{-- Pilihan Metode Pembayaran (Tab) --}}
+                <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+                    <div class="flex border-b border-gray-100">
+                        <button onclick="switchTab('midtrans')" id="tab-btn-midtrans"
+                                class="flex-1 py-4 px-6 font-semibold text-sm border-b-2 border-green-600 text-green-600 focus:outline-none flex items-center justify-center gap-2">
+                            <i class="fas fa-bolt text-lg"></i>
+                            Pembayaran Instan (Midtrans)
+                        </button>
+                        <button onclick="switchTab('manual')" id="tab-btn-manual"
+                                class="flex-1 py-4 px-6 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none flex items-center justify-center gap-2">
+                            <i class="fas fa-university text-lg"></i>
+                            Transfer Bank Manual
+                        </button>
+                    </div>
+
+                    {{-- Konten Tab 1: Midtrans --}}
+                    <div id="tab-content-midtrans" class="p-8 text-center space-y-6">
+                        <div class="mb-2">
+                            <div class="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
+                                <i class="fas fa-shield-alt text-green-600 text-2xl"></i>
+                            </div>
+                            <h2 class="text-xl font-semibold text-gray-900">Pembayaran Aman via Midtrans</h2>
+                            <p class="text-gray-500 mt-2 text-sm">
+                                Pilih metode pembayaran instan terverifikasi otomatis.
+                            </p>
                         </div>
-                        <h2 class="text-xl font-semibold text-gray-900">Pembayaran Aman via Midtrans</h2>
-                        <p class="text-gray-500 mt-2 text-sm">
-                            Pilih metode pembayaran yang paling nyaman — transfer bank, kartu kredit,
-                            GoPay, OVO, DANA, ShopeePay, dan banyak lagi.
-                        </p>
+
+                        <div class="flex flex-wrap justify-center gap-2 opacity-70 mb-4">
+                            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">Transfer Bank</span>
+                            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">GoPay</span>
+                            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">OVO / DANA</span>
+                            <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">QRIS</span>
+                        </div>
+
+                        <button id="pay-button"
+                                class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold
+                                       py-4 px-8 rounded-xl text-lg transition-colors focus:outline-none focus:ring-4
+                                       focus:ring-green-300 flex items-center justify-center gap-3">
+                            <i class="fas fa-credit-card"></i>
+                            Bayar Sekarang — Rp {{ number_format($booking->transaction->final_amount) }}
+                        </button>
                     </div>
 
-                    {{-- Ikon metode pembayaran --}}
-                    <div class="flex flex-wrap justify-center gap-3 mb-8 opacity-70">
-                        <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">Transfer Bank</span>
-                        <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">GoPay</span>
-                        <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">OVO</span>
-                        <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">DANA</span>
-                        <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">ShopeePay</span>
-                        <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">Kartu Kredit</span>
-                        <span class="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded-full">QRIS</span>
+                    {{-- Konten Tab 2: Transfer Manual --}}
+                    <div id="tab-content-manual" class="p-8 hidden space-y-6">
+                        <div class="bg-gray-50 rounded-xl p-5 border border-gray-100 text-left space-y-3">
+                            <h4 class="font-semibold text-gray-900 text-sm">Rekening Tujuan Pembayaran:</h4>
+                            
+                            <div class="flex items-center justify-between border-b border-gray-100 pb-2">
+                                <div>
+                                    <p class="text-xs text-gray-400">BANK MANDIRI</p>
+                                    <p class="font-bold text-gray-800 text-sm">137-00-1234567-8</p>
+                                    <p class="text-xs text-gray-500">a.n. PT EduLiving Indonesia</p>
+                                </div>
+                                <button onclick="salinTeks('1370012345678')" class="text-xs text-blue-600 hover:underline">
+                                    <i class="far fa-copy mr-1"></i>Salin
+                                </button>
+                            </div>
+
+                            <div class="flex items-center justify-between pt-1">
+                                <div>
+                                    <p class="text-xs text-gray-400">BANK BCA</p>
+                                    <p class="font-bold text-gray-800 text-sm">829-012-3456</p>
+                                    <p class="text-xs text-gray-500">a.n. PT EduLiving Indonesia</p>
+                                </div>
+                                <button onclick="salinTeks('8290123456')" class="text-xs text-blue-600 hover:underline">
+                                    <i class="far fa-copy mr-1"></i>Salin
+                                </button>
+                            </div>
+                        </div>
+
+                        <form action="{{ route('user.bookings.processPayment', $booking) }}" method="POST" enctype="multipart/form-data" class="text-left space-y-4">
+                            @csrf
+                            <div>
+                                <label class="block text-sm font-semibold text-gray-700 mb-2">Upload Bukti Transfer</label>
+                                <div class="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:bg-gray-50 transition-colors relative cursor-pointer">
+                                    <input type="file" name="payment_proof" accept="image/*" required class="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onchange="previewBukti(this)">
+                                    <div id="upload-placeholder">
+                                        <i class="fas fa-cloud-upload-alt text-gray-400 text-3xl mb-2"></i>
+                                        <p class="text-sm font-medium text-gray-600">Pilih berkas bukti transfer Anda</p>
+                                        <p class="text-xs text-gray-400 mt-1">Format: JPG, JPEG, PNG, WEBP (Maks 5MB)</p>
+                                    </div>
+                                    <div id="image-preview" class="hidden flex justify-center">
+                                        <img id="preview-img" src="#" alt="Pratinjau Bukti" class="max-h-48 rounded-lg border border-gray-200">
+                                    </div>
+                                </div>
+                                <p id="file-name" class="text-xs text-gray-400 mt-2 text-center"></p>
+                            </div>
+
+                            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-4 px-8 rounded-xl transition-colors flex items-center justify-center gap-2">
+                                <i class="fas fa-upload"></i>
+                                Kirim Bukti Transfer
+                            </button>
+                        </form>
                     </div>
-
-                    {{-- Tombol bayar --}}
-                    <button id="pay-button"
-                            class="w-full bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold
-                                   py-4 px-8 rounded-xl text-lg transition-colors focus:outline-none focus:ring-4
-                                   focus:ring-green-300 flex items-center justify-center gap-3">
-                        <i class="fas fa-credit-card"></i>
-                        Bayar Sekarang — Rp {{ number_format($booking->transaction->final_amount) }}
-                    </button>
-
-                    <p class="text-xs text-gray-400 mt-4">
-                        <i class="fas fa-lock mr-1"></i>
-                        Transaksi diproses secara aman oleh Midtrans. EduLiving tidak menyimpan data kartu Anda.
-                    </p>
                 </div>
 
                 {{-- Kembali --}}
@@ -161,5 +220,48 @@ document.getElementById('pay-button').addEventListener('click', function () {
         }
     });
 });
+
+function switchTab(type) {
+    const btnMidtrans = document.getElementById('tab-btn-midtrans');
+    const btnManual = document.getElementById('tab-btn-manual');
+    const contentMidtrans = document.getElementById('tab-content-midtrans');
+    const contentManual = document.getElementById('tab-content-manual');
+
+    if (type === 'midtrans') {
+        btnMidtrans.className = "flex-1 py-4 px-6 font-semibold text-sm border-b-2 border-green-600 text-green-600 focus:outline-none flex items-center justify-center gap-2";
+        btnManual.className = "flex-1 py-4 px-6 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none flex items-center justify-center gap-2";
+        contentMidtrans.classList.remove('hidden');
+        contentManual.classList.add('hidden');
+    } else {
+        btnManual.className = "flex-1 py-4 px-6 font-semibold text-sm border-b-2 border-blue-600 text-blue-600 focus:outline-none flex items-center justify-center gap-2";
+        btnMidtrans.className = "flex-1 py-4 px-6 font-semibold text-sm border-b-2 border-transparent text-gray-500 hover:text-gray-700 focus:outline-none flex items-center justify-center gap-2";
+        contentManual.classList.remove('hidden');
+        contentMidtrans.classList.add('hidden');
+    }
+}
+
+function previewBukti(input) {
+    const placeholder = document.getElementById('upload-placeholder');
+    const preview = document.getElementById('image-preview');
+    const img = document.getElementById('preview-img');
+    const filename = document.getElementById('file-name');
+
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            img.src = e.target.result;
+            placeholder.classList.add('hidden');
+            preview.classList.remove('hidden');
+        }
+        reader.readAsDataURL(input.files[0]);
+        filename.textContent = "Terpilih: " + input.files[0].name;
+    }
+}
+
+function salinTeks(teks) {
+    navigator.clipboard.writeText(teks).then(() => {
+        alert("Nomor rekening berhasil disalin: " + teks);
+    });
+}
 </script>
 @endpush

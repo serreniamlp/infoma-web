@@ -140,8 +140,8 @@ class BookingService
     public function cancelBooking(Booking $booking, $reason = null)
     {
         return DB::transaction(function () use ($booking, $reason) {
-            if ($booking->status === 'approved' && $booking->check_in_date <= now()->toDateString()) {
-                throw new \Exception('Tidak dapat membatalkan booking yang sudah dimulai');
+            if ($booking->status === 'approved' && $booking->check_in_date <= now()->toDateString() && $booking->transaction?->payment_status === 'paid') {
+                throw new \Exception('Tidak dapat membatalkan booking yang sudah dimulai dan dibayar');
             }
 
             $oldStatus = $booking->status;
@@ -217,6 +217,71 @@ class BookingService
             $booking->update(['payment_deadline' => null]);
 
             $this->notificationService->sendBookingNotification($booking, 'payment_received');
+
+            return $transaction;
+        });
+    }
+
+    /**
+     * Konfirmasi pembayaran transfer manual oleh provider/penyedia.
+     */
+    public function confirmManualPayment(Booking $booking)
+    {
+        return DB::transaction(function () use ($booking) {
+            $transaction = $booking->transaction;
+
+            if (! $transaction) {
+                throw new \Exception('Transaksi tidak ditemukan');
+            }
+
+            $transaction->update([
+                'payment_status' => 'paid',
+            ]);
+
+            $booking->update(['payment_deadline' => null]);
+
+            $this->notificationService->sendBookingNotification($booking, 'payment_received');
+
+            return $transaction;
+        });
+    }
+
+    /**
+     * Menolak bukti pembayaran transfer manual.
+     */
+    public function rejectManualPayment(Booking $booking, $reason)
+    {
+        return DB::transaction(function () use ($booking, $reason) {
+            $transaction = $booking->transaction;
+            if (!$transaction) {
+                throw new \Exception('Transaksi tidak ditemukan.');
+            }
+
+            // Hapus file bukti pembayaran lama dari storage
+            if ($transaction->payment_proof) {
+                Storage::disk('public')->delete($transaction->payment_proof);
+            }
+
+            // Reset status transaksi ke pending
+            $transaction->update([
+                'payment_proof' => null,
+                'payment_status' => 'pending',
+            ]);
+
+            // Simpan alasan penolakan pembayaran di kolom rejection_reason booking
+            $booking->update([
+                'rejection_reason' => $reason,
+            ]);
+
+            // Kirim notifikasi ke mahasiswa
+            $this->notificationService->send(
+                $booking->user_id,
+                'booking.pembayaran_ditolak',
+                "Bukti transfer untuk booking #{$booking->booking_code} ditolak karena: {$reason}. Harap unggah ulang.",
+                url("/user/bookings/{$booking->id}"),
+                'fa-exclamation-triangle',
+                'red'
+            );
 
             return $transaction;
         });

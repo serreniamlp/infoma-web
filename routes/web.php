@@ -209,6 +209,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
         Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
+        Route::patch('/bookings/{booking}/verify-payment', [BookingManagementController::class, 'verifyPayment'])->name('bookings.verifyPayment');
+        Route::patch('/bookings/{booking}/reject-payment', [BookingManagementController::class, 'rejectPayment'])->name('bookings.rejectPayment');
 
         // Balas Ulasan (reply) — provider bisa balas ulasan di huniannya
         Route::post('/ratings/{rating}/reply',   [RatingReplyController::class, 'reply'])->name('ratings.reply');
@@ -237,6 +239,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/bookings/{booking}', [BookingManagementController::class, 'show'])->name('bookings.show');
         Route::patch('/bookings/{booking}/approve', [BookingManagementController::class, 'approve'])->name('bookings.approve');
         Route::patch('/bookings/{booking}/reject', [BookingManagementController::class, 'reject'])->name('bookings.reject');
+        Route::patch('/bookings/{booking}/verify-payment', [BookingManagementController::class, 'verifyPayment'])->name('bookings.verifyPayment');
+        Route::patch('/bookings/{booking}/reject-payment', [BookingManagementController::class, 'rejectPayment'])->name('bookings.rejectPayment');
 
         // Balas Ulasan (reply) — provider event bisa balas ulasan di acaranya
         Route::post('/ratings/{rating}/reply',   [RatingReplyController::class, 'reply'])->name('ratings.reply');

@@ -216,8 +216,46 @@ use Illuminate\Support\Str;
                         @if($booking->transaction->payment_method)
                         <div class="flex justify-between">
                             <span class="text-sm text-gray-600">Metode Pembayaran</span>
-                            <span class="text-sm text-gray-900">{{ ucfirst($booking->transaction->payment_method) }}</span>
+                            <span class="text-sm text-gray-900">
+                                {{ $booking->transaction->payment_method === 'manual_transfer' ? 'Transfer Bank Manual' : ucfirst($booking->transaction->payment_method) }}
+                            </span>
                         </div>
+                        @endif
+
+                        {{-- Bukti Transfer Manual --}}
+                        @if($booking->transaction->payment_method === 'manual_transfer' && $booking->transaction->payment_proof)
+                        <div class="border-t border-gray-150 pt-3 space-y-2">
+                            <span class="block text-sm font-semibold text-gray-700">Bukti Pembayaran</span>
+                            <a href="{{ asset('storage/' . $booking->transaction->payment_proof) }}" target="_blank" class="block group relative overflow-hidden rounded-lg border border-gray-200">
+                                <img src="{{ asset('storage/' . $booking->transaction->payment_proof) }}" alt="Bukti Transfer" class="w-full h-32 object-cover group-hover:scale-105 transition-transform duration-200">
+                                <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity duration-200">
+                                    <i class="fas fa-search-plus mr-1"></i> Perbesar Bukti
+                                </div>
+                            </a>
+                        </div>
+
+                        {{-- Tombol Verifikasi & Penolakan --}}
+                        @if($booking->transaction->payment_status === 'pending')
+                        <div class="pt-3 space-y-2">
+                            <form method="POST" action="{{ route('provider.residence.bookings.verifyPayment', $booking) }}">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2" onclick="return confirm('Apakah Anda yakin ingin memverifikasi dan menyetujui pembayaran manual ini?')">
+                                    <i class="fas fa-check-circle"></i>
+                                    Setujui Pembayaran
+                                </button>
+                            </form>
+
+                            <form method="POST" action="{{ route('provider.residence.bookings.rejectPayment', $booking) }}" onsubmit="event.preventDefault(); let reason = prompt('Masukkan alasan penolakan bukti transfer ini:'); if (reason === null) return false; if (!reason.trim()) { alert('Alasan penolakan tidak boleh kosong.'); return false; } let input = document.createElement('input'); input.type = 'hidden'; input.name = 'payment_rejection_reason'; input.value = reason; this.appendChild(input); this.submit();">
+                                @csrf
+                                @method('PATCH')
+                                <button type="submit" class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2.5 px-4 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
+                                    <i class="fas fa-times-circle"></i>
+                                    Tolak Pembayaran
+                                </button>
+                            </form>
+                        </div>
+                        @endif
                         @endif
                     </div>
                 </div>
