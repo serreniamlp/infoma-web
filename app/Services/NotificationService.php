@@ -233,6 +233,21 @@ class NotificationService
         );
     }
 
+    /**
+     * Notifikasi ke provider saat customer mengunggah bukti transfer manual.
+     */
+    public static function buktiTransferDiunggah(int $providerId, string $userName, string $bookingCode, string $bookingUrl): void
+    {
+        self::send(
+            $providerId,
+            'booking.pembayaran_manual',
+            "{$userName} telah mengunggah bukti transfer untuk booking #{$bookingCode}. Harap verifikasi.",
+            $bookingUrl,
+            'fa-file-invoice-dollar',
+            'yellow'
+        );
+    }
+
     // -------------------------------------------------------
     // UNIFIED BOOKING NOTIFICATION (dipakai BookingService)
     // -------------------------------------------------------

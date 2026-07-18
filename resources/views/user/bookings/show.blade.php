@@ -212,6 +212,20 @@
                 </div>
                 @endif
 
+                {{-- Bukti Pembayaran Ditolak --}}
+                @if($booking->status === 'approved' && $booking->transaction && $booking->transaction->payment_status === 'pending' && $booking->rejection_reason)
+                <div class="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+                    <div class="flex">
+                        <i class="fas fa-exclamation-triangle text-red-500 mr-3 mt-0.5 text-lg"></i>
+                        <div>
+                            <h3 class="text-lg font-semibold text-red-800 mb-2">Bukti Pembayaran Ditolak</h3>
+                            <p class="text-red-700">{{ $booking->rejection_reason }}</p>
+                            <p class="text-xs text-red-500 mt-2 font-medium">Silakan lakukan pembayaran ulang dengan mengunggah bukti transfer yang valid.</p>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <!-- Rejection Reason -->
                 @if(in_array($booking->status, ['rejected', 'cancelled']) && $booking->rejection_reason)
                 <div class="bg-red-50 border border-red-200 rounded-lg p-6">
@@ -279,9 +293,9 @@
                     <h3 class="text-lg font-semibold text-gray-900 mb-4">Aksi</h3>
 
                     <div class="space-y-3">
-                        @if($booking->status === 'pending')
+                        @if($booking->status === 'pending' || ($booking->status === 'approved' && $booking->transaction && $booking->transaction->payment_status === 'pending'))
                             <form method="POST" action="{{ route('user.bookings.cancel', $booking) }}"
-                                  onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?')">
+                                  onsubmit="event.preventDefault(); let reason = prompt('Masukkan alasan pembatalan booking Anda:'); if (reason === null) return false; if (!reason.trim()) { alert('Alasan pembatalan tidak boleh kosong.'); return false; } let input = document.createElement('input'); input.type = 'hidden'; input.name = 'reason'; input.value = reason; this.appendChild(input); this.submit();">
                                 @csrf
                                 @method('PATCH')
                                 <button type="submit"

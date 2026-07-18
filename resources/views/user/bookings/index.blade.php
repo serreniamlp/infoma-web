@@ -122,9 +122,9 @@
                                             <i class="fas fa-eye mr-1"></i>Lihat Detail
                                         </a>
 
-                                        @if($booking->status === 'pending')
+                                        @if($booking->status === 'pending' || ($booking->status === 'approved' && $booking->transaction && $booking->transaction->payment_status === 'pending'))
                                             <form method="POST" action="{{ route('user.bookings.cancel', $booking) }}"
-                                                  class="inline" onsubmit="return confirm('Apakah Anda yakin ingin membatalkan booking ini?')">
+                                                  class="inline" onsubmit="event.preventDefault(); let reason = prompt('Masukkan alasan pembatalan booking Anda:'); if (reason === null) return false; if (!reason.trim()) { alert('Alasan pembatalan tidak boleh kosong.'); return false; } let input = document.createElement('input'); input.type = 'hidden'; input.name = 'reason'; input.value = reason; this.appendChild(input); this.submit();">
                                                 @csrf
                                                 @method('PATCH')
                                                 <button type="submit" class="text-red-600 hover:text-red-700 text-sm font-medium">

@@ -96,7 +96,7 @@ class BookingController extends Controller
         }
     }
 
-    public function cancel(Booking $booking)
+    public function cancel(Request $request, Booking $booking)
     {
         $this->authorize('update', $booking);
 
@@ -104,7 +104,14 @@ class BookingController extends Controller
             return redirect()->back()->with('error', 'Booking tidak dapat dibatalkan');
         }
 
-        $this->bookingService->cancelBooking($booking);
+        $request->validate([
+            'reason' => 'required|string|max:500',
+        ], [
+            'reason.required' => 'Alasan pembatalan wajib diisi.',
+            'reason.max'      => 'Alasan pembatalan maksimal 500 karakter.',
+        ]);
+
+        $this->bookingService->cancelBooking($booking, $request->reason);
 
         return redirect()->back()->with('success', 'Booking berhasil dibatalkan');
     }
@@ -174,18 +181,60 @@ class BookingController extends Controller
         return view('user.bookings.payment', compact('booking', 'snapToken', 'snapUrl', 'clientKey'));
     }
 
-    /**
-     * processPayment() tidak lagi digunakan untuk flow Midtrans.
-     * Konfirmasi pembayaran sekarang masuk via webhook (MidtransController::callback).
-     *
-     * Method ini dipertahankan agar route tidak error selama masa transisi.
-     */
     public function processPayment(Request $request, Booking $booking)
     {
         $this->authorize('update', $booking);
 
-        return redirect()->route('user.bookings.payment', $booking)
-            ->with('info', 'Gunakan tombol Bayar di halaman pembayaran.');
+        $request->validate([
+            'payment_proof' => 'required|image|mimes:jpg,jpeg,png,webp|max:5120',
+        ], [
+            'payment_proof.required' => 'File bukti transfer wajib diunggah.',
+            'payment_proof.image'    => 'File harus berupa gambar.',
+            'payment_proof.mimes'    => 'Format gambar harus berupa jpg, jpeg, png, atau webp.',
+            'payment_proof.max'      => 'Ukuran file maksimal 5MB.',
+        ]);
+
+        $transaction = $booking->transaction;
+        if (!$transaction) {
+            return redirect()->back()->with('error', 'Transaksi tidak ditemukan.');
+        }
+
+        // Simpan bukti transfer
+        if ($request->hasFile('payment_proof')) {
+            if ($transaction->payment_proof) {
+                Storage::disk('public')->delete($transaction->payment_proof);
+            }
+            $path = $request->file('payment_proof')->store('payment_proofs', 'public');
+            
+            $transaction->update([
+                'payment_method' => 'manual_transfer',
+                'payment_proof'  => $path,
+            ]);
+
+            // Reset alasan penolakan bukti pembayaran lama
+            $booking->update([
+                'rejection_reason' => null,
+            ]);
+
+            // Kirim notifikasi ke provider
+            $providerId = $booking->bookable->provider_id ?? null;
+            if ($providerId) {
+                $isResidence = ($booking->bookable_type === \App\Models\Residence::class);
+                $providerUrl = $isResidence
+                    ? url("/provider/residence/bookings/{$booking->id}")
+                    : url("/provider/event/bookings/{$booking->id}");
+                
+                \App\Services\NotificationService::buktiTransferDiunggah(
+                    $providerId,
+                    auth()->user()->name,
+                    $booking->booking_code,
+                    $providerUrl
+                );
+            }
+        }
+
+        return redirect()->route('user.bookings.show', $booking)
+            ->with('success', 'Bukti transfer berhasil diunggah! Menunggu verifikasi dari penyedia.');
     }
 }
 
