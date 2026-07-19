@@ -113,6 +113,18 @@ class NotificationService
         );
     }
 
+    public static function ratingReminder(int $userId, string $bookableName, string $residenceUrl): void
+    {
+        self::send(
+            $userId,
+            'sewa.rating_reminder',
+            "Anda sekarang sudah dapat memberikan rating & ulasan untuk hunian \"{$bookableName}\"",
+            $residenceUrl,
+            'fa-star',
+            'yellow'
+        );
+    }
+
     public static function pesananBaru(int $sellerId, string $buyerName, string $productName, string $orderUrl): void
     {
         self::send(

@@ -83,16 +83,32 @@ class ResidenceController extends Controller
                 ->first();
         }
 
-        // Check if user can rate (has completed or approved booking)
+        // Check if user can rate (has approved/completed booking, paid, and reached H-7 checkout)
         $canRate = false;
+        $ratingAllowedFrom = null;
+
         if (auth()->check()) {
-            $canRate = auth()->user()->bookings()
+            $booking = auth()->user()->bookings()
                 ->where('bookable_type', Residence::class)
                 ->where('bookable_id', $residence->id)
-                ->whereIn('status', ['completed', 'approved'])
-                ->exists();
+                ->where('status', 'approved')
+                ->whereHas('transaction', function ($q) {
+                    $q->where('payment_status', 'paid');
+                })
+                ->first();
+
+            if ($booking) {
+                $checkoutDate = \Carbon\Carbon::parse($booking->check_out_date);
+                $ratingStartDate = $checkoutDate->copy()->subDays(7);
+
+                if (now()->startOfDay()->gte($ratingStartDate->startOfDay())) {
+                    $canRate = true;
+                } else {
+                    $ratingAllowedFrom = $ratingStartDate->translatedFormat('d M Y');
+                }
+            }
         }
 
-        return view('user.residences.show', compact('residence', 'isBookmarked', 'userRating', 'canRate'));
+        return view('user.residences.show', compact('residence', 'isBookmarked', 'userRating', 'canRate', 'ratingAllowedFrom'));
     }
 }
