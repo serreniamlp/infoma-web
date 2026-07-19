@@ -441,6 +441,16 @@
                         </div>
 
                     </div>
+                    @elseif(isset($ratingAllowedFrom) && $ratingAllowedFrom)
+                    <div class="bg-white rounded-xl shadow-sm p-6 text-center border border-gray-100">
+                        <div class="inline-flex items-center justify-center w-12 h-12 bg-blue-100 rounded-full mb-3 text-blue-600">
+                            <i class="fas fa-info-circle text-xl"></i>
+                        </div>
+                        <h4 class="font-semibold text-gray-900 text-sm">Rating Belum Dapat Diberikan</h4>
+                        <p class="text-xs text-gray-500 mt-2 leading-relaxed max-w-sm mx-auto">
+                            Anda baru dapat memberikan rating & ulasan mulai tanggal <strong>{{ $ratingAllowedFrom }}</strong> (H-7 sebelum sewa berakhir) setelah merasakan pengalaman tinggal di hunian ini.
+                        </p>
+                    </div>
                     @endif
                 @endauth
 

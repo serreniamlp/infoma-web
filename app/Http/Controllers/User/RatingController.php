@@ -36,20 +36,33 @@ class RatingController extends Controller
         $item = $modelClass::findOrFail($id);
 
         // Cek kelayakan: harus punya booking approved + transaksi paid
-        $eligibleToRate = auth()->user()->bookings()
+        $booking = auth()->user()->bookings()
             ->where('bookable_type', $modelClass)
             ->where('bookable_id', $id)
             ->where('status', 'approved')
             ->whereHas('transaction', function ($q) {
                 $q->where('payment_status', 'paid');
             })
-            ->exists();
+            ->first();
 
-        if (!$eligibleToRate) {
+        if (!$booking) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Anda hanya dapat memberikan rating setelah booking disetujui dan dibayar',
             ], 403);
+        }
+
+        // Khusus Residence: batasi minimal H-7 sewa berakhir
+        if ($modelClass === Residence::class) {
+            $checkoutDate = \Carbon\Carbon::parse($booking->check_out_date);
+            $ratingStartDate = $checkoutDate->copy()->subDays(7);
+
+            if (now()->startOfDay()->lt($ratingStartDate->startOfDay())) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => 'Anda baru dapat memberikan rating mulai tanggal ' . $ratingStartDate->translatedFormat('d M Y') . ' (H-7 sebelum sewa berakhir)',
+                ], 403);
+            }
         }
 
         // Cek apakah user sudah pernah memberi rating

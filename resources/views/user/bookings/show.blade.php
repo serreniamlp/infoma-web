@@ -192,21 +192,65 @@
                 <!-- Documents -->
                 @if($booking->documents && count($booking->documents) > 0)
                 <div class="bg-white rounded-lg shadow-sm p-6">
-                    <h2 class="text-lg font-semibold text-gray-900 mb-4">Dokumen</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        @foreach($booking->documents as $document)
-                        <div class="flex items-center p-4 border border-gray-200 rounded-lg">
-                            <i class="fas fa-file-pdf text-red-500 text-2xl mr-3"></i>
-                            <div class="flex-1">
-                                <p class="font-medium text-gray-900">{{ $document['name'] }}</p>
-                                <p class="text-sm text-gray-500">{{ $document['type'] }}</p>
+                    <h2 class="text-lg font-semibold text-gray-900 mb-4 flex items-center justify-between">
+                        <span><i class="fas fa-id-card text-blue-600 mr-2"></i>Dokumen Terlampir</span>
+                        <span class="text-xs font-normal text-gray-500">{{ count($booking->documents) }} dokumen</span>
+                    </h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        @foreach($booking->documents as $index => $document)
+                            @php
+                                $docPath = is_array($document) ? ($document['path'] ?? '') : $document;
+                                $docName = is_array($document) ? ($document['name'] ?? 'Dokumen ' . ($index + 1)) : 'Dokumen ' . ($index + 1);
+                                $docType = is_array($document) ? ($document['type'] ?? '') : '';
+                                $ext = strtolower(pathinfo($docPath, PATHINFO_EXTENSION));
+                                $isImage = in_array($ext, ['jpg', 'jpeg', 'png', 'webp']) || str_contains($docType, 'image');
+                                $isPdf = $ext === 'pdf' || str_contains($docType, 'pdf');
+                                $fileUrl = asset('storage/' . $docPath);
+                            @endphp
+
+                            <div class="border border-gray-200 rounded-xl overflow-hidden bg-gray-50 flex flex-col shadow-sm">
+                                <div class="p-3 bg-white border-b border-gray-200 flex items-center justify-between">
+                                    <div class="flex items-center min-w-0 mr-2">
+                                        @if($isPdf)
+                                            <i class="fas fa-file-pdf text-red-500 text-lg mr-2 flex-shrink-0"></i>
+                                        @elseif($isImage)
+                                            <i class="fas fa-file-image text-blue-500 text-lg mr-2 flex-shrink-0"></i>
+                                        @else
+                                            <i class="fas fa-file-alt text-gray-500 text-lg mr-2 flex-shrink-0"></i>
+                                        @endif
+                                        <span class="text-sm font-medium text-gray-900 truncate" title="{{ $docName }}">{{ $docName }}</span>
+                                    </div>
+                                    <div class="flex items-center gap-2 flex-shrink-0">
+                                        <a href="{{ $fileUrl }}" target="_blank" class="text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1 rounded font-medium transition-colors inline-flex items-center" title="Buka di Tab Baru">
+                                            <i class="fas fa-external-link-alt mr-1"></i>Buka
+                                        </a>
+                                        <a href="{{ $fileUrl }}" download class="text-xs bg-gray-100 text-gray-600 hover:bg-gray-200 px-2.5 py-1 rounded font-medium transition-colors inline-flex items-center" title="Unduh File">
+                                            <i class="fas fa-download"></i>
+                                        </a>
+                                    </div>
+                                </div>
+
+                                {{-- Preview Content --}}
+                                <div class="flex-1 flex items-center justify-center p-3 bg-gray-100 min-h-[200px]">
+                                    @if($isImage)
+                                        <a href="{{ $fileUrl }}" target="_blank" class="group relative w-full h-48 flex items-center justify-center overflow-hidden rounded-lg bg-gray-900/5 border border-gray-200">
+                                            <img src="{{ $fileUrl }}" alt="{{ $docName }}" class="max-h-48 w-auto object-contain transition-transform duration-200 group-hover:scale-105">
+                                            <div class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-semibold transition-opacity duration-200">
+                                                <i class="fas fa-search-plus mr-1.5 text-base"></i> Klik untuk Memperbesar
+                                            </div>
+                                        </a>
+                                    @elseif($isPdf)
+                                        <div class="w-full h-48 rounded-lg overflow-hidden border border-gray-200 bg-white">
+                                            <iframe src="{{ $fileUrl }}#toolbar=0" class="w-full h-full border-none"></iframe>
+                                        </div>
+                                    @else
+                                        <div class="text-center p-6">
+                                            <i class="fas fa-file-alt text-gray-400 text-4xl mb-2"></i>
+                                            <p class="text-xs text-gray-500">Pratinjau tidak tersedia</p>
+                                        </div>
+                                    @endif
+                                </div>
                             </div>
-                            <a href="{{ asset('storage/' . $document['path']) }}"
-                               target="_blank"
-                               class="text-blue-600 hover:text-blue-700">
-                                <i class="fas fa-download"></i>
-                            </a>
-                        </div>
                         @endforeach
                     </div>
                 </div>

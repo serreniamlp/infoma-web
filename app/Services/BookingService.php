@@ -368,6 +368,12 @@ class BookingService
                 '/user/bookings/' . $booking->id
             );
 
+            NotificationService::ratingReminder(
+                $booking->user_id,
+                $booking->bookable->name ?? 'hunian',
+                '/residences/' . $booking->bookable_id
+            );
+
             // Tandai sudah dikirim agar tidak spam
             $booking->update(['renewal_reminder_sent_at' => now()]);
 
