@@ -200,6 +200,7 @@ Route::prefix('v1')->group(function () {
             Route::post('/bookings',                        [UserBookingController::class, 'store']);
             Route::get('/bookings/{booking}',               [UserBookingController::class, 'show']);
             Route::patch('/bookings/{booking}/cancel',      [UserBookingController::class, 'cancel']);
+            Route::post('/bookings/{booking}/renew',        [UserBookingController::class, 'renew']);
             Route::post('/bookings/{booking}/payment',      [UserBookingController::class, 'processPayment']);
 
             // Bookmark

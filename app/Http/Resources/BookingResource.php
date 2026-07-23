@@ -27,6 +27,7 @@ class BookingResource extends JsonResource
             'total_price'       => $this->total_price,
             'notes'             => $this->notes,
             'rejection_reason'  => $this->rejection_reason,
+            'is_renewal'        => (bool) $this->is_renewal,
             'bookable_type'     => class_basename($this->bookable_type),
             'bookable'          => $this->whenLoaded('bookable', fn() => [
                 'id'    => $this->bookable->id,
