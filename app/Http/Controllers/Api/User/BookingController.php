@@ -108,6 +108,50 @@ class BookingController extends Controller
         }
     }
 
+    public function renew(Request $request, Booking $booking)
+    {
+        if ($booking->user_id !== auth()->id()) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Unauthorized.',
+            ], 403);
+        }
+
+        if ($booking->bookable_type !== \App\Models\Residence::class) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Perpanjang sewa hanya tersedia untuk hunian.',
+            ], 422);
+        }
+
+        if ($booking->status !== 'approved') {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Hanya booking yang aktif yang bisa diperpanjang.',
+            ], 422);
+        }
+
+        $request->validate([
+            'duration_months' => 'required|integer|min:1',
+        ]);
+
+        try {
+            $newBooking = $this->bookingService->renewBooking($booking, (int) $request->duration_months);
+            $newBooking->load(['bookable', 'transaction']);
+
+            return response()->json([
+                'status'  => 'success',
+                'message' => 'Perpanjang sewa berhasil diajukan! Menunggu persetujuan penyedia.',
+                'data'    => new BookingResource($newBooking),
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal mengajukan perpanjangan: ' . $e->getMessage(),
+            ], 422);
+        }
+    }
+
     public function payment(Booking $booking)
     {
         if ($booking->user_id !== auth()->id()) {
