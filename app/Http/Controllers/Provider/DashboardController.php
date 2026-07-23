@@ -486,4 +486,97 @@ class DashboardController extends Controller
         ));
 
     }
+
+    public function exportReport(Request $request)
+    {
+        $providerId = auth()->id();
+        $isResidence = auth()->user()->hasRole('provider_residence');
+        $period     = $request->period ?? 'this_month';
+
+        $dateFrom = match($period) {
+            'this_week'  => Carbon::now()->startOfWeek(),
+            'this_month' => Carbon::now()->startOfMonth(),
+            'last_month' => Carbon::now()->subMonth()->startOfMonth(),
+            'this_year'  => Carbon::now()->startOfYear(),
+            'custom'     => ($request->filled('date_from')
+                                ? Carbon::parse($request->date_from)->startOfDay()
+                                : Carbon::now()->startOfMonth()),
+            default      => Carbon::now()->startOfMonth(),
+        };
+
+        $dateTo = match($period) {
+            'last_month' => Carbon::now()->subMonth()->endOfMonth(),
+            'custom'     => ($request->filled('date_to')
+                                ? Carbon::parse($request->date_to)->endOfDay()
+                                : Carbon::now()->endOfDay()),
+            default      => Carbon::now()->endOfDay(),
+        };
+
+        $bookings = Booking::whereHas('bookable', function ($q) use ($providerId) {
+            $q->where('provider_id', $providerId);
+        })
+        ->with(['user', 'bookable', 'transaction'])
+        ->whereBetween('created_at', [$dateFrom, $dateTo])
+        ->orderBy('created_at', 'desc')
+        ->get();
+
+        $fileName = 'laporan-pendapatan-' . ($isResidence ? 'hunian' : 'event') . '-' . now()->format('Y-m-d') . '.csv';
+
+        $headers = [
+            'Content-type'        => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => "attachment; filename={$fileName}",
+            'Pragma'              => 'no-cache',
+            'Cache-Control'       => 'must-revalidate, post-check=0, pre-check=0',
+            'Expires'             => '0'
+        ];
+
+        $callback = function() use ($bookings, $isResidence) {
+            $file = fopen('php://output', 'w');
+            
+            // Add UTF-8 BOM
+            fprintf($file, chr(0xEF).chr(0xBB).chr(0xBF));
+
+            // Header columns
+            fputcsv($file, [
+                'Kode Booking',
+                'Nama Pemesan',
+                'Nama ' . ($isResidence ? 'Hunian' : 'Event'),
+                'Tanggal Booking',
+                $isResidence ? 'Check-in Date' : 'Tanggal Kegiatan',
+                $isResidence ? 'Check-out Date' : 'Selesai Kegiatan',
+                'Status Booking',
+                'Metode Pembayaran',
+                'Status Pembayaran',
+                'Nominal (Rp)'
+            ]);
+
+            foreach ($bookings as $b) {
+                $finalAmount = 0;
+                $payStatus = 'Belum bayar';
+                $payMethod = '-';
+
+                if ($b->transaction) {
+                    $finalAmount = (int) $b->transaction->final_amount;
+                    $payStatus = ucfirst($b->transaction->payment_status);
+                    $payMethod = $b->transaction->payment_method === 'manual_transfer' ? 'Transfer Manual' : ucfirst($b->transaction->payment_method);
+                }
+
+                fputcsv($file, [
+                    $b->booking_code,
+                    $b->user->name ?? '-',
+                    $b->bookable->name ?? '-',
+                    $b->created_at->format('d/m/Y H:i'),
+                    $b->check_in_date?->format('d/m/Y') ?? '-',
+                    $b->check_out_date?->format('d/m/Y') ?? '-',
+                    ucfirst($b->status),
+                    $payMethod,
+                    $payStatus,
+                    $finalAmount
+                ]);
+            }
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
 }

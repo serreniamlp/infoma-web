@@ -5,8 +5,30 @@
 <div class="min-h-screen bg-gray-50 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {{-- ── Header ──────────────────────────────────────────────────── --}}
-        <div class="flex items-center justify-between mb-6">
+        {{-- Kop Surat Resmi untuk Cetak (Hanya Tampil saat Print/PDF) --}}
+        <div class="hidden print:block border-b-4 border-double border-gray-800 pb-4 mb-6">
+            <div class="text-center">
+                <h1 class="text-3xl font-extrabold uppercase tracking-wider text-gray-900">EDULIVING</h1>
+                <p class="text-xs text-gray-500 font-medium tracking-widest mt-1 uppercase">Platform Informasi & Penyewaan Mahasiswa Terintegrasi</p>
+                <div class="text-xs text-gray-400 mt-0.5">Email: support@eduliving.com | Website: eduliving.com</div>
+                <h2 class="text-xl font-bold mt-4 pt-3 border-t border-gray-200 uppercase tracking-wide text-gray-800">Laporan Pendapatan Resmi - Mitra Provider Event</h2>
+                <p class="text-sm text-gray-600 mt-1">Periode Laporan: <strong>{{ $dateFrom->translatedFormat('d F Y') }}</strong> s/d <strong>{{ $dateTo->translatedFormat('d F Y') }}</strong></p>
+            </div>
+            <div class="mt-6 grid grid-cols-2 gap-4 text-xs text-gray-700">
+                <div>
+                    <p class="mb-1"><strong>Nama Provider:</strong> {{ auth()->user()->name }}</p>
+                    <p class="mb-1"><strong>Email Mitra:</strong> {{ auth()->user()->email }}</p>
+                    <p><strong>Status Kemitraan:</strong> Aktif</p>
+                </div>
+                <div class="text-right">
+                    <p class="mb-1"><strong>Tanggal Cetak:</strong> {{ now()->translatedFormat('d F Y, H:i') }} WIB</p>
+                    <p><strong>Dicetak Oleh:</strong> {{ auth()->user()->name }}</p>
+                </div>
+            </div>
+        </div>
+
+        {{-- ── Header Web (Hidden when Printing) ────────────────────────── --}}
+        <div class="flex items-center justify-between mb-6 print:hidden">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
                     <i class="fas fa-chart-bar text-purple-500"></i>
@@ -17,14 +39,24 @@
                     <strong>{{ $dateTo->format('d M Y') }}</strong>
                 </p>
             </div>
-            <a href="{{ route('provider.event.dashboard') }}"
-               class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
-                <i class="fas fa-arrow-left text-xs"></i> Dashboard
-            </a>
+            <div class="flex items-center gap-3">
+                <a href="{{ route('provider.event.report.export', request()->all()) }}"
+                   class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                    <i class="fas fa-file-excel"></i> Ekspor Excel/CSV
+                </a>
+                <button onclick="window.print()"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
+                    <i class="fas fa-print"></i> Cetak Laporan / PDF
+                </button>
+                <a href="{{ route('provider.event.dashboard') }}"
+                   class="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all">
+                    <i class="fas fa-arrow-left text-xs"></i> Dashboard
+                </a>
+            </div>
         </div>
 
         {{-- ── Filter Periode ───────────────────────────────────────────── --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 print:hidden">
             <form method="GET" class="flex gap-3 flex-wrap items-end">
                 <div>
                     <label class="block text-xs font-medium text-gray-500 mb-1">Periode</label>
@@ -148,7 +180,7 @@
         </div>
 
         {{-- ── Grafik Pendapatan Harian ─────────────────────────────────── --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6 print:hidden">
             <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
                 <div>
                     <h3 class="font-semibold text-gray-900">Tren Pendapatan</h3>
@@ -170,7 +202,7 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 print:hidden">
 
             {{-- ── Grafik Status (Donut) ─────────────────────────────────── --}}
             <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -356,6 +388,62 @@
             </div>
             @endif
         </div>
+
+        {{-- Tanda Tangan / Validasi Laporan (Hanya Tampil saat Cetak) --}}
+        <div class="hidden print:block mt-12 grid grid-cols-2 text-xs text-gray-700">
+            <div>
+                <p>Catatan Laporan:</p>
+                <p class="text-gray-400 mt-1 max-w-sm">Laporan ini dibuat secara otomatis oleh sistem EduLiving Indonesia dan sah digunakan sebagai riwayat pendapatan provider.</p>
+            </div>
+            <div class="text-center ml-auto w-48 mr-6">
+                <p class="mb-16">Penyedia Event (Partner),</p>
+                <p class="font-bold underline text-gray-900">{{ auth()->user()->name }}</p>
+                <p class="text-gray-500 mt-0.5">EduLiving Partner</p>
+            </div>
+        </div>
+
+        <style>
+        @media print {
+            /* Sembunyikan navigasi web, tombol, form filter, & grafik */
+            .print\:hidden, nav, footer, header, button, form, .no-print, [role="navigation"] {
+                display: none !important;
+            }
+            body {
+                background-color: white !important;
+                color: black !important;
+            }
+            .min-h-screen, .max-w-7xl, .bg-gray-50, .bg-white {
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                max-width: 100% !important;
+                width: 100% !important;
+            }
+            .shadow-sm {
+                box-shadow: none !important;
+            }
+            .border border-gray-200 {
+                border-color: #e5e7eb !important;
+            }
+            /* Rapikan tabel cetak */
+            table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                border-bottom: 1px solid #e5e7eb !important;
+                padding: 8px 6px !important;
+                font-size: 11px !important;
+            }
+            /* Tampilkan Kop & Signature */
+            .print\:block {
+                display: block !important;
+            }
+            .print\:grid {
+                display: grid !important;
+            }
+        }
+        </style>
 
     </div>
 </div>

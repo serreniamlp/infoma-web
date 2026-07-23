@@ -218,6 +218,7 @@ Route::middleware('auth')->group(function () {
 
         // Laporan Provider Hunian
         Route::get('/report', [ProviderDashboardController::class, 'report'])->name('report');
+        Route::get('/report/export', [ProviderDashboardController::class, 'exportReport'])->name('report.export');
     });
 
     // --------------------------------------------------------
@@ -248,6 +249,7 @@ Route::middleware('auth')->group(function () {
 
         // Laporan Provider Event
         Route::get('/report', [ProviderDashboardController::class, 'report'])->name('report');
+        Route::get('/report/export', [ProviderDashboardController::class, 'exportReport'])->name('report.export');
     });
 
     // --------------------------------------------------------
