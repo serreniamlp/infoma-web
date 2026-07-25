@@ -35,6 +35,7 @@ class BookingResource extends JsonResource
                 'address' => $this->bookable->address ?? $this->bookable->location,
                 'images'  => $this->bookable->images,
                 'price'   => $this->bookable->price,
+                'rental_period' => $this->bookable->rental_period ?? null,
                 'provider' => $this->bookable->provider ? [
                     'id' => $this->bookable->provider->id,
                     'name' => $this->bookable->provider->name,
