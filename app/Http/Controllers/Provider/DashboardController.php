@@ -275,26 +275,31 @@ class DashboardController extends Controller
         $period     = $request->period ?? 'this_month';
 
         $dateFrom = match($period) {
-            'this_week'  => Carbon::now()->startOfWeek(),
-            'this_month' => Carbon::now()->startOfMonth(),
-            'last_month' => Carbon::now()->subMonth()->startOfMonth(),
-            'this_year'  => Carbon::now()->startOfYear(),
-            'custom'     => ($request->filled('date_from')
+            'this_week'     => Carbon::now()->startOfWeek(),
+            'this_month'    => Carbon::now()->startOfMonth(),
+            'last_month'    => Carbon::now()->subMonth()->startOfMonth(),
+            'last_6_months' => Carbon::now()->subMonths(5)->startOfMonth(),
+            'this_year'     => Carbon::now()->startOfYear(),
+            'custom'        => ($request->filled('date_from')
                                 ? Carbon::parse($request->date_from)->startOfDay()
                                 : Carbon::now()->startOfMonth()),
-            default      => Carbon::now()->startOfMonth(),
+            default         => Carbon::now()->startOfMonth(),
         };
 
         $dateTo = match($period) {
-            'last_month' => Carbon::now()->subMonth()->endOfMonth(),
-            'custom'     => ($request->filled('date_to')
+            'last_month'    => Carbon::now()->subMonth()->endOfMonth(),
+            'custom'        => ($request->filled('date_to')
                                 ? Carbon::parse($request->date_to)->endOfDay()
                                 : Carbon::now()->endOfDay()),
-            default      => Carbon::now()->endOfDay(),
+            default         => Carbon::now()->endOfDay(),
         };
 
+        $isResidence = auth()->user()->hasRole('provider_residence');
+        $bookableClass = $isResidence ? Residence::class : Activity::class;
+
         // --- Booking dalam periode ---
-        $bookingsQuery = Booking::whereHas('bookable', function ($q) use ($providerId) {
+        $bookingsQuery = Booking::where('bookable_type', $bookableClass)
+        ->whereHas('bookable', function ($q) use ($providerId) {
             $q->where('provider_id', $providerId);
         })->whereBetween('created_at', [$dateFrom, $dateTo]);
 
@@ -307,51 +312,23 @@ class DashboardController extends Controller
         // --- Booking revenue dalam periode ---
         $bookingRevenue = DB::table('transactions')
             ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
-            ->whereIn('bookings.bookable_type', [
-                'App\\Models\\Residence',
-                'App\\Models\\Activity',
-            ])
-            ->whereExists(function ($q) use ($providerId) {
-                $q->select(DB::raw(1))
-                ->from('residences')
-                ->whereColumn('residences.id', 'bookings.bookable_id')
-                ->where('residences.provider_id', $providerId)
-                ->where('bookings.bookable_type', 'like', '%Residence%')
-                ->union(
-                    DB::table('activities')
-                        ->select(DB::raw(1))
-                        ->whereColumn('activities.id', 'bookings.bookable_id')
-                        ->where('activities.provider_id', $providerId)
-                );
+            ->where('bookings.bookable_type', $bookableClass)
+            ->whereExists(function ($q) use ($providerId, $isResidence) {
+                if ($isResidence) {
+                    $q->select(DB::raw(1))
+                      ->from('residences')
+                      ->whereColumn('residences.id', 'bookings.bookable_id')
+                      ->where('residences.provider_id', $providerId);
+                } else {
+                    $q->select(DB::raw(1))
+                      ->from('activities')
+                      ->whereColumn('activities.id', 'bookings.bookable_id')
+                      ->where('activities.provider_id', $providerId);
+                }
             })
             ->where('transactions.payment_status', 'paid')
             ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
             ->sum('transactions.final_amount');
-
-        // Cara lebih simpel pakai 2 query terpisah
-        $residenceRevenue = DB::table('transactions')
-            ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
-            ->join('residences', function ($join) use ($providerId) {
-                $join->on('bookings.bookable_id', '=', 'residences.id')
-                    ->where('bookings.bookable_type', 'like', '%Residence%')
-                    ->where('residences.provider_id', $providerId);
-            })
-            ->where('transactions.payment_status', 'paid')
-            ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
-            ->sum('transactions.final_amount');
-
-        $activityRevenue = DB::table('transactions')
-            ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
-            ->join('activities', function ($join) use ($providerId) {
-                $join->on('bookings.bookable_id', '=', 'activities.id')
-                    ->where('bookings.bookable_type', 'like', '%Activity%')
-                    ->where('activities.provider_id', $providerId);
-            })
-            ->where('transactions.payment_status', 'paid')
-            ->whereBetween('transactions.created_at', [$dateFrom, $dateTo])
-            ->sum('transactions.final_amount');
-
-        $bookingRevenue = $residenceRevenue + $activityRevenue;
 
         // --- Marketplace revenue dalam periode ---
         $marketplaceRevenue = 0;
@@ -370,7 +347,8 @@ class DashboardController extends Controller
         $totalRevenue = $bookingRevenue + $marketplaceRevenue;
 
         // --- Tabel booking detail ---
-        $bookingDetails = Booking::whereHas('bookable', function ($q) use ($providerId) {
+        $bookingDetails = Booking::where('bookable_type', $bookableClass)
+        ->whereHas('bookable', function ($q) use ($providerId) {
             $q->where('provider_id', $providerId);
         })->with(['user', 'bookable', 'transaction'])
         ->whereBetween('created_at', [$dateFrom, $dateTo])
@@ -379,13 +357,11 @@ class DashboardController extends Controller
         ->withQueryString();
 
         // --- Revenue per item ---
-        $isResidence = auth()->user()->hasRole('provider_residence');
-
         if ($isResidence) {
             $revenuePerItem = DB::table('residences')
                 ->leftJoin('bookings', function ($join) {
                     $join->on('residences.id', '=', 'bookings.bookable_id')
-                        ->where('bookings.bookable_type', 'like', '%Residence%');
+                        ->where('bookings.bookable_type', Residence::class);
                 })
                 ->leftJoin('transactions', function ($join) use ($dateFrom, $dateTo) {
                     $join->on('transactions.booking_id', '=', 'bookings.id')
@@ -406,7 +382,7 @@ class DashboardController extends Controller
             $revenuePerItem = DB::table('activities')
                 ->leftJoin('bookings', function ($join) {
                     $join->on('activities.id', '=', 'bookings.bookable_id')
-                        ->where('bookings.bookable_type', 'like', '%Activity%');
+                        ->where('bookings.bookable_type', Activity::class);
                 })
                 ->leftJoin('transactions', function ($join) use ($dateFrom, $dateTo) {
                     $join->on('transactions.booking_id', '=', 'bookings.id')
@@ -430,7 +406,7 @@ class DashboardController extends Controller
                 ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
                 ->join('residences', function ($join) use ($providerId) {
                     $join->on('bookings.bookable_id', '=', 'residences.id')
-                        ->where('bookings.bookable_type', 'like', '%Residence%')
+                        ->where('bookings.bookable_type', Residence::class)
                         ->where('residences.provider_id', $providerId);
                 })
                 ->where('transactions.payment_status', 'paid')
@@ -448,7 +424,7 @@ class DashboardController extends Controller
                 ->join('bookings', 'transactions.booking_id', '=', 'bookings.id')
                 ->join('activities', function ($join) use ($providerId) {
                     $join->on('bookings.bookable_id', '=', 'activities.id')
-                        ->where('bookings.bookable_type', 'like', '%Activity%')
+                        ->where('bookings.bookable_type', Activity::class)
                         ->where('activities.provider_id', $providerId);
                 })
                 ->where('transactions.payment_status', 'paid')
@@ -476,13 +452,36 @@ class DashboardController extends Controller
             'cancelled_bookings' => (clone $bookingsQuery)->where('status', 'cancelled')->count(),
         ];
 
+        // --- Bulanan e-Statements untuk Akses Cepat (Tahun Berjalan - Bahasa Indonesia) ---
+        $monthlyStatements = [];
+        $currentYear = Carbon::now()->year;
+        $currentMonthNumber = Carbon::now()->month;
+
+        $monthNamesIndonesian = [
+            1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+            5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+            9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+        ];
+
+        for ($m = 1; $m <= $currentMonthNumber; $m++) {
+            $mCarbon = Carbon::createFromDate($currentYear, $m, 1);
+            $monthlyStatements[] = [
+                'month_number' => $m,
+                'month_name'   => $monthNamesIndonesian[$m],
+                'year'         => $currentYear,
+                'date_from'    => $mCarbon->copy()->startOfMonth()->format('Y-m-d'),
+                'date_to'      => $mCarbon->copy()->endOfMonth()->format('Y-m-d'),
+            ];
+        }
+        $monthlyStatements = array_reverse($monthlyStatements);
+
         $viewName = $isResidence
             ? 'provider_residence.report'
             : 'provider_event.report';
 
         return view($viewName, compact(
             'summary', 'bookingDetails', 'revenuePerItem',
-            'dailyRevenue', 'period', 'dateFrom', 'dateTo'  
+            'dailyRevenue', 'period', 'dateFrom', 'dateTo', 'monthlyStatements'
         ));
 
     }
@@ -491,30 +490,35 @@ class DashboardController extends Controller
     {
         $providerId = auth()->id();
         $isResidence = auth()->user()->hasRole('provider_residence');
+        $bookableClass = $isResidence ? Residence::class : Activity::class;
         $period     = $request->period ?? 'this_month';
 
         $dateFrom = match($period) {
-            'this_week'  => Carbon::now()->startOfWeek(),
-            'this_month' => Carbon::now()->startOfMonth(),
-            'last_month' => Carbon::now()->subMonth()->startOfMonth(),
-            'this_year'  => Carbon::now()->startOfYear(),
-            'custom'     => ($request->filled('date_from')
+            'this_week'     => Carbon::now()->startOfWeek(),
+            'this_month'    => Carbon::now()->startOfMonth(),
+            'last_month'    => Carbon::now()->subMonth()->startOfMonth(),
+            'last_6_months' => Carbon::now()->subMonths(5)->startOfMonth(),
+            'this_year'     => Carbon::now()->startOfYear(),
+            'custom'        => ($request->filled('date_from')
                                 ? Carbon::parse($request->date_from)->startOfDay()
                                 : Carbon::now()->startOfMonth()),
-            default      => Carbon::now()->startOfMonth(),
+            default         => Carbon::now()->startOfMonth(),
         };
 
         $dateTo = match($period) {
-            'last_month' => Carbon::now()->subMonth()->endOfMonth(),
-            'custom'     => ($request->filled('date_to')
+            'last_month'    => Carbon::now()->subMonth()->endOfMonth(),
+            'custom'        => ($request->filled('date_to')
                                 ? Carbon::parse($request->date_to)->endOfDay()
                                 : Carbon::now()->endOfDay()),
-            default      => Carbon::now()->endOfDay(),
+            default         => Carbon::now()->endOfDay(),
         };
 
-        $bookings = Booking::whereHas('bookable', function ($q) use ($providerId) {
+        // KECUALIKAN TRANSAKSI REJECTED & CANCELLED DARI LAPORAN EXCEL
+        $bookings = Booking::where('bookable_type', $bookableClass)
+        ->whereHas('bookable', function ($q) use ($providerId) {
             $q->where('provider_id', $providerId);
         })
+        ->whereNotIn('status', ['rejected', 'cancelled'])
         ->with(['user', 'bookable', 'transaction'])
         ->whereBetween('created_at', [$dateFrom, $dateTo])
         ->orderBy('created_at', 'desc')

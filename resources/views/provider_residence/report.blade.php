@@ -1,24 +1,24 @@
 @extends('layouts.app')
-@section('title', 'Laporan Pendapatan — Provider Hunian')
+@section('title', 'Laporan Keuangan & e-Statement — Provider Hunian')
 
 @section('content')
 <div class="min-h-screen bg-gray-50 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        {{-- Kop Surat Resmi untuk Cetak (Hanya Tampil saat Print/PDF) --}}
+        {{-- ── 1. Kop Surat Resmi untuk Cetak / PDF (Print Only) ──────────────── --}}
         <div class="hidden print:block border-b-4 border-double border-gray-800 pb-4 mb-6">
             <div class="text-center">
-                <h1 class="text-3xl font-extrabold uppercase tracking-wider text-gray-900">EDULIVING</h1>
+                <h1 class="text-3xl font-extrabold uppercase tracking-wider text-gray-900">EDULIVING INDONESIA</h1>
                 <p class="text-xs text-gray-500 font-medium tracking-widest mt-1 uppercase">Platform Informasi & Penyewaan Mahasiswa Terintegrasi</p>
                 <div class="text-xs text-gray-400 mt-0.5">Email: support@eduliving.com | Website: eduliving.com</div>
-                <h2 class="text-xl font-bold mt-4 pt-3 border-t border-gray-200 uppercase tracking-wide text-gray-800">Laporan Pendapatan Resmi - Mitra Provider Hunian</h2>
+                <h2 class="text-xl font-bold mt-4 pt-3 border-t border-gray-200 uppercase tracking-wide text-gray-800">E-STATEMENT / LAPORAN KEUANGAN RESMI</h2>
                 <p class="text-sm text-gray-600 mt-1">Periode Laporan: <strong>{{ $dateFrom->translatedFormat('d F Y') }}</strong> s/d <strong>{{ $dateTo->translatedFormat('d F Y') }}</strong></p>
             </div>
             <div class="mt-6 grid grid-cols-2 gap-4 text-xs text-gray-700">
                 <div>
                     <p class="mb-1"><strong>Nama Provider:</strong> {{ auth()->user()->name }}</p>
                     <p class="mb-1"><strong>Email Mitra:</strong> {{ auth()->user()->email }}</p>
-                    <p><strong>Status Kemitraan:</strong> Aktif</p>
+                    <p><strong>Status Kemitraan:</strong> Aktif (Provider Hunian)</p>
                 </div>
                 <div class="text-right">
                     <p class="mb-1"><strong>Tanggal Cetak:</strong> {{ now()->translatedFormat('d F Y, H:i') }} WIB</p>
@@ -27,328 +27,230 @@
             </div>
         </div>
 
-        {{-- ── Header Web (Hidden when Printing) ────────────────────────── --}}
+        {{-- ── 2. Header Web & Quick Actions (Web Only) ──────────────────────── --}}
         <div class="flex items-center justify-between mb-6 print:hidden">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <i class="fas fa-chart-bar text-blue-500"></i>
-                    Laporan Pendapatan
+                    <i class="fas fa-file-invoice-dollar text-blue-600"></i>
+                    Laporan Keuangan & e-Statement
                 </h1>
                 <p class="text-gray-500 text-sm mt-1">
-                    Periode: <strong>{{ $dateFrom->format('d M Y') }}</strong> —
-                    <strong>{{ $dateTo->format('d M Y') }}</strong>
+                    Periode Laporan Aktif: <strong>{{ $dateFrom->translatedFormat('d M Y') }}</strong> — <strong>{{ $dateTo->translatedFormat('d M Y') }}</strong>
                 </p>
             </div>
             <div class="flex items-center gap-3">
-                <a href="{{ route('provider.residence.report.export', request()->all()) }}"
-                   class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-                    <i class="fas fa-file-excel"></i> Ekspor Excel/CSV
-                </a>
-                <button onclick="window.print()"
-                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium flex items-center gap-2 transition-colors">
-                    <i class="fas fa-print"></i> Cetak Laporan / PDF
-                </button>
                 <a href="{{ route('provider.residence.dashboard') }}"
                    class="px-4 py-2 border border-gray-300 hover:bg-gray-50 text-gray-700 rounded-lg text-sm font-medium flex items-center gap-1.5 transition-all">
-                    <i class="fas fa-arrow-left text-xs"></i> Dashboard
+                    <i class="fas fa-arrow-left text-xs"></i> Kembali ke Dashboard
                 </a>
             </div>
         </div>
 
-        {{-- ── Filter Periode ───────────────────────────────────────────── --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6 print:hidden">
-            <form method="GET" class="flex gap-3 flex-wrap items-end">
-                <div>
-                    <label class="block text-xs font-medium text-gray-500 mb-1">Periode</label>
-                    <select name="period" onchange="toggleCustomDate(this.value); this.form.submit()"
-                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500">
-                        <option value="this_week"  {{ $period === 'this_week'  ? 'selected' : '' }}>Minggu Ini</option>
-                        <option value="this_month" {{ $period === 'this_month' ? 'selected' : '' }}>Bulan Ini</option>
-                        <option value="last_month" {{ $period === 'last_month' ? 'selected' : '' }}>Bulan Lalu</option>
-                        <option value="this_year"  {{ $period === 'this_year'  ? 'selected' : '' }}>Tahun Ini</option>
-                        <option value="custom"     {{ $period === 'custom'     ? 'selected' : '' }}>Kustom</option>
-                    </select>
-                </div>
-                <div id="custom-date" class="{{ $period === 'custom' ? '' : 'hidden' }} flex gap-3">
+        {{-- ── 3. Filter Periode Bebas & Action Bar (Web Only) ──────────────── --}}
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 print:hidden">
+            <div class="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                <form method="GET" class="flex gap-3 flex-wrap items-end">
                     <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Dari</label>
-                        <input type="date" name="date_from"
-                               value="{{ $period === 'custom' ? request('date_from') : '' }}"
-                               class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        <label class="block text-xs font-semibold text-gray-600 mb-1">Pilih Periode Laporan</label>
+                        <select name="period" onchange="toggleCustomDate(this.value); this.form.submit()"
+                                class="px-3 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:ring-2 focus:ring-blue-500">
+                            <option value="this_month"    {{ $period === 'this_month'    ? 'selected' : '' }}>Bulan Ini ({{ now()->translatedFormat('F Y') }})</option>
+                            <option value="last_month"    {{ $period === 'last_month'    ? 'selected' : '' }}>Bulan Lalu</option>
+                            <option value="last_6_months" {{ $period === 'last_6_months' ? 'selected' : '' }}>6 Bulan Terakhir</option>
+                            <option value="this_year"     {{ $period === 'this_year'     ? 'selected' : '' }}>Tahun Ini ({{ now()->year }})</option>
+                            <option value="custom"        {{ $period === 'custom'        ? 'selected' : '' }}>Kustom Rentang Tanggal</option>
+                        </select>
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-500 mb-1">Sampai</label>
-                        <input type="date" name="date_to"
-                               value="{{ $period === 'custom' ? request('date_to') : '' }}"
-                               class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                    <div id="custom-date" class="{{ $period === 'custom' ? '' : 'hidden' }} flex gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Dari Tanggal</label>
+                            <input type="date" name="date_from"
+                                   value="{{ $period === 'custom' ? request('date_from') : '' }}"
+                                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Sampai Tanggal</label>
+                            <input type="date" name="date_to"
+                                   value="{{ $period === 'custom' ? request('date_to') : '' }}"
+                                   class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+                        </div>
+                        <div class="self-end">
+                            <button type="submit"
+                                    class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
+                                Terapkan
+                            </button>
+                        </div>
                     </div>
-                    <div class="self-end">
-                        <button type="submit"
-                                class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700">
-                            Terapkan
-                        </button>
-                    </div>
+                </form>
+
+                <div class="flex items-center gap-2">
+                    <a href="{{ route('provider.residence.report.export', request()->all()) }}"
+                       class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+                        <i class="fas fa-file-excel"></i> Unduh Excel
+                    </a>
+                    <button onclick="window.print()"
+                            class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm">
+                        <i class="fas fa-print"></i> Cetak / Simpan PDF
+                    </button>
                 </div>
-            </form>
+            </div>
         </div>
 
-        {{-- ── Summary Cards ────────────────────────────────────────────── --}}
+        {{-- ── 4. Akses Cepat e-Statement Bulanan (Gaya Bank Mandiri - Web Only) ── --}}
+        @if(isset($monthlyStatements) && count($monthlyStatements) > 0)
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-5 mb-6 print:hidden">
+            <div class="flex items-center justify-between mb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-sm">e-Statement Bulanan (Akses Cepat {{ now()->year }})</h3>
+                        <p class="text-xs text-gray-500">Pilih bulan di bawah ini untuk langsung mengunduh atau mencetak e-Statement per bulan</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 mt-4">
+                @foreach($monthlyStatements as $m)
+                @php
+                    $isCurrentMonthActive = $period === 'custom' && request('date_from') === $m['date_from'] && request('date_to') === $m['date_to'];
+                @endphp
+                <div class="border {{ $isCurrentMonthActive ? 'border-blue-500 bg-blue-50/40' : 'border-gray-200 bg-white' }} hover:border-blue-400 rounded-xl p-3.5 flex flex-col justify-between transition-all shadow-sm">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="font-bold text-gray-900 text-sm">{{ $m['month_name'] }}</span>
+                        <span class="text-xs font-mono text-gray-400">{{ $m['year'] }}</span>
+                    </div>
+                    <div class="flex items-center gap-2 pt-2 border-t border-gray-100">
+                        <a href="{{ route('provider.residence.report.export', ['period' => 'custom', 'date_from' => $m['date_from'], 'date_to' => $m['date_to']]) }}"
+                           class="flex-1 text-center py-1.5 px-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1">
+                            <i class="fas fa-file-excel text-xs"></i> Excel
+                        </a>
+                        <a href="{{ route('provider.residence.report', ['period' => 'custom', 'date_from' => $m['date_from'], 'date_to' => $m['date_to']]) }}"
+                           class="flex-1 text-center py-1.5 px-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center gap-1">
+                            <i class="fas fa-file-alt text-xs"></i> Laporan
+                        </a>
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif
+
+        {{-- ── 5. Ringkasan Finansial (4 Cards Utama - Web & Print) ─────────── --}}
         <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             {{-- Total Pendapatan --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5 col-span-2 lg:col-span-1">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 bg-green-50 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-wallet text-green-500"></i>
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 bg-green-50 rounded-lg flex items-center justify-center text-green-600">
+                        <i class="fas fa-wallet"></i>
                     </div>
-                    <p class="text-sm font-medium text-gray-500">Total Pendapatan</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Pendapatan</p>
                 </div>
-                <p class="text-2xl font-bold text-gray-900">
+                <p class="text-2xl font-extrabold text-gray-900">
                     Rp {{ number_format($summary['total_revenue'], 0, ',', '.') }}
                 </p>
-                @if(($summary['marketplace_revenue'] ?? 0) > 0)
-                <div class="mt-3 pt-3 border-t border-gray-100 space-y-1 text-xs text-gray-500">
-                    <div class="flex justify-between">
-                        <span>Booking</span>
-                        <span class="font-medium">Rp {{ number_format($summary['booking_revenue'], 0, ',', '.') }}</span>
-                    </div>
-                    <div class="flex justify-between">
-                        <span>Marketplace</span>
-                        <span class="font-medium">Rp {{ number_format($summary['marketplace_revenue'], 0, ',', '.') }}</span>
-                    </div>
-                </div>
-                @endif
+                <p class="text-xs text-gray-400 mt-1">Transaksi Lunas Periode Ini</p>
             </div>
 
-            {{-- Total Booking --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-calendar-check text-blue-500"></i>
+            {{-- Transaksi Lunas --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600">
+                        <i class="fas fa-check-circle"></i>
                     </div>
-                    <p class="text-sm font-medium text-gray-500">Total Booking</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Transaksi Lunas</p>
                 </div>
-                <p class="text-2xl font-bold text-gray-900">{{ $summary['total_bookings'] }}</p>
-                <div class="mt-3 pt-3 border-t border-gray-100 grid grid-cols-3 gap-1 text-xs text-center">
-                    <div class="text-green-600">
-                        <div class="font-bold">{{ $summary['approved_bookings'] }}</div>
-                        <div class="text-gray-400">Aktif</div>
-                    </div>
-                    <div class="text-blue-600">
-                        <div class="font-bold">{{ $summary['completed_bookings'] }}</div>
-                        <div class="text-gray-400">Selesai</div>
-                    </div>
-                    <div class="text-red-500">
-                        <div class="font-bold">{{ $summary['rejected_bookings'] }}</div>
-                        <div class="text-gray-400">Ditolak</div>
-                    </div>
-                </div>
+                <p class="text-2xl font-extrabold text-blue-700">{{ $summary['approved_bookings'] + $summary['completed_bookings'] }}</p>
+                <p class="text-xs text-gray-400 mt-1">Booking Aktif & Selesai</p>
             </div>
 
-            {{-- Tingkat Konversi --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 bg-purple-50 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-percentage text-purple-500"></i>
+            {{-- Pending Pembayaran --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 bg-amber-50 rounded-lg flex items-center justify-center text-amber-600">
+                        <i class="fas fa-clock"></i>
                     </div>
-                    <p class="text-sm font-medium text-gray-500">Tingkat Persetujuan</p>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Pending / Menunggu</p>
+                </div>
+                <p class="text-2xl font-extrabold text-amber-600">{{ $summary['pending_bookings'] }}</p>
+                <p class="text-xs text-gray-400 mt-1">Menunggu Pembayaran</p>
+            </div>
+
+            {{-- Rata-rata Nominal --}}
+            <div class="bg-white rounded-xl border border-gray-200 p-5 shadow-sm">
+                <div class="flex items-center gap-3 mb-2">
+                    <div class="w-9 h-9 bg-purple-50 rounded-lg flex items-center justify-center text-purple-600">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <p class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Rata-rata Booking</p>
                 </div>
                 @php
-                    $approvalRate = $summary['total_bookings'] > 0
-                        ? round(($summary['approved_bookings'] + $summary['completed_bookings']) / $summary['total_bookings'] * 100, 1)
-                        : 0;
+                    $paidCount = $summary['approved_bookings'] + $summary['completed_bookings'];
+                    $avgBooking = $paidCount > 0 ? $summary['booking_revenue'] / $paidCount : 0;
                 @endphp
-                <p class="text-2xl font-bold text-purple-600">{{ $approvalRate }}%</p>
-                <div class="mt-3 w-full bg-gray-100 rounded-full h-2">
-                    <div class="bg-purple-500 h-2 rounded-full" style="width: {{ $approvalRate }}%"></div>
-                </div>
-                <p class="text-xs text-gray-400 mt-1">{{ $summary['approved_bookings'] + $summary['completed_bookings'] }} dari {{ $summary['total_bookings'] }} booking</p>
-            </div>
-
-            {{-- Rata-rata Nilai --}}
-            <div class="bg-white rounded-xl border border-gray-200 p-5">
-                <div class="flex items-center gap-3 mb-3">
-                    <div class="w-10 h-10 bg-orange-50 rounded-xl flex items-center justify-center">
-                        <i class="fas fa-chart-line text-orange-500"></i>
-                    </div>
-                    <p class="text-sm font-medium text-gray-500">Rata-rata Booking</p>
-                </div>
-                @php
-                    $completedCount = $summary['completed_bookings'];
-                    $avgBooking = $completedCount > 0 ? $summary['booking_revenue'] / $completedCount : 0;
-                @endphp
-                <p class="text-2xl font-bold text-orange-600">
+                <p class="text-2xl font-extrabold text-purple-700">
                     Rp {{ number_format($avgBooking, 0, ',', '.') }}
                 </p>
-                <p class="text-xs text-gray-400 mt-2">per transaksi selesai</p>
+                <p class="text-xs text-gray-400 mt-1">Nominal Rata-rata</p>
             </div>
         </div>
 
-        {{-- ── Grafik Pendapatan Harian ─────────────────────────────────── --}}
-        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6 print:hidden">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                    <h3 class="font-semibold text-gray-900">Tren Pendapatan</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Pendapatan dari booking yang selesai per hari</p>
-                </div>
-                <span class="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
-                    {{ $dateFrom->format('d M') }} — {{ $dateTo->format('d M Y') }}
-                </span>
-            </div>
-            <div class="p-6">
-                @if($dailyRevenue->count() > 0)
-                    <canvas id="revenueChart" height="100"></canvas>
-                @else
-                    <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                        <i class="fas fa-chart-area text-4xl mb-3"></i>
-                        <p class="text-sm">Belum ada data pendapatan pada periode ini</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6 print:hidden">
-
-            {{-- ── Grafik Status Booking (Donut) ────────────────────────── --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-gray-900">Komposisi Booking</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Distribusi status booking periode ini</p>
-                </div>
-                <div class="p-6">
-                    @if($summary['total_bookings'] > 0)
-                        <canvas id="statusChart" height="200"></canvas>
-                        <div class="mt-4 space-y-2">
-                            @php
-                                $statusData = [
-                                    ['label' => 'Selesai',  'value' => $summary['completed_bookings'], 'color' => 'bg-green-500'],
-                                    ['label' => 'Aktif',    'value' => $summary['approved_bookings'],  'color' => 'bg-blue-500'],
-                                    ['label' => 'Pending',  'value' => $summary['pending_bookings'],   'color' => 'bg-yellow-400'],
-                                    ['label' => 'Ditolak',  'value' => $summary['rejected_bookings'],  'color' => 'bg-red-400'],
-                                    ['label' => 'Dibatalkan','value'=> $summary['cancelled_bookings'] ?? 0, 'color' => 'bg-gray-400'],
-                                ];
-                            @endphp
-                            @foreach($statusData as $s)
-                                @if($s['value'] > 0)
-                                <div class="flex items-center justify-between text-xs">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-3 h-3 rounded-full {{ $s['color'] }}"></div>
-                                        <span class="text-gray-600">{{ $s['label'] }}</span>
-                                    </div>
-                                    <span class="font-semibold text-gray-900">{{ $s['value'] }}</span>
-                                </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="flex flex-col items-center justify-center py-10 text-gray-400">
-                            <i class="fas fa-chart-pie text-3xl mb-2"></i>
-                            <p class="text-xs">Belum ada data</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-            {{-- ── Revenue per Hunian ───────────────────────────────────── --}}
-            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-gray-900">Performa per Hunian</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Revenue dan jumlah booking per listing</p>
-                </div>
-                <div class="divide-y divide-gray-50">
-                    @forelse($revenuePerItem as $i => $item)
-                    @php
-                        $maxRevenue = $revenuePerItem->max('revenue') ?: 1;
-                        $barWidth   = $item->revenue > 0 ? round(($item->revenue / $maxRevenue) * 100) : 0;
-                    @endphp
-                    <div class="px-6 py-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="text-sm font-bold text-gray-300 w-5 flex-shrink-0">{{ $i + 1 }}</span>
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 truncate">{{ $item->name }}</p>
-                                    <p class="text-xs text-gray-400">{{ $item->booking_count }} booking</p>
-                                </div>
-                            </div>
-                            <div class="text-right ml-4 flex-shrink-0">
-                                <p class="text-sm font-bold text-green-700">
-                                    Rp {{ number_format($item->revenue, 0, ',', '.') }}
-                                </p>
-                            </div>
-                        </div>
-                        {{-- Progress bar --}}
-                        <div class="w-full bg-gray-100 rounded-full h-1.5">
-                            <div class="bg-green-500 h-1.5 rounded-full transition-all duration-500"
-                                 style="width: {{ $barWidth }}%"></div>
-                        </div>
-                    </div>
-                    @empty
-                    <div class="px-6 py-12 text-center text-gray-400">
-                        <i class="fas fa-building text-3xl mb-2"></i>
-                        <p class="text-sm">Belum ada data pendapatan per hunian</p>
-                    </div>
-                    @endforelse
-                </div>
-            </div>
-        </div>
-
-        {{-- ── Tabel Detail Booking ─────────────────────────────────────── --}}
+        {{-- ── 6. Tabel Histori Transaksi (Gaya Bank BNI e-Statement) ────────── --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
                 <div>
-                    <h3 class="font-semibold text-gray-900">Riwayat Booking</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Semua booking pada periode yang dipilih</p>
+                    <h3 class="font-bold text-gray-900 text-base">Histori & Rincian Transaksi</h3>
+                    <p class="text-xs text-gray-500 mt-0.5">Daftar transaksi hunian pada periode <strong>{{ $dateFrom->format('d M Y') }}</strong> — <strong>{{ $dateTo->format('d M Y') }}</strong></p>
                 </div>
-                <span class="text-xs bg-blue-50 text-blue-600 border border-blue-100 px-3 py-1 rounded-full font-medium">
-                    {{ $bookingDetails->total() }} booking
+                <span class="text-xs bg-gray-100 text-gray-700 px-3 py-1 rounded-full font-semibold border border-gray-200">
+                    Total: {{ $bookingDetails->total() }} Transaksi
                 </span>
             </div>
             <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-100">
-                    <thead class="bg-gray-50">
+                <table class="min-w-full divide-y divide-gray-200 text-left">
+                    <thead class="bg-gray-100/70">
                         <tr>
-                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Kode</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Pemesan</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Hunian</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Tgl Booking</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Check-in</th>
-                            <th class="px-5 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Status</th>
-                            <th class="px-5 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">Nominal</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider">Tgl Transaksi</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider">Kode Booking</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Pemesan</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider">Unit Hunian</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider">Metode Bayar</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider">Status</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider text-right">Nominal (Rp)</th>
                         </tr>
                     </thead>
-                    <tbody class="divide-y divide-gray-50">
+                    <tbody class="divide-y divide-gray-200 bg-white">
                         @forelse($bookingDetails as $booking)
-                        <tr class="hover:bg-gray-50 transition-colors">
-                            <td class="px-5 py-3">
-                                <span class="text-xs font-mono text-gray-500">{{ $booking->booking_code }}</span>
+                        <tr class="hover:bg-gray-50/80 transition-colors {{ in_array($booking->status, ['rejected', 'cancelled']) ? 'print:hidden' : '' }}">
+                            <td class="px-4 py-3.5 text-xs text-gray-600 whitespace-nowrap">
+                                {{ $booking->created_at->format('d/m/Y H:i') }}
                             </td>
-                            <td class="px-5 py-3">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-7 h-7 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                                        <span class="text-xs font-bold text-blue-600">
-                                            {{ substr($booking->user->name ?? 'U', 0, 1) }}
-                                        </span>
-                                    </div>
-                                    <span class="text-sm text-gray-900">{{ $booking->user->name ?? '—' }}</span>
-                                </div>
+                            <td class="px-4 py-3.5">
+                                <span class="text-xs font-mono font-semibold text-gray-800">#{{ $booking->booking_code }}</span>
                             </td>
-                            <td class="px-5 py-3 text-sm text-gray-700 max-w-[150px] truncate">
+                            <td class="px-4 py-3.5 text-sm font-medium text-gray-900">
+                                {{ $booking->user->name ?? '—' }}
+                            </td>
+                            <td class="px-4 py-3.5 text-xs text-gray-700 max-w-[180px] truncate">
                                 {{ $booking->bookable->name ?? '—' }}
                             </td>
-                            <td class="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {{ $booking->created_at->format('d M Y') }}
+                            <td class="px-4 py-3.5 text-xs text-gray-600 whitespace-nowrap">
+                                @if($booking->transaction && $booking->transaction->payment_method)
+                                    {{ $booking->transaction->payment_method === 'manual_transfer' ? 'Transfer Bank' : ucfirst($booking->transaction->payment_method) }}
+                                @else
+                                    —
+                                @endif
                             </td>
-                            <td class="px-5 py-3 text-sm text-gray-500 whitespace-nowrap">
-                                {{ $booking->check_in_date?->format('d M Y') ?? '—' }}
-                            </td>
-                            <td class="px-5 py-3">
+                            <td class="px-4 py-3.5 whitespace-nowrap">
                                 @php
                                     $badge = match($booking->status) {
-                                        'pending'   => 'bg-yellow-100 text-yellow-700',
-                                        'approved'  => 'bg-blue-100 text-blue-700',
-                                        'completed' => 'bg-green-100 text-green-700',
-                                        'rejected'  => 'bg-red-100 text-red-700',
-                                        'cancelled' => 'bg-gray-100 text-gray-600',
-                                        default     => 'bg-gray-100 text-gray-600',
+                                        'pending'   => 'bg-amber-50 text-amber-700 border-amber-200',
+                                        'approved'  => 'bg-blue-50 text-blue-700 border-blue-200',
+                                        'completed' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                        'rejected'  => 'bg-rose-50 text-rose-700 border-rose-200',
+                                        'cancelled' => 'bg-gray-100 text-gray-600 border-gray-200',
+                                        default     => 'bg-gray-100 text-gray-600 border-gray-200',
                                     };
                                     $label = match($booking->status) {
                                         'pending'   => 'Pending',
@@ -359,29 +261,26 @@
                                         default     => ucfirst($booking->status),
                                     };
                                 @endphp
-                                <span class="px-2.5 py-1 rounded-full text-xs font-semibold {{ $badge }}">
+                                <span class="px-2.5 py-0.5 rounded-md text-xs font-semibold border {{ $badge }}">
                                     {{ $label }}
                                 </span>
                             </td>
-                            <td class="px-5 py-3 text-right">
+                            <td class="px-4 py-3.5 text-right font-semibold text-sm whitespace-nowrap">
                                 @if($booking->transaction)
-                                    <span class="text-sm font-semibold {{ $booking->transaction->payment_status === 'paid' ? 'text-green-700' : 'text-gray-400' }}">
+                                    <span class="{{ $booking->transaction->payment_status === 'paid' ? 'text-emerald-700 font-bold' : 'text-gray-400' }}">
                                         Rp {{ number_format($booking->transaction->final_amount, 0, ',', '.') }}
                                     </span>
-                                    @if($booking->transaction->payment_status !== 'paid')
-                                        <div class="text-xs text-gray-400">Belum bayar</div>
-                                    @endif
                                 @else
-                                    <span class="text-gray-300 text-sm">—</span>
+                                    <span class="text-gray-300">—</span>
                                 @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="7" class="px-5 py-12 text-center">
-                                <div class="flex flex-col items-center text-gray-400">
-                                    <i class="fas fa-calendar-times text-3xl mb-2"></i>
-                                    <p class="text-sm">Tidak ada booking pada periode ini</p>
+                            <td colspan="7" class="px-5 py-12 text-center text-gray-400">
+                                <div class="flex flex-col items-center">
+                                    <i class="fas fa-file-invoice text-4xl mb-2 text-gray-300"></i>
+                                    <p class="text-sm font-medium">Tidak ada transaksi pada periode ini</p>
                                 </div>
                             </td>
                         </tr>
@@ -390,163 +289,78 @@
                 </table>
             </div>
             @if($bookingDetails->hasPages())
-            <div class="px-6 py-4 border-t border-gray-100 bg-gray-50">
+            <div class="px-6 py-4 border-t border-gray-200 bg-gray-50 print:hidden">
                 {{ $bookingDetails->links() }}
             </div>
             @endif
         </div>
 
-        {{-- Tanda Tangan / Validasi Laporan (Hanya Tampil saat Cetak) --}}
+        {{-- ── 7. Tanda Tangan / Lembar Pengesahan (Print Only) ──────────────── --}}
         <div class="hidden print:block mt-12 grid grid-cols-2 text-xs text-gray-700">
             <div>
-                <p>Catatan Laporan:</p>
-                <p class="text-gray-400 mt-1 max-w-sm">Laporan ini dibuat secara otomatis oleh sistem EduLiving Indonesia dan sah digunakan sebagai riwayat pendapatan provider.</p>
+                <p class="font-bold mb-1">Catatan Laporan e-Statement:</p>
+                <p class="text-gray-500 max-w-sm leading-relaxed">
+                    Dokumen e-Statement ini diterbitkan secara otomatis oleh sistem EduLiving Indonesia dan sah sebagai bukti rekapitulasi pendapatan provider hunian.
+                </p>
             </div>
-            <div class="text-center ml-auto w-48 mr-6">
-                <p class="mb-16">Penyedia Hunian (Partner),</p>
-                <p class="font-bold underline text-gray-900">{{ auth()->user()->name }}</p>
+            <div class="text-center ml-auto w-56 mr-4">
+                <p class="mb-16">Mitra Provider Hunian,</p>
+                <p class="font-bold underline text-gray-900 text-sm">{{ auth()->user()->name }}</p>
                 <p class="text-gray-500 mt-0.5">EduLiving Partner</p>
             </div>
         </div>
 
-        <style>
-        @media print {
-            /* Sembunyikan navigasi web, tombol, form filter, & grafik */
-            .print\:hidden, nav, footer, header, button, form, .no-print, [role="navigation"] {
-                display: none !important;
-            }
-            body {
-                background-color: white !important;
-                color: black !important;
-            }
-            .min-h-screen, .max-w-7xl, .bg-gray-50, .bg-white {
-                background: transparent !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: 100% !important;
-                width: 100% !important;
-            }
-            .shadow-sm {
-                box-shadow: none !important;
-            }
-            .border border-gray-200 {
-                border-color: #e5e7eb !important;
-            }
-            /* Rapikan tabel cetak */
-            table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-            }
-            th, td {
-                border-bottom: 1px solid #e5e7eb !important;
-                padding: 8px 6px !important;
-                font-size: 11px !important;
-            }
-            /* Tampilkan Kop & Signature */
-            .print\:block {
-                display: block !important;
-            }
-            .print\:grid {
-                display: grid !important;
-            }
-        }
-        </style>
-
     </div>
 </div>
+
+<style>
+@media print {
+    /* Sembunyikan semua elemen navigasi, filter, dan tombol web */
+    .print\:hidden, nav, footer, header, button, form, .no-print, [role="navigation"] {
+        display: none !important;
+    }
+    body {
+        background-color: white !important;
+        color: black !important;
+        font-size: 12px !important;
+    }
+    .min-h-screen, .max-w-7xl, .bg-gray-50, .bg-white {
+        background: transparent !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+    .shadow-sm {
+        box-shadow: none !important;
+    }
+    .border {
+        border-color: #d1d5db !important;
+    }
+    /* Rapikan tabel cetak */
+    table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+    }
+    th, td {
+        border-bottom: 1px solid #e5e7eb !important;
+        padding: 6px 4px !important;
+        font-size: 10.5px !important;
+    }
+    .print\:block {
+        display: block !important;
+    }
+    .print\:grid {
+        display: grid !important;
+    }
+}
+</style>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
 function toggleCustomDate(value) {
     document.getElementById('custom-date').classList.toggle('hidden', value !== 'custom');
 }
-
-// ── Grafik Tren Pendapatan (Bar Chart) ───────────────────────────────────
-@if($dailyRevenue->count() > 0)
-const revenueCtx = document.getElementById('revenueChart').getContext('2d');
-new Chart(revenueCtx, {
-    type: 'bar',
-    data: {
-        labels: @json($dailyRevenue->pluck('date')->map(fn($d) => \Carbon\Carbon::parse($d)->format('d M'))),
-        datasets: [{
-            label: 'Pendapatan (Rp)',
-            data: @json($dailyRevenue->pluck('revenue')),
-            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-            borderColor: 'rgba(59, 130, 246, 0.8)',
-            borderWidth: 2,
-            borderRadius: 6,
-            borderSkipped: false,
-        }]
-    },
-    options: {
-        responsive: true,
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: ctx => 'Rp ' + ctx.parsed.y.toLocaleString('id-ID'),
-                }
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true,
-                ticks: {
-                    callback: val => 'Rp ' + (val / 1000000).toFixed(1) + 'jt',
-                    font: { size: 11 },
-                },
-                grid: { color: 'rgba(0,0,0,0.05)' },
-            },
-            x: {
-                ticks: { font: { size: 11 } },
-                grid: { display: false },
-            }
-        }
-    }
-});
-@endif
-
-// ── Grafik Status Booking (Donut) ─────────────────────────────────────────
-@if($summary['total_bookings'] > 0)
-const statusCtx = document.getElementById('statusChart').getContext('2d');
-new Chart(statusCtx, {
-    type: 'doughnut',
-    data: {
-        labels: ['Selesai', 'Aktif', 'Pending', 'Ditolak', 'Dibatalkan'],
-        datasets: [{
-            data: [
-                {{ $summary['completed_bookings'] }},
-                {{ $summary['approved_bookings'] }},
-                {{ $summary['pending_bookings'] }},
-                {{ $summary['rejected_bookings'] }},
-                {{ $summary['cancelled_bookings'] ?? 0 }},
-            ],
-            backgroundColor: [
-                'rgba(34, 197, 94, 0.8)',
-                'rgba(59, 130, 246, 0.8)',
-                'rgba(234, 179, 8, 0.8)',
-                'rgba(239, 68, 68, 0.8)',
-                'rgba(156, 163, 175, 0.8)',
-            ],
-            borderWidth: 0,
-            hoverOffset: 4,
-        }]
-    },
-    options: {
-        responsive: true,
-        cutout: '65%',
-        plugins: {
-            legend: { display: false },
-            tooltip: {
-                callbacks: {
-                    label: ctx => ctx.label + ': ' + ctx.parsed + ' booking',
-                }
-            }
-        }
-    }
-});
-@endif
 </script>
 @endpush
