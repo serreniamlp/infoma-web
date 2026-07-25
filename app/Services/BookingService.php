@@ -43,6 +43,7 @@ class BookingService
                         'name' => $uploadedFile->getClientOriginalName(),
                         'type' => $uploadedFile->getClientMimeType(),
                         'path' => $path,
+                        'doc_type' => $index === 0 ? 'ktp' : ($index === 1 ? 'kk' : 'lainnya'),
                     ];
                 }
             }

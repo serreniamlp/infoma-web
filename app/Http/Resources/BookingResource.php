@@ -29,6 +29,22 @@ class BookingResource extends JsonResource
             'rejection_reason'  => $this->rejection_reason,
             'is_renewal'        => (bool) $this->is_renewal,
             'bookable_type'     => class_basename($this->bookable_type),
+            'documents'         => collect($this->documents ?? [])->values()->map(function ($doc, $index) {
+                    $docType = $doc['doc_type'] ?? ($index === 0 ? 'ktp' : ($index === 1 ? 'kk' : 'lainnya'));
+                    $label   = match ($docType) {
+                        'ktp' => 'KTP',
+                        'kk'  => 'Kartu Keluarga',
+                        default => 'Dokumen ' . ($index + 1),
+                    };  
+                    $mime = $doc['type'] ?? '';
+
+                    return [
+                        'doc_type' => $docType,
+                        'label'    => $label,
+                        'url'      => isset($doc['path']) ? asset('storage/' . $doc['path']) : null,
+                        'is_image' => str_starts_with((string) $mime, 'image'),
+                    ];
+                })->filter(fn ($doc) => $doc['url'] !== null)->values(),
             'bookable'          => $this->whenLoaded('bookable', fn() => [
                 'id'    => $this->bookable->id,
                 'name'  => $this->bookable->name,
