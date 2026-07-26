@@ -37,7 +37,7 @@ class BookingService
             // Handle document uploads (residence only)
             $documents = [];
             if (isset($data['documents']) && is_array($data['documents'])) {
-                foreach ($data['documents'] as $uploadedFile) {
+                foreach ($data['documents'] as $index => $uploadedFile) {
                     $path = $uploadedFile->store('documents', 'public');
                     $documents[] = [
                         'name' => $uploadedFile->getClientOriginalName(),
