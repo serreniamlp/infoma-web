@@ -14,7 +14,7 @@ class ActivityPolicy
 
     public function view(User $user, Activity $activity)
     {
-        return $activity->is_active || $user->hasRole('admin') || $activity->provider_id === $user->id;
+        return $activity->is_active || $user->hasRole('admin') || $activity->provider_id == $user->id;
     }
 
     public function create(User $user)
@@ -25,11 +25,11 @@ class ActivityPolicy
 
     public function update(User $user, Activity $activity)
     {
-        return $user->hasRole('admin') || $activity->provider_id === $user->id;
+        return $user->hasRole('admin') || $activity->provider_id == $user->id;
     }
 
     public function delete(User $user, Activity $activity)
     {
-        return $user->hasRole('admin') || $activity->provider_id === $user->id;
+        return $user->hasRole('admin') || $activity->provider_id == $user->id;
     }
 }

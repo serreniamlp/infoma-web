@@ -14,7 +14,7 @@ class ResidencePolicy
 
     public function view(User $user, Residence $residence)
     {
-        return $residence->is_active || $user->hasRole('admin') || $residence->provider_id === $user->id;
+        return $residence->is_active || $user->hasRole('admin') || $residence->provider_id == $user->id;
     }
 
     public function create(User $user)
@@ -24,11 +24,11 @@ class ResidencePolicy
 
     public function update(User $user, Residence $residence)
     {
-        return $user->hasRole('admin') || $residence->provider_id === $user->id;
+        return $user->hasRole('admin') || $residence->provider_id == $user->id;
     }
 
     public function delete(User $user, Residence $residence)
     {
-        return $user->hasRole('admin') || $residence->provider_id === $user->id;
+        return $user->hasRole('admin') || $residence->provider_id == $user->id;
     }
 }

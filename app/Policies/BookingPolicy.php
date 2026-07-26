@@ -15,8 +15,8 @@ class BookingPolicy
     public function view(User $user, Booking $booking)
     {
         return $user->hasRole('admin') ||
-               $booking->user_id === $user->id ||
-               $booking->bookable->provider_id === $user->id;
+               $booking->user_id == $user->id ||
+               $booking->bookable->provider_id == $user->id;
     }
 
     public function create(User $user)
@@ -27,23 +27,23 @@ class BookingPolicy
     public function update(User $user, Booking $booking)
     {
         return $user->hasRole('admin') ||
-               $booking->user_id === $user->id ||
-               $booking->bookable->provider_id === $user->id;
+               $booking->user_id == $user->id ||
+               $booking->bookable->provider_id == $user->id;
     }
 
     public function delete(User $user, Booking $booking)
     {
-        return $user->hasRole('admin') || $booking->user_id === $user->id;
+        return $user->hasRole('admin') || $booking->user_id == $user->id;
     }
 
     public function approve(User $user, Booking $booking)
     {
-        return $user->hasRole('admin') || $booking->bookable->provider_id === $user->id;
+        return $user->hasRole('admin') || $booking->bookable->provider_id == $user->id;
     }
 
     public function reject(User $user, Booking $booking)
     {
-        return $user->hasRole('admin') || $booking->bookable->provider_id === $user->id;
+        return $user->hasRole('admin') || $booking->bookable->provider_id == $user->id;
     }
 }
 
