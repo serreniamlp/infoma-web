@@ -71,7 +71,7 @@ class BookingManagementController extends Controller
 
     public function show(Booking $booking)
     {
-        if ($booking->bookable->provider_id !== auth()->id()) {
+        if ($booking->bookable->provider_id != auth()->id()) {
             abort(403);
         }
 
@@ -86,7 +86,7 @@ class BookingManagementController extends Controller
 
     public function approve(Request $request, Booking $booking)
     {
-        if ($booking->bookable->provider_id !== auth()->id()) {
+        if ($booking->bookable->provider_id != auth()->id()) {
             abort(403);
         }
 
@@ -112,7 +112,7 @@ class BookingManagementController extends Controller
             'rejection_reason' => 'required|string|max:1000'
         ]);
 
-        if ($booking->bookable->provider_id !== auth()->id()) {
+        if ($booking->bookable->provider_id != auth()->id()) {
             abort(403);
         }
 
@@ -137,7 +137,7 @@ class BookingManagementController extends Controller
      */
     public function verifyPayment(Booking $booking)
     {
-        if ($booking->bookable->provider_id !== auth()->id()) {
+        if ($booking->bookable->provider_id != auth()->id()) {
             abort(403);
         }
 
@@ -165,7 +165,7 @@ class BookingManagementController extends Controller
             'payment_rejection_reason.max'      => 'Alasan penolakan pembayaran maksimal 500 karakter.',
         ]);
 
-        if ($booking->bookable->provider_id !== auth()->id()) {
+        if ($booking->bookable->provider_id != auth()->id()) {
             abort(403);
         }
 

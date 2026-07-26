@@ -36,7 +36,7 @@ class BookingController extends Controller
 
     public function show(Booking $booking)
     {
-        if ($booking->user_id !== auth()->id()) {
+        if ($booking->user_id != auth()->id()) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Unauthorized.',
@@ -73,7 +73,7 @@ class BookingController extends Controller
 
     public function cancel(Request $request, Booking $booking)
     {
-        if ($booking->user_id !== auth()->id()) {
+        if ($booking->user_id != auth()->id()) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Unauthorized.',
@@ -110,7 +110,7 @@ class BookingController extends Controller
 
     public function renew(Request $request, Booking $booking)
     {
-        if ($booking->user_id !== auth()->id()) {
+        if ($booking->user_id != auth()->id()) {
             return response()->json([
                 'status'  => 'error',
                 'message' => 'Unauthorized.',
@@ -154,7 +154,7 @@ class BookingController extends Controller
 
     public function payment(Booking $booking)
     {
-        if ($booking->user_id !== auth()->id()) {
+        if ($booking->user_id != auth()->id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -183,7 +183,7 @@ class BookingController extends Controller
 
     public function processPayment(Request $request, Booking $booking)
     {
-        if ($booking->user_id !== auth()->id()) {
+        if ($booking->user_id != auth()->id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
