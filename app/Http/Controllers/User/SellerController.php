@@ -221,11 +221,13 @@ class SellerController extends Controller
         ];
 
         if ($request->status === 'confirmed') {
-            $transaction->product->decrement('stock_quantity', $transaction->quantity);
+            if ($transaction->pickup_method !== 'cod') {
+                $data['payment_deadline'] = now()->addHour();
+            }
         } elseif ($request->status === 'cancelled') {
             $data['cancellation_reason'] = $request->cancellation_reason;
             $data['cancelled_at']        = now();
-            if (in_array($transaction->status, ['confirmed', 'in_progress'])) {
+            if (in_array($transaction->status, ['confirmed', 'in_progress', 'completed'])) {
                 $transaction->product->increment('stock_quantity', $transaction->quantity);
             }
         } elseif ($request->status === 'completed') {
@@ -233,12 +235,25 @@ class SellerController extends Controller
         }
 
         $transaction->update($data);
-        NotificationService::statusPesananDiupdate(
-            $transaction->buyer_id,
-            $transaction->product->name,
-            $request->status,
-            route('user.marketplace.transactions.show', $transaction->id)
-        );
+
+        // Notifikasi khusus saat dikonfirmasi (instruksi bayar)
+        if ($request->status === 'confirmed' && $transaction->pickup_method !== 'cod') {
+            NotificationService::send(
+                $transaction->buyer_id,
+                'pesanan.dikonfirmasi',
+                "Pesanan \"{$transaction->product->name}\" telah dikonfirmasi oleh penjual! Silakan selesaikan pembayaran dalam 1 jam.",
+                route('user.marketplace.transactions.show', $transaction->id),
+                'fa-credit-card',
+                'blue'
+            );
+        } else {
+            NotificationService::statusPesananDiupdate(
+                $transaction->buyer_id,
+                $transaction->product->name,
+                $request->status,
+                route('user.marketplace.transactions.show', $transaction->id)
+            );
+        }
 
         return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui!');
     }

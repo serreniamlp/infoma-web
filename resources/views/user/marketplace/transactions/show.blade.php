@@ -28,12 +28,27 @@
             </ol>
         </nav>
 
+        {{-- Banner: Menunggu Konfirmasi Penjual --}}
+        @if($transaction->status === 'pending' && $transaction->pickup_method !== 'cod')
+            <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-4">
+                <div class="text-blue-500 text-2xl mt-0.5">
+                    <i class="fas fa-user-clock"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-blue-800 text-base">Menunggu Konfirmasi Penjual</h3>
+                    <p class="text-blue-700 text-sm mt-1">
+                        Pesanan kamu berhasil dibuat. Penjual sedang memeriksa ketersediaan barang.
+                        Tombol pembayaran akan terbuka otomatis setelah penjual mengonfirmasi pesanan.
+                    </p>
+                </div>
+            </div>
+        @endif
+
         {{-- ================================================================ --}}
         {{-- BANNER: COUNTDOWN PEMBAYARAN                                     --}}
-        {{-- Muncul jika: status pending + payment pending + deadline belum   --}}
-        {{-- lewat. Berbeda dengan booking — deadline dari created_at +1 jam. --}}
+        {{-- Muncul jika: status confirmed + payment pending + deadline belum lewat --}}
         {{-- ================================================================ --}}
-        @if(in_array($transaction->status, ['pending', 'confirmed', 'processing']) && $transaction->payment_status === 'pending' && $transaction->payment_deadline && $transaction->pickup_method !== 'cod')
+        @if($transaction->status === 'confirmed' && $transaction->payment_status === 'pending' && $transaction->payment_deadline && $transaction->pickup_method !== 'cod')
             @php $isExpired = $transaction->isPaymentExpired(); @endphp
 
             @if(!$isExpired)
@@ -43,13 +58,10 @@
                     <i class="fas fa-clock"></i>
                 </div>
                 <div class="flex-1">
-                    {{-- [MIDTRANS] Teks diubah: tidak lagi minta upload bukti, tapi minta bayar via Midtrans --}}
-                    <h3 class="font-semibold text-amber-800 text-base">Segera Selesaikan Pembayaran!</h3>
+                    <h3 class="font-semibold text-amber-800 text-base">Pesanan Dikonfirmasi! Segera Selesaikan Pembayaran</h3>
                     <p class="text-amber-700 text-sm mt-1">
-                        Pesanan kamu sudah dibuat. Selesaikan pembayaran sebelum batas waktu habis,
-                        atau pesanan akan dibatalkan otomatis.
+                        Penjual telah mengonfirmasi kesiapan barang. Selesaikan pembayaran sebelum batas waktu habis.
                     </p>
-                    {{-- [MIDTRANS-END] --}}
                     <div class="mt-3 flex items-center gap-3">
                         <span class="text-amber-700 text-sm font-medium">Sisa waktu:</span>
                         <span id="paymentCountdown"
@@ -61,15 +73,12 @@
                         Batas akhir: {{ $transaction->payment_deadline->format('d M Y, H:i') }} WIB
                     </p>
                 </div>
-                {{-- [MIDTRANS] Link diubah ke halaman payment Midtrans --}}
                 <a href="{{ route('user.marketplace.transactions.payment', $transaction) }}"
                    class="shrink-0 bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg font-medium text-sm transition-colors">
                     Bayar Sekarang
                 </a>
-                {{-- [MIDTRANS-END] --}}
             </div>
             @else
-            {{-- Deadline sudah lewat, tapi command belum jalan — tampilkan pesan --}}
             <div class="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
                 <i class="fas fa-clock text-red-400 text-xl mt-0.5"></i>
                 <div>
@@ -80,6 +89,21 @@
                 </div>
             </div>
             @endif
+        @endif
+
+        {{-- Banner: Pesanan Selesai --}}
+        @if($transaction->status === 'completed')
+            <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-4">
+                <div class="text-green-500 text-2xl mt-0.5">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-green-800 text-base">Pesanan Selesai!</h3>
+                    <p class="text-green-700 text-sm mt-1">
+                        Pembayaran telah berhasil diproses dan transaksi telah selesai. Terima kasih telah berbelanja di EduLiving!
+                    </p>
+                </div>
+            </div>
         @endif
 
         {{-- Banner: dibatalkan otomatis --}}
@@ -239,7 +263,7 @@
             <!-- Sidebar -->
             <div class="space-y-8">
                 <!-- [MIDTRANS] Blok pembayaran — menggantikan form upload bukti manual -->
-                @if(in_array($transaction->status, ['pending', 'confirmed', 'processing']) && $transaction->payment_status === 'pending' && $transaction->pickup_method !== 'cod' && !$transaction->isPaymentExpired())
+                @if($transaction->status === 'confirmed' && $transaction->payment_status === 'pending' && $transaction->pickup_method !== 'cod' && !$transaction->isPaymentExpired())
                 <div id="upload-payment" class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="px-6 py-4 bg-green-50 border-b border-green-200">
                         <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">

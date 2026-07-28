@@ -128,17 +128,24 @@ class MidtransController extends Controller
         if ($this->midtrans->isPaymentSuccess($payload)) {
             DB::transaction(function () use ($transaction, $payload) {
                 $transaction->update([
+                    'status'                => 'completed',
+                    'completed_at'          => now(),
                     'payment_status'        => 'paid',
                     'payment_method'        => $payload['payment_type'] ?? 'midtrans',
                     'midtrans_payment_type' => $payload['payment_type'] ?? null,
                     'payment_deadline'      => null,
                 ]);
 
-                // Notifikasi ke buyer
+                // Kurangi stok produk saat pembayaran berhasil & pesanan selesai
+                if ($transaction->product) {
+                    $transaction->product->decrement('stock_quantity', $transaction->quantity);
+                }
+
+                // Notifikasi ke buyer (lengkap dengan link rating)
                 NotificationService::send(
                     $transaction->buyer_id,
                     'pesanan.dibayar',
-                    "Pembayaran untuk pesanan \"{$transaction->product->name}\" berhasil dikonfirmasi.",
+                    "Pembayaran untuk pesanan \"{$transaction->product->name}\" berhasil! Pesanan Selesai. Silakan berikan ulasan/rating.",
                     route('user.marketplace.transactions.show', $transaction->id),
                     'fa-check-circle',
                     'green'
@@ -148,14 +155,14 @@ class MidtransController extends Controller
                 NotificationService::send(
                     $transaction->seller_id,
                     'pesanan.dibayar',
-                    "Pembayaran dari {$transaction->buyer->name} untuk \"{$transaction->product->name}\" telah diterima.",
+                    "Pembayaran dari {$transaction->buyer->name} untuk \"{$transaction->product->name}\" telah diterima. Pesanan Selesai!",
                     route('user.marketplace.seller.orders.show', $transaction->id),
                     'fa-money-bill-wave',
                     'green'
                 );
             });
 
-            Log::info('MidtransController: Marketplace payment success', ['order_id' => $payload['order_id']]);
+            Log::info('MidtransController: Marketplace payment success & auto-completed', ['order_id' => $payload['order_id']]);
 
         } elseif ($this->midtrans->isPaymentFailed($payload)) {
             DB::transaction(function () use ($transaction, $payload) {
