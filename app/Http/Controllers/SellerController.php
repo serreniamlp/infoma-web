@@ -153,7 +153,7 @@ class SellerController extends Controller
     // Update produk
     public function updateProduct(Request $request, MarketplaceProduct $product)
     {
-        if ($product->seller_id !== Auth::id()) {
+        if ($product->seller_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -179,7 +179,7 @@ class SellerController extends Controller
     // Hapus produk
     public function destroyProduct(MarketplaceProduct $product)
     {
-        if ($product->seller_id !== Auth::id()) {
+        if ($product->seller_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -210,7 +210,7 @@ class SellerController extends Controller
     // Detail pesanan
     public function orderShow(MarketplaceTransaction $transaction)
     {
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -225,7 +225,7 @@ class SellerController extends Controller
     // Update status pesanan
     public function updateOrderStatus(Request $request, MarketplaceTransaction $transaction)
     {
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 

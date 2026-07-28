@@ -61,7 +61,7 @@ class MarketplaceTransactionController extends Controller
     public function show(MarketplaceTransaction $transaction)
     {
         // Check if user is the seller
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
@@ -76,7 +76,7 @@ class MarketplaceTransactionController extends Controller
     public function updateStatus(Request $request, MarketplaceTransaction $transaction)
     {
         // Check if user is the seller
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
@@ -114,7 +114,7 @@ class MarketplaceTransactionController extends Controller
     public function confirmPayment(Request $request, MarketplaceTransaction $transaction)
     {
         // Check if user is the seller
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 

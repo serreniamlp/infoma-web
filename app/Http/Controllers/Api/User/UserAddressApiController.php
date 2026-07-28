@@ -56,7 +56,7 @@ class UserAddressApiController extends Controller
 
     public function update(Request $request, UserAddress $address)
     {
-        if ($address->user_id !== Auth::id()) {
+        if ($address->user_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
         }
 
@@ -83,7 +83,7 @@ class UserAddressApiController extends Controller
 
     public function destroy(UserAddress $address)
     {
-        if ($address->user_id !== Auth::id()) {
+        if ($address->user_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
         }
 
@@ -107,7 +107,7 @@ class UserAddressApiController extends Controller
 
     public function setDefault(UserAddress $address)
     {
-        if ($address->user_id !== Auth::id()) {
+        if ($address->user_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized'], 403);
         }
 

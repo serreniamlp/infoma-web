@@ -191,7 +191,7 @@ class SellerController extends Controller
      */
     public function orderShow(MarketplaceTransaction $transaction)
     {
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
@@ -205,7 +205,7 @@ class SellerController extends Controller
      */
     public function updateOrderStatus(Request $request, MarketplaceTransaction $transaction)
     {
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 

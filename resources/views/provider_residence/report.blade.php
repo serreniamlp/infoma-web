@@ -196,6 +196,58 @@
             </div>
         </div>
 
+        {{-- ── 5.5. Rincian Performa & Ketersediaan per Unit Hunian ───────────── --}}
+        @if(isset($revenuePerItem) && count($revenuePerItem) > 0)
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
+            <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-teal-50/40">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-teal-100 text-teal-700 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-bed"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base">Rincian Performa & Ketersediaan per Unit Hunian</h3>
+                        <p class="text-xs text-gray-500">Statistik sisa kamar (ketersediaan) dan akumulasi omzet per unit properti</p>
+                    </div>
+                </div>
+                <span class="text-xs bg-teal-100 text-teal-800 px-3 py-1 rounded-full font-semibold border border-teal-200">
+                    {{ count($revenuePerItem) }} Unit Properti
+                </span>
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200 text-left">
+                    <thead class="bg-gray-100/70">
+                        <tr>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider">Nama Unit Hunian</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Slot / Kamar Tersedia</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider text-center">Total Transaksi</th>
+                            <th class="px-4 py-3.5 text-xs font-bold text-gray-700 uppercase tracking-wider text-right">Total Pendapatan Unit (Rp)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        @foreach($revenuePerItem as $item)
+                        <tr class="hover:bg-gray-50/80 transition-colors">
+                            <td class="px-4 py-3.5 text-sm font-semibold text-gray-900">
+                                {{ $item->name }}
+                            </td>
+                            <td class="px-4 py-3.5 text-xs font-semibold text-center whitespace-nowrap">
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold {{ $item->available_slots > 0 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200' }}">
+                                    {{ $item->available_slots }} Kamar Tersedia
+                                </span>
+                            </td>
+                            <td class="px-4 py-3.5 text-xs font-bold text-gray-700 text-center">
+                                {{ $item->booking_count }} Booking
+                            </td>
+                            <td class="px-4 py-3.5 text-right font-extrabold text-sm text-emerald-700 whitespace-nowrap">
+                                Rp {{ number_format($item->revenue, 0, ',', '.') }}
+                            </td>
+                        </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        @endif
+
         {{-- ── 6. Tabel Histori Transaksi (Gaya Bank BNI e-Statement) ────────── --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
             <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between bg-gray-50/50">
