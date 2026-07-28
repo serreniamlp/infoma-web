@@ -215,7 +215,7 @@
 
                     {{-- Avatar dropdown --}}
                     <div class="ml-3 relative" x-data="{ open: false }">
-                        <button @click="open = !open"
+                        <button @click="open = !open" id="btn-user-dropdown"
                                 class="bg-white flex items-center text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500">
                             <div class="h-8 w-8 rounded-full bg-blue-900 flex items-center justify-center">
                                 <span class="text-white text-sm font-medium">{{ substr(auth()->user()->name, 0, 1) }}</span>
@@ -279,7 +279,7 @@
                                 <a href="{{ route('user.bookmarks.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-heart mr-2 w-4"></i>Bookmark
                                 </a>
-                                <a href="{{ route('user.marketplace.sell') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                <a href="{{ route('user.marketplace.sell') }}" id="link-mode-penjual" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-store mr-2 w-4"></i>
                                     {{ auth()->user()->isSeller() ? 'Mode Penjual' : 'Mulai Berjualan' }}
                                 </a>
