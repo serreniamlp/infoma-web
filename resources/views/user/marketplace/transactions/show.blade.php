@@ -33,7 +33,7 @@
         {{-- Muncul jika: status pending + payment pending + deadline belum   --}}
         {{-- lewat. Berbeda dengan booking — deadline dari created_at +1 jam. --}}
         {{-- ================================================================ --}}
-        @if($transaction->status === 'pending' && $transaction->payment_status === 'pending' && $transaction->payment_deadline)
+        @if(in_array($transaction->status, ['pending', 'confirmed', 'processing']) && $transaction->payment_status === 'pending' && $transaction->payment_deadline && $transaction->pickup_method !== 'cod')
             @php $isExpired = $transaction->isPaymentExpired(); @endphp
 
             @if(!$isExpired)
@@ -239,7 +239,7 @@
             <!-- Sidebar -->
             <div class="space-y-8">
                 <!-- [MIDTRANS] Blok pembayaran — menggantikan form upload bukti manual -->
-                @if($transaction->status === 'pending' && $transaction->payment_status === 'pending' && !$transaction->isPaymentExpired())
+                @if(in_array($transaction->status, ['pending', 'confirmed', 'processing']) && $transaction->payment_status === 'pending' && $transaction->pickup_method !== 'cod' && !$transaction->isPaymentExpired())
                 <div id="upload-payment" class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="px-6 py-4 bg-green-50 border-b border-green-200">
                         <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
