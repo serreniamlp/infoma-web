@@ -143,7 +143,7 @@ class MarketplaceController extends Controller
                 ->with('error', 'Aktifkan akun penjual terlebih dahulu.');
         }
 
-        if ($product->seller_id !== Auth::id()) abort(403);
+        if ($product->seller_id != Auth::id()) abort(403);
 
         $categories = ProductCategory::active()->get();
         return view('marketplace.edit', compact('product', 'categories'));
@@ -156,7 +156,7 @@ class MarketplaceController extends Controller
                 ->with('error', 'Aktifkan akun penjual terlebih dahulu.');
         }
 
-        if ($product->seller_id !== Auth::id()) abort(403);
+        if ($product->seller_id != Auth::id()) abort(403);
 
         $request->validate([
             'name'           => 'required|string|max:255',
@@ -211,7 +211,7 @@ class MarketplaceController extends Controller
     public function destroy(MarketplaceProduct $product)
     {
         if (!Auth::user()->isSeller()) abort(403);
-        if ($product->seller_id !== Auth::id()) abort(403);
+        if ($product->seller_id != Auth::id()) abort(403);
 
         if ($product->images) {
             foreach ($product->images as $image) {

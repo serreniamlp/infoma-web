@@ -24,7 +24,7 @@ class MarketplaceTransactionController extends Controller
     public function show(MarketplaceTransaction $transaction)
     {
         // Check if user is involved in this transaction
-        if ($transaction->buyer_id !== Auth::id() && $transaction->seller_id !== Auth::id()) {
+        if ($transaction->buyer_id != Auth::id() && $transaction->seller_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
@@ -35,7 +35,7 @@ class MarketplaceTransactionController extends Controller
 
     public function create(MarketplaceProduct $product)
     {
-        if ($product->seller_id === Auth::id()) {
+        if ($product->seller_id == Auth::id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat membeli produk sendiri!');
         }
 
@@ -48,7 +48,7 @@ class MarketplaceTransactionController extends Controller
 
     public function store(Request $request, MarketplaceProduct $product)
     {
-        if ($product->seller_id === Auth::id()) {
+        if ($product->seller_id == Auth::id()) {
             return redirect()->back()->with('error', 'Anda tidak dapat membeli produk sendiri!');
         }
 
@@ -97,7 +97,7 @@ class MarketplaceTransactionController extends Controller
     public function updateStatus(Request $request, MarketplaceTransaction $transaction)
     {
         // Check if user is the seller
-        if ($transaction->seller_id !== Auth::id()) {
+        if ($transaction->seller_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
@@ -127,7 +127,7 @@ class MarketplaceTransactionController extends Controller
     public function uploadPaymentProof(Request $request, MarketplaceTransaction $transaction)
     {
         // Check if user is the buyer
-        if ($transaction->buyer_id !== Auth::id()) {
+        if ($transaction->buyer_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 
@@ -153,7 +153,7 @@ class MarketplaceTransactionController extends Controller
     public function rate(Request $request, MarketplaceTransaction $transaction)
     {
         // Check if user is the buyer and transaction is completed
-        if ($transaction->buyer_id !== Auth::id()) {
+        if ($transaction->buyer_id != Auth::id()) {
             abort(403, 'Unauthorized');
         }
 

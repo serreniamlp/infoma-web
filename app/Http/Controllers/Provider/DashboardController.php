@@ -369,10 +369,11 @@ class DashboardController extends Controller
                         ->whereBetween('transactions.created_at', [$dateFrom, $dateTo]);
                 })
                 ->where('residences.provider_id', $providerId)
-                ->groupBy('residences.id', 'residences.name')
+                ->groupBy('residences.id', 'residences.name', 'residences.available_slots')
                 ->select(
                     'residences.id',
                     'residences.name',
+                    'residences.available_slots',
                     DB::raw('COUNT(DISTINCT bookings.id) as booking_count'),
                     DB::raw('COALESCE(SUM(transactions.final_amount), 0) as revenue')
                 )

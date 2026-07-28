@@ -36,7 +36,7 @@ class ResidenceController extends Controller
 
     public function show(Residence $residence)
     {
-        if ($residence->provider_id !== Auth::id()) {
+        if ($residence->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -94,7 +94,7 @@ class ResidenceController extends Controller
 
     public function update(Request $request, Residence $residence)
     {
-        if ($residence->provider_id !== Auth::id()) {
+        if ($residence->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -123,7 +123,7 @@ class ResidenceController extends Controller
 
     public function destroy(Residence $residence)
     {
-        if ($residence->provider_id !== Auth::id()) {
+        if ($residence->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -134,7 +134,7 @@ class ResidenceController extends Controller
 
     public function toggleStatus(Residence $residence)
     {
-        if ($residence->provider_id !== Auth::id()) {
+        if ($residence->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 

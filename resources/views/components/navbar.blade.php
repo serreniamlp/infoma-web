@@ -273,17 +273,11 @@
                                 <a href="{{ route('user.dashboard') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-tachometer-alt mr-2 w-4"></i>Dashboard
                                 </a>
-                                <a href="{{ route('user.history') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-history mr-2 w-4"></i>Riwayat
-                                </a>
-                                <a href="{{ route('user.bookings.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-bookmark mr-2 w-4"></i>Booking Saya
+                                <a href="{{ route('user.history') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 font-semibold text-blue-600">
+                                    <i class="fas fa-history mr-2 w-4"></i>Riwayat Transaksi
                                 </a>
                                 <a href="{{ route('user.bookmarks.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-heart mr-2 w-4"></i>Bookmark
-                                </a>
-                                <a href="{{ route('user.marketplace.transactions.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-shopping-cart mr-2 w-4"></i>Transaksi Barang
                                 </a>
                                 <a href="{{ route('user.marketplace.sell') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-store mr-2 w-4"></i>
@@ -417,8 +411,7 @@
                                 <a href="{{ route('search') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-search mr-2"></i>Cari</a>
                                 <div class="border-t border-gray-200 my-2"></div>
                                 <a href="{{ route('user.dashboard') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</a>
-                                <a href="{{ route('user.bookings.index') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-bookmark mr-2"></i>Booking Saya</a>
-                                <a href="{{ route('user.marketplace.transactions.index') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium"><i class="fas fa-shopping-cart mr-2"></i>Transaksi Barang</a>
+                                <a href="{{ route('user.history') }}" class="text-blue-600 hover:text-blue-700 block px-3 py-2 rounded-md text-base font-semibold"><i class="fas fa-history mr-2"></i>Riwayat Transaksi</a>
                                 <a href="{{ route('user.marketplace.sell') }}" class="text-gray-700 hover:text-blue-600 block px-3 py-2 rounded-md text-base font-medium">
                                     <i class="fas fa-store mr-2"></i>{{ auth()->user()->isSeller() ? 'Produk Saya' : 'Mulai Berjualan' }}
                                 </a>

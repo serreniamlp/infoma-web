@@ -46,7 +46,7 @@ class BookingManagementController extends Controller
 
     public function show(Booking $booking)
     {
-        if ($booking->bookable->provider_id !== Auth::id()) {
+        if ($booking->bookable->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -60,7 +60,7 @@ class BookingManagementController extends Controller
 
     public function approve(Request $request, Booking $booking)
     {
-        if ($booking->bookable->provider_id !== Auth::id()) {
+        if ($booking->bookable->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -83,7 +83,7 @@ class BookingManagementController extends Controller
 
     public function reject(Request $request, Booking $booking)
     {
-        if ($booking->bookable->provider_id !== Auth::id()) {
+        if ($booking->bookable->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 

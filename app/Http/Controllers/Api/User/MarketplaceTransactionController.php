@@ -30,7 +30,7 @@ class MarketplaceTransactionController extends Controller
 
     public function show(MarketplaceTransaction $transaction)
     {
-        if ($transaction->buyer_id !== Auth::id()) {
+        if ($transaction->buyer_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -44,7 +44,7 @@ class MarketplaceTransactionController extends Controller
 
     public function store(Request $request, MarketplaceProduct $product)
     {
-        if ($product->seller_id === Auth::id()) {
+        if ($product->seller_id == Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Tidak bisa membeli produk sendiri.'], 422);
         }
 
@@ -97,7 +97,7 @@ class MarketplaceTransactionController extends Controller
 
     public function cancel(Request $request, MarketplaceTransaction $transaction)
     {
-        if ($transaction->buyer_id !== Auth::id()) {
+        if ($transaction->buyer_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -123,7 +123,7 @@ class MarketplaceTransactionController extends Controller
 
     public function uploadPaymentProof(Request $request, MarketplaceTransaction $transaction)
     {
-        if ($transaction->buyer_id !== Auth::id()) {
+        if ($transaction->buyer_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 

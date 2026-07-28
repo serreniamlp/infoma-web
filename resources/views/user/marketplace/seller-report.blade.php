@@ -5,22 +5,50 @@
 <div class="min-h-screen bg-gray-50 py-6">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
+        {{-- ── Kop Surat Resmi (Tampil Saat Cetak PDF / e-Statement) ────────── --}}
+        <div class="hidden print:block mb-8 pb-4 border-b-2 border-orange-500">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 bg-orange-500 text-white rounded-xl flex items-center justify-center font-black text-xl">
+                        EL
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black text-gray-900 tracking-wider">EDULIVING INDONESIA</h1>
+                        <p class="text-xs text-gray-500 uppercase tracking-widest font-semibold">e-Statement Penjualan Marketplace FJB</p>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs font-bold text-gray-800">TANGGAL CETAK</p>
+                    <p class="text-xs font-mono text-gray-600">{{ now()->translatedFormat('d F Y H:i') }} WIB</p>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-gray-100 flex justify-between text-xs text-gray-600">
+                <div><strong>NAMA PENJUAL:</strong> {{ auth()->user()->name }} ({{ auth()->user()->email }})</div>
+                <div><strong>PERIODE LAPORAN:</strong> {{ $dateFrom->translatedFormat('d F Y') }} — {{ $dateTo->translatedFormat('d F Y') }}</div>
+            </div>
+        </div>
+
         {{-- ── Header ──────────────────────────────────────────────────── --}}
         <div class="flex items-center justify-between mb-6">
             <div>
                 <h1 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
-                    <i class="fas fa-chart-bar text-orange-500"></i>
-                    Laporan Penjualan
+                    <i class="fas fa-chart-bar text-orange-500 print:hidden"></i>
+                    Laporan Penjualan Marketplace
                 </h1>
                 <p class="text-gray-500 text-sm mt-1">
-                    Periode: <strong>{{ $dateFrom->format('d M Y') }}</strong> —
+                    Periode Laporan: <strong>{{ $dateFrom->format('d M Y') }}</strong> —
                     <strong>{{ $dateTo->format('d M Y') }}</strong>
                 </p>
             </div>
-            <a href="{{ route('user.marketplace.seller.home') }}"
-               class="text-sm text-gray-500 hover:text-gray-700 flex items-center gap-1">
-                <i class="fas fa-arrow-left text-xs"></i> Dashboard Seller
-            </a>
+            <div class="flex items-center gap-2 print:hidden">
+                <button onclick="window.print()" class="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-xs font-semibold rounded-lg shadow-sm transition-colors flex items-center gap-1.5">
+                    <i class="fas fa-print"></i> Cetak PDF / e-Statement
+                </button>
+                <a href="{{ route('user.marketplace.seller.home') }}"
+                   class="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1">
+                    <i class="fas fa-arrow-left text-xs"></i> Dashboard Seller
+                </a>
+            </div>
         </div>
 
         {{-- ── Filter Periode ───────────────────────────────────────────── --}}
@@ -142,107 +170,54 @@
             </div>
         </div>
 
-        {{-- ── Grafik Penjualan Harian ──────────────────────────────────── --}}
+        {{-- ── Revenue per Produk (Full Width) ───────────────────────────────── --}}
         <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden mb-6">
-            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-                <div>
-                    <h3 class="font-semibold text-gray-900">Tren Penjualan</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Revenue dan jumlah pesanan selesai per hari</p>
+            <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-orange-50/30">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-boxes"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-gray-900 text-base">Performa & Stok per Produk</h3>
+                        <p class="text-xs text-gray-500">Omzet dan sisa stok barang pada periode ini</p>
+                    </div>
                 </div>
-                <span class="text-xs text-gray-400 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
-                    {{ $dateFrom->format('d M') }} — {{ $dateTo->format('d M Y') }}
+                <span class="text-xs bg-orange-100 text-orange-800 px-3 py-1 rounded-full font-semibold border border-orange-200">
+                    {{ count($revenuePerProduct) }} Produk
                 </span>
             </div>
-            <div class="p-6">
-                @if($dailyRevenue->count() > 0)
-                    <canvas id="revenueChart" height="100"></canvas>
-                @else
-                    <div class="flex flex-col items-center justify-center py-16 text-gray-400">
-                        <i class="fas fa-chart-area text-4xl mb-3"></i>
-                        <p class="text-sm">Belum ada data penjualan pada periode ini</p>
-                    </div>
-                @endif
-            </div>
-        </div>
-
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-
-            {{-- ── Grafik Status Pesanan (Donut) ────────────────────────── --}}
-            <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-gray-900">Komposisi Pesanan</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Distribusi status pesanan periode ini</p>
-                </div>
-                <div class="p-6">
-                    @if($summary['total_orders'] > 0)
-                        <canvas id="statusChart" height="200"></canvas>
-                        <div class="mt-4 space-y-2">
-                            @php
-                                $statusData = [
-                                    ['label' => 'Selesai',     'value' => $summary['completed_orders'], 'color' => 'bg-green-500'],
-                                    ['label' => 'Pending',     'value' => $summary['pending_orders'],   'color' => 'bg-orange-400'],
-                                    ['label' => 'Dikonfirmasi','value' => $summary['confirmed_orders'] ?? 0, 'color' => 'bg-blue-500'],
-                                    ['label' => 'Dibatalkan',  'value' => $summary['cancelled_orders'], 'color' => 'bg-red-400'],
-                                ];
-                            @endphp
-                            @foreach($statusData as $s)
-                                @if($s['value'] > 0)
-                                <div class="flex items-center justify-between text-xs">
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-3 h-3 rounded-full {{ $s['color'] }}"></div>
-                                        <span class="text-gray-600">{{ $s['label'] }}</span>
-                                    </div>
-                                    <span class="font-semibold text-gray-900">{{ $s['value'] }}</span>
-                                </div>
-                                @endif
-                            @endforeach
-                        </div>
-                    @else
-                        <div class="flex flex-col items-center justify-center py-10 text-gray-400">
-                            <i class="fas fa-chart-pie text-3xl mb-2"></i>
-                            <p class="text-xs">Belum ada data</p>
-                        </div>
-                    @endif
-                </div>
-            </div>
-
-            {{-- ── Revenue per Produk ───────────────────────────────────── --}}
-            <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-100">
-                    <h3 class="font-semibold text-gray-900">Performa per Produk</h3>
-                    <p class="text-xs text-gray-400 mt-0.5">Revenue dan jumlah pesanan per produk</p>
-                </div>
-                <div class="divide-y divide-gray-50">
-                    @forelse($revenuePerProduct as $i => $product)
-                    @php
-                        $maxRevenue = $revenuePerProduct->max('revenue') ?: 1;
-                        $barWidth   = $product->revenue > 0 ? round(($product->revenue / $maxRevenue) * 100) : 0;
-                    @endphp
-                    <div class="px-6 py-4">
-                        <div class="flex items-center justify-between mb-2">
-                            <div class="flex items-center gap-3 min-w-0">
-                                <span class="text-sm font-bold text-gray-300 w-5 flex-shrink-0">{{ $i + 1 }}</span>
-                                <div class="min-w-0">
-                                    <p class="text-sm font-semibold text-gray-900 truncate">{{ $product->name }}</p>
-                                    <p class="text-xs text-gray-400">{{ $product->order_count }} pesanan terjual</p>
-                                </div>
+            <div class="divide-y divide-gray-100">
+                @forelse($revenuePerProduct as $i => $product)
+                @php
+                    $maxRevenue = $revenuePerProduct->max('revenue') ?: 1;
+                    $barWidth   = $product->revenue > 0 ? round(($product->revenue / $maxRevenue) * 100) : 0;
+                @endphp
+                <div class="px-6 py-4 hover:bg-gray-50/60 transition-colors">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <span class="text-sm font-bold text-gray-400 w-5 flex-shrink-0">{{ $i + 1 }}</span>
+                            <div class="min-w-0">
+                                <p class="text-sm font-semibold text-gray-900 truncate">{{ $product->name }}</p>
+                                <p class="text-xs text-gray-500 font-medium">
+                                    {{ $product->order_count }} pesanan terjual • Sisa Stok: <span class="font-bold text-gray-800">{{ $product->stock_quantity }}</span>
+                                </p>
                             </div>
-                            <p class="text-sm font-bold text-green-700 ml-4 flex-shrink-0">
-                                Rp {{ number_format($product->revenue ?? 0, 0, ',', '.') }}
-                            </p>
                         </div>
-                        <div class="w-full bg-gray-100 rounded-full h-1.5">
-                            <div class="bg-orange-400 h-1.5 rounded-full transition-all duration-500"
-                                 style="width: {{ $barWidth }}%"></div>
-                        </div>
+                        <p class="text-sm font-extrabold text-emerald-700 ml-4 flex-shrink-0">
+                            Rp {{ number_format($product->revenue ?? 0, 0, ',', '.') }}
+                        </p>
                     </div>
-                    @empty
-                    <div class="px-6 py-12 text-center text-gray-400">
-                        <i class="fas fa-boxes text-3xl mb-2"></i>
-                        <p class="text-sm">Belum ada data penjualan per produk</p>
+                    <div class="w-full bg-gray-100 rounded-full h-1.5">
+                        <div class="bg-orange-400 h-1.5 rounded-full transition-all duration-500"
+                             style="width: {{ $barWidth }}%"></div>
                     </div>
-                    @endforelse
                 </div>
+                @empty
+                <div class="px-6 py-12 text-center text-gray-400">
+                    <i class="fas fa-boxes text-3xl mb-2"></i>
+                    <p class="text-sm">Belum ada data penjualan per produk</p>
+                </div>
+                @endforelse
             </div>
         </div>
 
@@ -272,7 +247,7 @@
                     </thead>
                     <tbody class="divide-y divide-gray-50">
                         @forelse($transactions as $tx)
-                        <tr class="hover:bg-gray-50 transition-colors">
+                        <tr class="hover:bg-gray-50 transition-colors {{ $tx->status === 'cancelled' ? 'print:hidden' : '' }}">
                             <td class="px-5 py-3">
                                 <span class="text-xs font-mono text-gray-500">{{ $tx->transaction_code }}</span>
                             </td>
@@ -353,6 +328,23 @@
                 {{ $transactions->links() }}
             </div>
             @endif
+        {{-- ── Pengesahan & Tanda Tangan Laporan (Tampil Saat Cetak PDF) ───── --}}
+        <div class="hidden print:block mt-12 pt-6 border-t border-gray-300">
+            <div class="grid grid-cols-2 gap-8 text-center text-xs text-gray-700">
+                <div>
+                    <p class="font-bold uppercase tracking-wider text-gray-500 mb-1">Dibuat Oleh (Penjual)</p>
+                    <p class="font-bold text-gray-900 text-sm mt-12 underline">{{ auth()->user()->name }}</p>
+                    <p class="text-gray-500">Seller Marketplace FJB</p>
+                </div>
+                <div>
+                    <p class="font-bold uppercase tracking-wider text-gray-500 mb-1">Mengetahui & Disahkan</p>
+                    <p class="font-bold text-gray-900 text-sm mt-12 underline">EduLiving Partner Admin</p>
+                    <p class="text-gray-500">Platform Verifikator</p>
+                </div>
+            </div>
+            <div class="mt-8 text-center text-[10px] text-gray-400 font-mono">
+                *** Dokumen ini secara otomatis dihasilkan oleh Sistem EduLiving Indonesia dan sah secara elektronik ***
+            </div>
         </div>
 
     </div>

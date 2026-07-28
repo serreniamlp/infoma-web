@@ -36,7 +36,7 @@ class ActivityController extends Controller
 
     public function show(Activity $activity)
     {
-        if ($activity->provider_id !== Auth::id()) {
+        if ($activity->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -87,7 +87,7 @@ class ActivityController extends Controller
 
     public function update(Request $request, Activity $activity)
     {
-        if ($activity->provider_id !== Auth::id()) {
+        if ($activity->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -102,7 +102,7 @@ class ActivityController extends Controller
 
     public function destroy(Activity $activity)
     {
-        if ($activity->provider_id !== Auth::id()) {
+        if ($activity->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
@@ -113,7 +113,7 @@ class ActivityController extends Controller
 
     public function toggleStatus(Activity $activity)
     {
-        if ($activity->provider_id !== Auth::id()) {
+        if ($activity->provider_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 

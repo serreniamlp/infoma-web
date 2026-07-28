@@ -25,7 +25,7 @@ class CartController extends Controller
     {
         $request->validate(['quantity' => ['nullable', 'integer', 'min:1', 'max:99']]);
 
-        if ($product->seller_id === Auth::id()) {
+        if ($product->seller_id == Auth::id()) {
             return back()->with('error', 'Anda tidak bisa menambahkan produk Anda sendiri ke keranjang.');
         }
 
@@ -58,7 +58,7 @@ class CartController extends Controller
 
     public function update(Request $request, CartItem $cartItem)
     {
-        if ($cartItem->user_id !== Auth::id()) {
+        if ($cartItem->user_id != Auth::id()) {
             abort(403);
         }
 
@@ -84,7 +84,7 @@ class CartController extends Controller
 
     public function remove(CartItem $cartItem)
     {
-        if ($cartItem->user_id !== Auth::id()) {
+        if ($cartItem->user_id != Auth::id()) {
             abort(403);
         }
 

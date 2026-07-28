@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
 use App\Models\Residence;
 use App\Models\Activity;
 use App\Models\MarketplaceProduct;
@@ -61,33 +62,78 @@ class DashboardController extends Controller
     }
 
     /**
-     * Display user's history page (bookings, transactions, etc.)
+     * Display user's history page (consolidated per category & status filter)
      */
-    public function history()
+    public function history(Request $request)
     {
-        $user = auth()->user();
-        
-        // Get user's bookings
-        $bookings = $user->bookings()
-            ->with(['bookable'])
-            ->latest()
-            ->paginate(10, ['*'], 'bookings');
+        $userId   = auth()->id();
+        $category = $request->get('category', 'residence');
+        $status   = $request->get('status', 'all');
 
-        // Get user's bookmarks
-        $bookmarks = $user->bookmarks()
-            ->with(['bookmarkable'])
-            ->latest()
-            ->paginate(10, ['*'], 'bookmarks');
+        // Counts for top category tabs
+        $residenceCount = Booking::where('user_id', $userId)
+            ->where('bookable_type', Residence::class)
+            ->count();
 
-        // Get user's marketplace transactions if they exist
-        $transactions = collect();
-        if (class_exists('App\Models\MarketplaceTransaction')) {
-            $transactions = $user->marketplaceTransactions()
-                ->with(['product'])
-                ->latest()
-                ->paginate(10, ['*'], 'transactions');
+        $activityCount = Booking::where('user_id', $userId)
+            ->where('bookable_type', Activity::class)
+            ->count();
+
+        $marketplaceCount = MarketplaceTransaction::where('buyer_id', $userId)->count();
+
+        // Data query according to category & status filter
+        if ($category === 'activity') {
+            $query = Booking::where('user_id', $userId)
+                ->where('bookable_type', Activity::class)
+                ->with(['bookable', 'transaction']);
+
+            if ($status !== 'all') {
+                if ($status === 'rejected_cancelled') {
+                    $query->whereIn('status', ['rejected', 'cancelled']);
+                } else {
+                    $query->where('status', $status);
+                }
+            }
+
+            $items = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        } elseif ($category === 'marketplace') {
+            $query = MarketplaceTransaction::where('buyer_id', $userId)
+                ->with(['product', 'seller', 'rating']);
+
+            if ($status !== 'all') {
+                if ($status === 'approved') {
+                    $query->whereIn('status', ['processing', 'shipped']);
+                } elseif ($status === 'rejected_cancelled') {
+                    $query->where('status', 'cancelled');
+                } else {
+                    $query->where('status', $status);
+                }
+            }
+
+            $items = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
+
+        } else {
+            // Default: Residence
+            $category = 'residence';
+            $query = Booking::where('user_id', $userId)
+                ->where('bookable_type', Residence::class)
+                ->with(['bookable', 'transaction']);
+
+            if ($status !== 'all') {
+                if ($status === 'rejected_cancelled') {
+                    $query->whereIn('status', ['rejected', 'cancelled']);
+                } else {
+                    $query->where('status', $status);
+                }
+            }
+
+            $items = $query->orderBy('created_at', 'desc')->paginate(10)->withQueryString();
         }
 
-        return view('user.history', compact('bookings', 'bookmarks', 'transactions'));
+        return view('user.history', compact(
+            'items', 'category', 'status', 
+            'residenceCount', 'activityCount', 'marketplaceCount'
+        ));
     }
 }
