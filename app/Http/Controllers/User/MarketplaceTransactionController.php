@@ -124,7 +124,7 @@ class MarketplaceTransactionController extends Controller
             'status'         => 'pending',
             // [MIDTRANS] COD tidak perlu pembayaran online — langsung set paid
             'payment_status' => $isCashOnDelivery ? 'cod_pending' : 'pending',
-            'payment_deadline' => $isCashOnDelivery ? null : now()->addHour(),
+            'payment_deadline' => null, // Deadline baru berjalan setelah penjual mengonfirmasi
         ]);
 
         // Notifikasi ke seller
@@ -135,15 +135,14 @@ class MarketplaceTransactionController extends Controller
             route('user.marketplace.seller.orders.show', $transaction->id)
         );
 
-        // [MIDTRANS] COD/meetup: tidak perlu halaman pembayaran
+        // Redirect ke detail transaksi
         if ($isCashOnDelivery) {
             return redirect()->route('user.marketplace.transactions.show', $transaction)
                 ->with('success', 'Pesanan berhasil dibuat! Bayar langsung saat barang diterima.');
         }
 
-        // Non-COD: redirect ke halaman pembayaran Midtrans
-        return redirect()->route('user.marketplace.transactions.payment', $transaction)
-            ->with('info', 'Pesanan dibuat. Selesaikan pembayaran sebelum batas waktu.');
+        return redirect()->route('user.marketplace.transactions.show', $transaction)
+            ->with('success', 'Pesanan berhasil dibuat! Menunggu penjual mengonfirmasi ketersediaan barang sebelum pembayaran.');
     }
 
     // [MIDTRANS] Method baru — generate Snap token dan tampilkan halaman pembayaran.
@@ -157,6 +156,11 @@ class MarketplaceTransactionController extends Controller
         if (in_array($transaction->pickup_method, ['cod', 'meetup'])) {
             return redirect()->route('user.marketplace.transactions.show', $transaction)
                 ->with('info', 'Transaksi COD/meetup tidak memerlukan pembayaran online.');
+        }
+
+        if ($transaction->status === 'pending') {
+            return redirect()->route('user.marketplace.transactions.show', $transaction)
+                ->with('info', 'Pesanan masih menunggu konfirmasi dari penjual. Pembayaran dapat dilakukan setelah penjual mengonfirmasi pesanan.');
         }
 
         if ($transaction->payment_status === 'paid') {
