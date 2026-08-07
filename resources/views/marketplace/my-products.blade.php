@@ -128,16 +128,23 @@
 
                                 {{-- Stats row --}}
                                 <div
-                                    class="flex items-center justify-between text-xs text-gray-400 border-t border-gray-50 pt-2.5 mb-4">
-                                    <span class="flex items-center gap-1">
-                                        <i class="fas fa-layer-group"></i>
-                                        Stok <span
-                                            class="font-semibold text-gray-600 ml-0.5">{{ $product->stock_quantity }}</span>
-                                    </span>
-                                    <span class="flex items-center gap-1">
-                                        <i class="fas fa-calendar"></i>
-                                        {{ $product->created_at->format('d M Y') }}
-                                    </span>
+                                    class="flex flex-col gap-1.5 text-xs text-gray-500 border-t border-gray-100 pt-2.5 mb-4">
+                                    <div class="flex items-center justify-between">
+                                        <span class="flex items-center gap-1">
+                                            <i class="fas fa-layer-group text-gray-400"></i>
+                                            Total Stok: <span class="font-bold text-gray-800 ml-0.5">{{ $product->stock_quantity }}</span>
+                                        </span>
+                                        <span class="flex items-center gap-1 text-gray-400">
+                                            <i class="fas fa-calendar"></i>
+                                            {{ $product->created_at->format('d M Y') }}
+                                        </span>
+                                    </div>
+                                    @if($product->active_reserved_quantity > 0)
+                                        <div class="flex items-center justify-between text-[11px] bg-amber-50 text-amber-700 px-2 py-1 rounded-md border border-amber-200">
+                                            <span><i class="fas fa-lock text-amber-500 mr-1"></i>Terkunci Transaksi:</span>
+                                            <span class="font-bold font-mono">{{ $product->active_reserved_quantity }} unit</span>
+                                        </div>
+                                    @endif
                                 </div>
 
                                 {{-- Action buttons --}}

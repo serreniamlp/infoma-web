@@ -101,8 +101,8 @@ class MarketplaceTransactionController extends Controller
 
         $totalAmount = $product->price * $request->quantity;
 
-        // [MIDTRANS] COD dan meetup = bayar di tempat, tidak perlu Midtrans
-        $isCashOnDelivery = in_array($request->pickup_method, ['cod', 'meetup']);
+        // [MIDTRANS] COD, meetup, dan pickup = bayar langsung di tempat, tidak perlu Midtrans
+        $isCashOnDelivery = in_array($request->pickup_method, ['cod', 'meetup', 'pickup']);
         $paymentMethod    = $isCashOnDelivery ? 'cod' : 'midtrans';
 
         $transaction = MarketplaceTransaction::create([
@@ -122,7 +122,7 @@ class MarketplaceTransactionController extends Controller
             'pickup_notes'   => $request->pickup_notes,
             'payment_method' => $paymentMethod,
             'status'         => 'pending',
-            // [MIDTRANS] COD tidak perlu pembayaran online — langsung set paid
+            // [MIDTRANS] COD & pickup tidak perlu pembayaran online — langsung set cod_pending
             'payment_status' => $isCashOnDelivery ? 'cod_pending' : 'pending',
             'payment_deadline' => null, // Deadline baru berjalan setelah penjual mengonfirmasi
         ]);
@@ -138,7 +138,7 @@ class MarketplaceTransactionController extends Controller
         // Redirect ke detail transaksi
         if ($isCashOnDelivery) {
             return redirect()->route('user.marketplace.transactions.show', $transaction)
-                ->with('success', 'Pesanan berhasil dibuat! Bayar langsung saat barang diterima.');
+                ->with('success', 'Pesanan berhasil dibuat! Bayar langsung saat mengambil/menerima barang.');
         }
 
         return redirect()->route('user.marketplace.transactions.show', $transaction)
@@ -153,9 +153,9 @@ class MarketplaceTransactionController extends Controller
             abort(403, 'Unauthorized');
         }
 
-        if (in_array($transaction->pickup_method, ['cod', 'meetup'])) {
+        if (in_array($transaction->pickup_method, ['cod', 'meetup', 'pickup'])) {
             return redirect()->route('user.marketplace.transactions.show', $transaction)
-                ->with('info', 'Transaksi COD/meetup tidak memerlukan pembayaran online.');
+                ->with('info', 'Transaksi COD / Ambil Sendiri tidak memerlukan pembayaran online.');
         }
 
         if ($transaction->status === 'pending') {

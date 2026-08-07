@@ -119,8 +119,15 @@
                                 Stok <span class="text-red-500">*</span>
                             </label>
                             <input type="number" id="stock_quantity" name="stock_quantity"
-                                   value="{{ old('stock_quantity', $product->stock_quantity) }}" min="0"
+                                   value="{{ old('stock_quantity', $product->stock_quantity) }}"
+                                   min="{{ $product->active_reserved_quantity }}"
                                    class="w-full px-4 py-2.5 border {{ $errors->has('stock_quantity') ? 'border-red-400 bg-red-50' : 'border-gray-300' }} rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors">
+                            @if($product->active_reserved_quantity > 0)
+                                <p class="text-amber-800 text-xs mt-1.5 font-medium bg-amber-50 border border-amber-200 p-2 rounded-md flex items-center gap-1.5">
+                                    <i class="fas fa-lock text-amber-500 flex-shrink-0"></i>
+                                    <span>Stok minimal: <strong>{{ $product->active_reserved_quantity }} unit</strong> ({{ $product->active_reserved_quantity }} unit sedang dalam transaksi aktif).</span>
+                                </p>
+                            @endif
                             @error('stock_quantity')
                                 <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                             @enderror

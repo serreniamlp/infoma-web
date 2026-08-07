@@ -61,7 +61,24 @@
 
                 <!-- Info Pembeli -->
                 <div class="bg-white rounded-xl shadow-sm p-6">
-                    <h2 class="font-semibold text-gray-900 mb-4">Informasi Pembeli</h2>
+                    @php
+                        $bPhone = $transaction->buyer_phone ?? null;
+                        $cleanBPhone = $bPhone ? preg_replace('/[^0-9]/', '', $bPhone) : null;
+                        if ($cleanBPhone && str_starts_with($cleanBPhone, '0')) {
+                            $cleanBPhone = '62' . substr($cleanBPhone, 1);
+                        }
+                        $waSellerMsg = "Halo {$transaction->buyer_name}, saya penjual pesanan \"{$transaction->product->name}\" (Kode: {$transaction->transaction_code}). Izin konfirmasi pesanan / lokasi titik temu COD.";
+                        $buyerWaUrl = $cleanBPhone ? "https://wa.me/{$cleanBPhone}?text=" . urlencode($waSellerMsg) : null;
+                    @endphp
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="font-semibold text-gray-900">Informasi Pembeli</h2>
+                        @if($buyerWaUrl)
+                            <a href="{{ $buyerWaUrl }}" target="_blank" rel="noopener noreferrer"
+                               class="inline-flex items-center gap-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors shadow-sm">
+                                <i class="fab fa-whatsapp text-sm"></i> Hubungi Pembeli
+                            </a>
+                        @endif
+                    </div>
                     <div class="grid grid-cols-2 gap-4 text-sm">
                         <div>
                             <p class="text-gray-500">Nama</p>
@@ -142,10 +159,11 @@
                                     <option value="confirmed">Konfirmasi Pesanan</option>
                                     <option value="cancelled">Batalkan</option>
                                 @elseif($transaction->status === 'confirmed')
-                                    <option value="in_progress">Sedang Diproses</option>
+                                    <option value="in_progress">Sedang Diproses / Pertemuan</option>
+                                    <option value="completed">Selesai (Pembayaran & Barang Diterima)</option>
                                     <option value="cancelled">Batalkan</option>
                                 @elseif($transaction->status === 'in_progress')
-                                    <option value="completed">Selesai</option>
+                                    <option value="completed">Selesai (Pembayaran & Barang Diterima)</option>
                                     <option value="cancelled">Batalkan</option>
                                 @endif
                             </select>

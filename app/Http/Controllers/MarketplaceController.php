@@ -202,6 +202,15 @@ class MarketplaceController extends Controller
             $data['tags'] = array_map('trim', explode(',', $request->tags));
         }
 
+        if ($request->filled('stock_quantity')) {
+            $reservedQty = $product->active_reserved_quantity;
+            if ((int) $request->stock_quantity < $reservedQty) {
+                return redirect()->back()
+                    ->withInput()
+                    ->with('error', "Stok produk tidak boleh kurang dari {$reservedQty} unit karena terdapat {$reservedQty} unit barang yang sedang dalam transaksi aktif.");
+            }
+        }
+
         $product->update($data);
 
         return redirect()->route('user.marketplace.seller.my-products')
@@ -212,6 +221,12 @@ class MarketplaceController extends Controller
     {
         if (!Auth::user()->isSeller()) abort(403);
         if ($product->seller_id != Auth::id()) abort(403);
+
+        $reservedQty = $product->active_reserved_quantity;
+        if ($reservedQty > 0) {
+            return redirect()->back()
+                ->with('error', "Produk \"{$product->name}\" tidak dapat dihapus total karena terdapat {$reservedQty} unit barang yang sedang dalam transaksi aktif. Anda dapat menurunkan stok hingga minimal {$reservedQty} unit di menu Edit Produk, atau selesaikan/batalkan transaksi terlebih dahulu.");
+        }
 
         if ($product->images) {
             foreach ($product->images as $image) {

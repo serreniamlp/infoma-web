@@ -82,6 +82,18 @@
             font-size: 1em !important;
             line-height: 1 !important;
         }
+
+        /* Global Print Rules: Sembunyikan Navbar, Footer, & Flash Alerts saat Cetak PDF */
+        @media print {
+            nav, #navbar, footer, .flash-alert, .print\:hidden {
+                display: none !important;
+            }
+            body {
+                background-color: #ffffff !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+        }
     </style>
 
     <!-- Font Awesome Loading Management -->
@@ -249,7 +261,7 @@
     </main>
 
     <!-- Footer -->
-    <footer class="bg-gray-900 text-white py-16 mt-16">
+    <footer class="bg-gray-900 text-white py-16 mt-16 print:hidden">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div class="col-span-1 md:col-span-2">

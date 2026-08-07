@@ -183,6 +183,14 @@ class SellerController extends Controller
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
         }
 
+        $reservedQty = $product->active_reserved_quantity;
+        if ($reservedQty > 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Produk tidak dapat dihapus total karena terdapat {$reservedQty} unit barang yang sedang dalam transaksi aktif. Anda dapat menurunkan stok hingga minimal {$reservedQty} unit, atau selesaikan/batalkan transaksi terlebih dahulu."
+            ], 422);
+        }
+
         $product->delete();
 
         return response()->json(['status' => 'success', 'message' => 'Produk berhasil dihapus.']);

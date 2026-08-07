@@ -3,6 +3,15 @@
 @section('title', 'Detail Transaksi Marketplace')
 
 @section('content')
+@php
+    $sellerPhone = $transaction->seller->phone ?? null;
+    $cleanSellerPhone = $sellerPhone ? preg_replace('/[^0-9]/', '', $sellerPhone) : null;
+    if ($cleanSellerPhone && str_starts_with($cleanSellerPhone, '0')) {
+        $cleanSellerPhone = '62' . substr($cleanSellerPhone, 1);
+    }
+    $waBuyerMsg = "Halo {$transaction->seller->name}, saya pembeli ({$transaction->buyer_name}) dari EduLiving untuk pesanan \"{$transaction->product->name}\" (Kode: {$transaction->transaction_code}). Izin bertanya terkait pesanan / lokasi titik temu COD.";
+    $sellerWaUrl = $cleanSellerPhone ? "https://wa.me/{$cleanSellerPhone}?text=" . urlencode($waBuyerMsg) : null;
+@endphp
 <div class="min-h-screen bg-gray-50 py-8">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <!-- Breadcrumb -->
@@ -29,7 +38,7 @@
         </nav>
 
         {{-- Banner: Menunggu Konfirmasi Penjual --}}
-        @if($transaction->status === 'pending' && $transaction->pickup_method !== 'cod')
+        @if($transaction->status === 'pending' && !in_array($transaction->pickup_method, ['cod', 'meetup', 'pickup']))
             <div class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-4">
                 <div class="text-blue-500 text-2xl mt-0.5">
                     <i class="fas fa-user-clock"></i>
@@ -42,13 +51,25 @@
                     </p>
                 </div>
             </div>
+        @elseif($transaction->status === 'pending' && in_array($transaction->pickup_method, ['cod', 'meetup', 'pickup']))
+            <div class="mb-6 bg-green-50 border border-green-200 rounded-lg p-4 flex items-start gap-4">
+                <div class="text-green-500 text-2xl mt-0.5">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="flex-1">
+                    <h3 class="font-semibold text-green-800 text-base">Menunggu Konfirmasi Pesanan Penjual</h3>
+                    <p class="text-green-700 text-sm mt-1">
+                        Pesanan berhasil dibuat! Penjual akan memeriksa ketersediaan barang. Pembayaran dilakukan langsung saat bertemu/mengambil barang.
+                    </p>
+                </div>
+            </div>
         @endif
 
         {{-- ================================================================ --}}
         {{-- BANNER: COUNTDOWN PEMBAYARAN                                     --}}
         {{-- Muncul jika: status confirmed + payment pending + deadline belum lewat --}}
         {{-- ================================================================ --}}
-        @if($transaction->status === 'confirmed' && $transaction->payment_status === 'pending' && $transaction->payment_deadline && $transaction->pickup_method !== 'cod')
+        @if($transaction->status === 'confirmed' && $transaction->payment_status === 'pending' && $transaction->payment_deadline && !in_array($transaction->pickup_method, ['cod', 'meetup', 'pickup']))
             @php $isExpired = $transaction->isPaymentExpired(); @endphp
 
             @if(!$isExpired)
@@ -191,20 +212,38 @@
 
                 <!-- Seller Information -->
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
-                    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200">
+                    <div class="px-6 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
                         <h2 class="text-xl font-bold text-gray-900">Informasi Penjual</h2>
+                        @if($transaction->seller && $transaction->seller->isOnline())
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span class="w-2 h-2 mr-1.5 bg-green-500 rounded-full animate-pulse"></span>Online
+                            </span>
+                        @endif
                     </div>
                     <div class="p-6">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center">
-                                <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                                </svg>
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div class="flex items-center space-x-4">
+                                <div class="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-xl shadow">
+                                    {{ strtoupper(substr($transaction->seller->name ?? 'U', 0, 1)) }}
+                                </div>
+                                <div>
+                                    <h3 class="text-lg font-semibold text-gray-900">{{ $transaction->seller->name }}</h3>
+                                    <p class="text-gray-500 text-sm">{{ $transaction->seller->email }}</p>
+                                    @if($transaction->seller->phone)
+                                        <p class="text-gray-600 text-xs mt-1">
+                                            <i class="fas fa-phone-alt mr-1 text-gray-400"></i>{{ $transaction->seller->phone }}
+                                        </p>
+                                    @endif
+                                </div>
                             </div>
-                            <div>
-                                <h3 class="text-lg font-semibold text-gray-900">{{ $transaction->seller->name }}</h3>
-                                <p class="text-gray-600">{{ $transaction->seller->email }}</p>
-                            </div>
+                            @if($sellerWaUrl)
+                                <a href="{{ $sellerWaUrl }}" target="_blank" rel="noopener noreferrer"
+                                   class="inline-flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors shadow-sm shrink-0">
+                                    <i class="fab fa-whatsapp text-lg"></i> Hubungi Penjual (WhatsApp)
+                                </a>
+                            @else
+                                <span class="text-xs text-gray-400 italic">Nomor HP Penjual tidak tersedia</span>
+                            @endif
                         </div>
                     </div>
                 </div>
@@ -290,20 +329,33 @@
                     </div>
                 </div>
 
-                @elseif($transaction->status === 'pending' && $transaction->payment_method === 'cod')
-                {{-- [MIDTRANS] COD: tidak perlu bayar online --}}
+                @elseif(in_array($transaction->pickup_method, ['cod', 'meetup', 'pickup']) || $transaction->payment_method === 'cod')
+                {{-- [MIDTRANS] COD & Pickup: tidak perlu bayar online --}}
                 <div class="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div class="px-6 py-4 bg-green-50 border-b border-green-200">
-                        <h2 class="text-xl font-bold text-gray-900">Pembayaran COD</h2>
+                        <h2 class="text-xl font-bold text-gray-900 flex items-center gap-2">
+                            <i class="fas {{ $transaction->pickup_method === 'pickup' ? 'fa-walking' : 'fa-handshake' }} text-green-600"></i>
+                            {{ $transaction->pickup_method === 'pickup' ? 'Pembayaran Pas Ambil (Di Lokasi)' : 'Pembayaran COD (Bayar di Tempat)' }}
+                        </h2>
                     </div>
-                    <div class="p-6">
+                    <div class="p-6 space-y-4">
                         <div class="flex items-start gap-3 text-sm text-green-800">
                             <i class="fas fa-check-circle text-green-500 mt-0.5 text-lg"></i>
                             <p>
-                                Pesanan ini menggunakan metode <strong>bayar di tempat (COD)</strong>.
-                                Siapkan uang tunai saat menerima barang dari penjual.
+                                @if($transaction->pickup_method === 'pickup')
+                                    Pesanan ini menggunakan metode <strong>Ambil Sendiri</strong>. Silakan datangi alamat penjual dan bayar langsung di lokasi saat mengambil barang.
+                                @else
+                                    Pesanan ini menggunakan metode <strong>bayar di tempat (COD)</strong>. Siapkan uang tunai saat bertemu dan menerima barang dari penjual.
+                                @endif
                             </p>
                         </div>
+                        @if($sellerWaUrl)
+                            <a href="{{ $sellerWaUrl }}" target="_blank" rel="noopener noreferrer"
+                               class="block w-full text-center bg-green-600 hover:bg-green-700 text-white font-semibold py-3 px-4 rounded-xl transition-colors shadow-sm">
+                                <i class="fab fa-whatsapp text-lg mr-2"></i>
+                                Hubungi Penjual via WhatsApp
+                            </a>
+                        @endif
                     </div>
                 </div>
                 @endif

@@ -221,17 +221,26 @@ class SellerController extends Controller
         ];
 
         if ($request->status === 'confirmed') {
-            if ($transaction->pickup_method !== 'cod') {
+            if (!in_array($transaction->pickup_method, ['cod', 'meetup', 'pickup'])) {
                 $data['payment_deadline'] = now()->addHour();
             }
         } elseif ($request->status === 'cancelled') {
             $data['cancellation_reason'] = $request->cancellation_reason;
             $data['cancelled_at']        = now();
-            if (in_array($transaction->status, ['confirmed', 'in_progress', 'completed'])) {
+            // Kembalikan stok hanya jika transaksi sudah sempat memotong stok (payment_status paid)
+            if ($transaction->payment_status === 'paid' && $transaction->product) {
                 $transaction->product->increment('stock_quantity', $transaction->quantity);
             }
         } elseif ($request->status === 'completed') {
             $data['completed_at'] = now();
+            // Khusus COD/transaksi yang belum paid: saat diselesaikan oleh penjual,
+            // tandai payment_status menjadi 'paid' dan potong stok produk.
+            if ($transaction->payment_status !== 'paid') {
+                $data['payment_status'] = 'paid';
+                if ($transaction->product) {
+                    $transaction->product->decrement('stock_quantity', $transaction->quantity);
+                }
+            }
         }
 
         $transaction->update($data);
