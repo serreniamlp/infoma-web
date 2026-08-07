@@ -34,6 +34,9 @@ class BookingService
                 throw new \Exception('Tidak ada slot tersedia');
             }
 
+            // Reserve slot mahasiswa saat pending agar menghindari spam
+            $bookable->decrement('available_slots');
+
             // Handle document uploads (residence only)
             $documents = [];
             if (isset($data['documents']) && is_array($data['documents'])) {
@@ -103,13 +106,8 @@ class BookingService
     public function approveBooking(Booking $booking, $notes = null)
     {
         return DB::transaction(function () use ($booking, $notes) {
-            // Perpanjangan tidak butuh slot baru — user sudah menempati unit yang sama
-            if (! $booking->is_renewal) {
-                if ($booking->bookable->available_slots <= 0) {
-                    throw new \Exception('Slot sudah tidak tersedia');
-                }
-                $booking->bookable->decrement('available_slots');
-            }
+            // Slot sudah dikurangi saat createBooking (status pending)
+            // untuk menghindari spam, sehingga tidak perlu mengurangi slot lagi di sini.
 
             $booking->update([
                 'status'           => 'approved',
@@ -127,15 +125,22 @@ class BookingService
 
     public function rejectBooking(Booking $booking, $reason, $notes = null)
     {
-        $booking->update([
-            'status'           => 'rejected',
-            'rejection_reason' => $reason,
-            'notes'            => $notes,
-        ]);
+        return DB::transaction(function () use ($booking, $reason, $notes) {
+            $booking->update([
+                'status'           => 'rejected',
+                'rejection_reason' => $reason,
+                'notes'            => $notes,
+            ]);
 
-        $this->notificationService->sendBookingNotification($booking, 'booking_rejected');
+            // Kembalikan slot karena penyedia tidak approve
+            if ($this->holdsSlotResponsibility($booking)) {
+                $booking->bookable->increment('available_slots');
+            }
 
-        return $booking;
+            $this->notificationService->sendBookingNotification($booking, 'booking_rejected');
+
+            return $booking;
+        });
     }
 
     public function cancelBooking(Booking $booking, $reason = null)
@@ -153,7 +158,8 @@ class BookingService
                 'payment_deadline' => null,  // ← clear deadline saat dibatalkan manual
             ]);
 
-            if ($oldStatus === 'approved' && ! $booking->is_renewal) {
+            // Jika status sebelumnya pending atau approved, slot sudah diambil, maka kembalikan
+            if (in_array($oldStatus, ['pending', 'approved']) && $this->holdsSlotResponsibility($booking)) {
                 $booking->bookable->increment('available_slots');
             }
 
@@ -308,6 +314,19 @@ class BookingService
             }
 
             $newCheckIn  = $booking->check_out_date->toDateString();
+            
+            // Pencegahan spam/ganda: Cek apakah sudah ada perpanjangan yang menyambung
+            $existingRenewal = Booking::where('user_id', $booking->user_id)
+                ->where('bookable_id', $residence->id)
+                ->where('is_renewal', true)
+                ->where('check_in_date', $newCheckIn)
+                ->whereIn('status', ['pending', 'approved'])
+                ->exists();
+
+            if ($existingRenewal) {
+                throw new \Exception('Anda sudah mengajukan perpanjangan untuk masa sewa ini.');
+            }
+
             $newCheckOut = $booking->check_out_date->copy()->addMonths($durationMonths)->toDateString();
 
             $discountedPrice = $residence->getDiscountedPrice();
@@ -362,12 +381,22 @@ class BookingService
             $checkOutFormatted = \Carbon\Carbon::parse($booking->check_out_date)
                 ->translatedFormat('d F Y');
 
-            NotificationService::perpanjangSewa(
-                $booking->user_id,
-                $booking->bookable->name ?? 'hunian',
-                $checkOutFormatted,
-                '/user/bookings/' . $booking->id
-            );
+            // Cek apakah sudah ada perpanjangan yang menyambung
+            $hasRenewal = Booking::where('user_id', $booking->user_id)
+                ->where('bookable_id', $booking->bookable_id)
+                ->where('is_renewal', true)
+                ->where('check_in_date', $booking->check_out_date->toDateString())
+                ->whereIn('status', ['pending', 'approved'])
+                ->exists();
+
+            if (! $hasRenewal) {
+                NotificationService::perpanjangSewa(
+                    $booking->user_id,
+                    $booking->bookable->name ?? 'hunian',
+                    $checkOutFormatted,
+                    '/user/bookings/' . $booking->id
+                );
+            }
 
             NotificationService::ratingReminder(
                 $booking->user_id,
@@ -410,8 +439,10 @@ class BookingService
 
         foreach ($expiredBookings as $booking) {
             DB::transaction(function () use ($booking) {
-                // Kembalikan slot
-                $booking->bookable->increment('available_slots');
+                // Kembalikan slot jika bertanggung jawab atas slot tersebut
+                if ($this->holdsSlotResponsibility($booking)) {
+                    $booking->bookable->increment('available_slots');
+                }
 
                 // Update status booking
                 $booking->update([
@@ -490,9 +521,32 @@ class BookingService
      */
     public function updateExpiredBookings()
     {
-        return Booking::where('status', 'approved')
+        $expiredBookings = Booking::where('status', 'approved')
             ->where('check_out_date', '<', now()->toDateString())
-            ->update(['status' => 'completed']);
+            ->get();
+
+        $count = 0;
+        foreach ($expiredBookings as $booking) {
+            DB::transaction(function () use ($booking) {
+                // Cek apakah ada perpanjangan sewa yang aktif (menyambung)
+                $hasRenewal = Booking::where('user_id', $booking->user_id)
+                    ->where('bookable_id', $booking->bookable_id)
+                    ->where('is_renewal', true)
+                    ->where('check_in_date', $booking->check_out_date->toDateString())
+                    ->whereIn('status', ['pending', 'approved'])
+                    ->exists();
+
+                // Jika tidak ada perpanjangan, berarti mahasiswa benar-benar keluar kamar -> kembalikan slot
+                if (! $hasRenewal && $booking->bookable) {
+                    $booking->bookable->increment('available_slots');
+                }
+
+                $booking->update(['status' => 'completed']);
+            });
+            $count++;
+        }
+
+        return $count;
     }
 
     /**
@@ -545,5 +599,23 @@ class BookingService
     protected function generateTransactionCode(): string
     {
         return 'TR-' . now()->format('Ymd') . '-' . Str::random(6);
+    }
+
+    /**
+     * Mengecek apakah booking ini memegang tanggung jawab atas slot yang dikurangi.
+     */
+    private function holdsSlotResponsibility(Booking $booking): bool
+    {
+        if (! $booking->is_renewal) {
+            return true; // Booking awal selalu menahan slot
+        }
+
+        // Jika ini perpanjangan, ia menahan slot HANYA JIKA pesanan sebelumnya
+        // sudah 'completed' (tanggung jawab mengembalikan slot dipindahkan ke sini).
+        return Booking::where('user_id', $booking->user_id)
+            ->where('bookable_id', $booking->bookable_id)
+            ->where('check_out_date', $booking->check_in_date)
+            ->where('status', 'completed')
+            ->exists();
     }
 }
