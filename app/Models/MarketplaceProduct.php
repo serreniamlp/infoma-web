@@ -68,17 +68,17 @@ class MarketplaceProduct extends Model
                 'need_address'=> false, // buyer tidak perlu isi alamat tujuan
             ],
             'delivery' => [
-                'label'       => 'Diantar Seller',
+                'label'       => 'Diantar',
                 'icon'        => 'fa-motorcycle',
                 'color'       => 'blue',
-                'description' => 'Penjual mengantar barang ke alamat pembeli. Pembeli transfer terlebih dahulu.',
+                'description' => 'Barang diantar ke alamat pembeli (via kurir / penjual). Pembeli melunasi pembayaran online terlebih dahulu.',
                 'need_address'=> true,  // buyer wajib isi alamat tujuan
             ],
             'pickup'   => [
                 'label'       => 'Ambil Sendiri',
                 'icon'        => 'fa-walking',
                 'color'       => 'orange',
-                'description' => 'Pembeli datang langsung ke lokasi penjual untuk mengambil barang.',
+                'description' => 'Pembeli mendatangi alamat penjual untuk mengambil barang dan bayar langsung di lokasi.',
                 'need_address'=> false, // buyer tidak perlu isi alamat tujuan
             ],
         ];
@@ -146,6 +146,32 @@ class MarketplaceProduct extends Model
     public function transactions(): HasMany
     {
         return $this->hasMany(MarketplaceTransaction::class, 'product_id');
+    }
+
+    /**
+     * Total kuantitas barang yang terkunci dalam transaksi aktif (belum selesai/batal).
+     */
+    public function getActiveReservedQuantityAttribute(): int
+    {
+        return (int) $this->transactions()
+            ->whereNotIn('status', ['completed', 'cancelled'])
+            ->sum('quantity');
+    }
+
+    /**
+     * Stok bebas yang belum terpakai oleh transaksi aktif.
+     */
+    public function getAvailableStockAttribute(): int
+    {
+        return max(0, (int) $this->stock_quantity - $this->active_reserved_quantity);
+    }
+
+    /**
+     * Cek apakah produk ini memiliki transaksi aktif (sedang berjalan/belum selesai atau belum batal).
+     */
+    public function hasActiveTransactions(): bool
+    {
+        return $this->active_reserved_quantity > 0;
     }
 
     public function bookmarks(): MorphMany

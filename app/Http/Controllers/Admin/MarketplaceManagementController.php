@@ -51,6 +51,13 @@ class MarketplaceManagementController extends Controller
     public function destroyProduct(MarketplaceProduct $product)
     {
         $name = $product->name;
+        $reservedQty = $product->active_reserved_quantity;
+
+        if ($reservedQty > 0) {
+            return redirect()->back()
+                ->with('error', "Produk \"{$name}\" tidak dapat dihapus total karena terdapat {$reservedQty} unit barang yang sedang dalam transaksi aktif.");
+        }
+
         $product->delete();
         return redirect()->route('admin.marketplace.products')->with('success', "Produk \"{$name}\" berhasil dihapus.");
     }

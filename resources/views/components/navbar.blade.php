@@ -1,4 +1,4 @@
-<nav class="bg-white shadow-lg sticky top-0 z-50 transition-all duration-300" id="navbar">
+<nav class="bg-white shadow-lg sticky top-0 z-50 transition-all duration-300 print:hidden" id="navbar">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center h-16">
 
@@ -279,10 +279,17 @@
                                 <a href="{{ route('user.bookmarks.index') }}" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                                     <i class="fas fa-heart mr-2 w-4"></i>Bookmark
                                 </a>
-                                <a href="{{ route('user.marketplace.sell') }}" id="link-mode-penjual" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                                    <i class="fas fa-store mr-2 w-4"></i>
-                                    {{ auth()->user()->isSeller() ? 'Mode Penjual' : 'Mulai Berjualan' }}
+                                @if(auth()->user()->isSeller())
+                                <a href="{{ route('user.marketplace.seller.home') }}" id="link-mode-penjual" class="flex items-center px-4 py-2 text-sm text-orange-600 bg-orange-50/80 hover:bg-orange-100 font-semibold">
+                                    <i class="fas fa-store text-orange-500 mr-2 w-4"></i>
+                                    Mode Penjual (Toko Saya)
                                 </a>
+                                @else
+                                <a href="{{ route('user.marketplace.sell') }}" id="link-mode-penjual" class="flex items-center px-4 py-2 text-sm text-orange-600 bg-orange-50/80 hover:bg-orange-100 font-semibold">
+                                    <i class="fas fa-rocket text-orange-500 mr-2 w-4"></i>
+                                    Mendaftar Penjual FJB
+                                </a>
+                                @endif
                                 <div class="border-t border-gray-100 my-1"></div>
                                 {{-- Switch Role shortcuts --}}
                                 @if(auth()->user()->hasRole('provider_event'))

@@ -166,16 +166,14 @@
                                         <i class="fas fa-exclamation-triangle mr-1.5"></i>
                                         Penjual belum mengatur metode pengambilan. Hubungi penjual untuk informasi lebih lanjut.
                                     </div>
-                                    {{-- Fallback ke select biasa jika seller belum set metode --}}
                                     <select name="pickup_method" required
                                             class="mt-3 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
                                         <option value="">-- Pilih Metode --</option>
                                         <option value="pickup"   {{ old('pickup_method') == 'pickup'   ? 'selected' : '' }}>Ambil Sendiri</option>
-                                        <option value="delivery" {{ old('pickup_method') == 'delivery' ? 'selected' : '' }}>Diantar Seller</option>
+                                        <option value="delivery" {{ old('pickup_method') == 'delivery' ? 'selected' : '' }}>Diantar</option>
                                         <option value="cod"      {{ old('pickup_method') == 'cod'      ? 'selected' : '' }}>COD (Bayar di Tempat)</option>
                                     </select>
                                 @else
-                                    {{-- Tampilkan hanya metode yang seller aktifkan --}}
                                     <input type="hidden" name="pickup_method" id="selectedPickupMethod"
                                            value="{{ old('pickup_method', count($activeMethods) === 1 ? array_key_first($activeMethods) : '') }}">
 
@@ -211,14 +209,12 @@
                                                     </div>
                                                     <p class="text-xs text-gray-500">{{ $method['description'] }}</p>
 
-                                                    {{-- Info khusus COD --}}
-                                                    @if($key === 'cod')
+                                                    @if(in_array($key, ['cod', 'pickup']))
                                                     <p class="text-xs text-green-600 mt-1 font-medium">
-                                                        <i class="fas fa-check-circle mr-1"></i>Tidak perlu transfer di muka
+                                                        <i class="fas fa-check-circle mr-1"></i>Tidak perlu transfer di muka (Bayar di lokasi)
                                                     </p>
                                                     @endif
 
-                                                    {{-- Info khusus pickup — tampilkan alamat seller --}}
                                                     @if($key === 'pickup' && $product->pickup_address)
                                                     <div class="mt-2 text-xs text-orange-700 bg-orange-50 border border-orange-100 rounded-lg px-3 py-2">
                                                         <i class="fas fa-map-marker-alt mr-1"></i>
@@ -341,14 +337,17 @@
                                 </div>
                                 {{-- [REVISI-3-END] --}}
 
-                                {{-- Catatan ke seller --}}
+                                {{-- Catatan ke seller / Titik Temu COD --}}
                                 <div class="mt-4">
-                                    <label class="block text-sm font-medium text-gray-700 mb-1.5">
+                                    <label id="pickupNotesLabel" class="block text-sm font-medium text-gray-700 mb-1.5">
                                         Catatan <span class="text-gray-400 font-normal">(Opsional)</span>
                                     </label>
-                                    <textarea name="pickup_notes" rows="2"
+                                    <textarea name="pickup_notes" id="pickup_notes" rows="2"
                                               placeholder="Catatan tambahan untuk penjual..."
                                               class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm">{{ old('pickup_notes') }}</textarea>
+                                    <p id="codNotesHelp" class="text-xs text-green-700 mt-1 hidden">
+                                        <i class="fas fa-info-circle mr-1"></i>Anda dapat menulis usulan titik temu di atas atau menyepakatinya via WhatsApp setelah pesanan dibuat.
+                                    </p>
                                 </div>
                             </div>
                         </div>
@@ -446,6 +445,32 @@ function pilihMetode(key, needAddress, color) {
     if (deliveryField) {
         deliveryField.classList.toggle('hidden', !needAddress);
         if (addressTextarea) addressTextarea.required = needAddress;
+    }
+
+    // Update label & placeholder catatan titik temu jika COD / Pickup
+    const notesLabel = document.getElementById('pickupNotesLabel');
+    const notesInput = document.getElementById('pickup_notes');
+    const codHelp    = document.getElementById('codNotesHelp');
+    if (notesLabel && notesInput) {
+        if (key === 'cod') {
+            notesLabel.innerHTML = '<i class="fas fa-handshake text-green-600 mr-1.5"></i>Catatan & Usulan Titik Temu COD <span class="text-gray-400 font-normal">(Opsional)</span>';
+            notesInput.placeholder = 'Misal: Usul ketemu di depan Perpustakaan Kampus / Parkiran Utama jam 13.00';
+            if (codHelp) {
+                codHelp.innerHTML = '<i class="fas fa-info-circle mr-1"></i>Anda dapat menulis usulan titik temu di atas atau menyepakatinya via WhatsApp setelah pesanan dibuat.';
+                codHelp.classList.remove('hidden');
+            }
+        } else if (key === 'pickup') {
+            notesLabel.innerHTML = '<i class="fas fa-walking text-orange-600 mr-1.5"></i>Catatan & Rencana Jam Ambil <span class="text-gray-400 font-normal">(Opsional)</span>';
+            notesInput.placeholder = 'Misal: Rencana ambil hari ini jam 16.00 sepulang kuliah';
+            if (codHelp) {
+                codHelp.innerHTML = '<i class="fas fa-info-circle mr-1"></i>Anda dapat menyepakati jam dan detail lokasi pengambilan via WhatsApp dengan penjual.';
+                codHelp.classList.remove('hidden');
+            }
+        } else {
+            notesLabel.innerHTML = 'Catatan <span class="text-gray-400 font-normal">(Opsional)</span>';
+            notesInput.placeholder = 'Catatan tambahan untuk penjual...';
+            if (codHelp) codHelp.classList.add('hidden');
+        }
     }
 
     // Update info di sidebar

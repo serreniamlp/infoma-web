@@ -189,6 +189,16 @@ class SellerController extends Controller
             $data['pickup_address'] = null;
         }
         
+        if ($request->has('stock_quantity')) {
+            $reservedQty = $product->active_reserved_quantity;
+            if ((int) $request->stock_quantity < $reservedQty) {
+                return response()->json([
+                    'status'  => 'error',
+                    'message' => "Stok produk tidak boleh kurang dari {$reservedQty} unit karena terdapat {$reservedQty} unit barang yang sedang dalam transaksi aktif."
+                ], 422);
+            }
+        }
+
         $product->update($request->except(['images', '_method']));
 
         return response()->json([
@@ -203,6 +213,14 @@ class SellerController extends Controller
     {
         if ($product->seller_id != Auth::id()) {
             return response()->json(['status' => 'error', 'message' => 'Unauthorized.'], 403);
+        }
+
+        $reservedQty = $product->active_reserved_quantity;
+        if ($reservedQty > 0) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => "Produk tidak dapat dihapus total karena terdapat {$reservedQty} unit barang yang sedang dalam transaksi aktif. Anda dapat menurunkan stok hingga minimal {$reservedQty} unit, atau selesaikan/batalkan transaksi terlebih dahulu."
+            ], 422);
         }
 
         $product->delete();

@@ -75,6 +75,87 @@
                     <span>{{ session('error') }}</span>
                 </div>
             @endif
+            {{-- ================================================================ --}}
+            {{-- BANNER PROMOSI "MULAI BERJUALAN" (AWARENESS FITUR SELLER)        --}}
+            {{-- ================================================================ --}}
+            @auth
+                @if(!Auth::user()->isSeller())
+                <div class="mb-8 bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-orange-400/30">
+                    <div class="relative z-10 max-w-2xl text-center md:text-left">
+                        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
+                            <i class="fas fa-store text-yellow-200"></i> Fitur Mahasiswa Seller FJB
+                        </div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
+                            Punya Barang Tak Terpakai atau Usaha Mahasiswa?
+                        </h2>
+                        <p class="mt-2 text-orange-50 text-sm md:text-base leading-relaxed">
+                            Mulai jualan gratis di <strong>EduLiving FJB</strong>! Jangkau ribuan mahasiswa di sekitar kampus dengan mudah, aman via Midtrans/COD, dan tanpa biaya admin.
+                        </p>
+                        <div class="mt-4 flex flex-wrap justify-center md:justify-start gap-4 text-xs font-medium text-white/90">
+                            <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-yellow-300"></i> 100% Gratis</span>
+                            <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-yellow-300"></i> Pasar Khusus Kampus</span>
+                            <span class="flex items-center gap-1.5"><i class="fas fa-check-circle text-yellow-300"></i> Rekening Midtrans & COD</span>
+                        </div>
+                    </div>
+                    <div class="relative z-10 flex-shrink-0">
+                        <a href="{{ route('user.marketplace.sell') }}"
+                           class="inline-flex items-center gap-2 bg-white hover:bg-orange-50 text-orange-600 font-bold px-6 py-3.5 rounded-xl shadow-md hover:shadow-xl transition-all duration-200 text-sm md:text-base group">
+                            <i class="fas fa-rocket text-orange-500 group-hover:scale-110 transition-transform"></i>
+                            Buka Toko / Mulai Jualan
+                        </a>
+                    </div>
+                </div>
+                @else
+                {{-- User sudah aktif sebagai seller --}}
+                <div class="mb-8 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-md p-6 text-white relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6">
+                    <div class="relative z-10 max-w-2xl text-center md:text-left">
+                        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-2">
+                            <i class="fas fa-check-circle text-green-300"></i> Toko Anda Sudah Aktif
+                        </div>
+                        <h2 class="text-xl md:text-2xl font-bold">
+                            Ingin Tambah Produk Baru atau Cek Pesanan?
+                        </h2>
+                        <p class="mt-1 text-blue-100 text-sm">
+                            Kelola toko Anda, tambahkan barang dagangan baru, atau pantau pesanan dari sesama mahasiswa.
+                        </p>
+                    </div>
+                    <div class="relative z-10 flex flex-wrap gap-3 flex-shrink-0 justify-center md:justify-end">
+                        <a href="{{ route('user.marketplace.seller.create') }}"
+                           class="inline-flex items-center gap-2 bg-white hover:bg-blue-50 text-blue-700 font-bold px-5 py-3 rounded-xl shadow-sm text-sm transition-all">
+                            <i class="fas fa-plus-circle text-blue-600"></i>
+                            Tambah Produk
+                        </a>
+                        <a href="{{ route('user.marketplace.seller.home') }}"
+                           class="inline-flex items-center gap-2 bg-blue-700/80 hover:bg-blue-800 text-white font-semibold px-5 py-3 rounded-xl border border-blue-400/30 text-sm transition-all">
+                            <i class="fas fa-store"></i>
+                            Dashboard Toko
+                        </a>
+                    </div>
+                </div>
+                @endif
+            @else
+                {{-- Guest / Belum Login --}}
+                <div class="mb-8 bg-gradient-to-r from-orange-600 via-amber-500 to-yellow-500 rounded-2xl shadow-lg p-6 text-white relative overflow-hidden flex flex-col md:flex-row items-center justify-between gap-6 border border-orange-400/30">
+                    <div class="relative z-10 max-w-2xl text-center md:text-left">
+                        <div class="inline-flex items-center gap-2 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider mb-3">
+                            <i class="fas fa-store text-yellow-200"></i> Jual & Beli Barang Kampus
+                        </div>
+                        <h2 class="text-2xl md:text-3xl font-extrabold tracking-tight leading-tight">
+                            Ingin Jualan Barang Bekas / Produk Kamu?
+                        </h2>
+                        <p class="mt-2 text-orange-50 text-sm md:text-base leading-relaxed">
+                            Daftar akun mahasiswa EduLiving sekarang untuk mulai menjual barang ke sesama mahasiswa di seluruh kampus!
+                        </p>
+                    </div>
+                    <div class="relative z-10 flex-shrink-0">
+                        <a href="{{ route('login') }}"
+                           class="inline-flex items-center gap-2 bg-white hover:bg-orange-50 text-orange-600 font-bold px-6 py-3.5 rounded-xl shadow-md hover:shadow-xl transition-all duration-200 text-sm md:text-base group">
+                            <i class="fas fa-sign-in-alt text-orange-500 group-hover:scale-110 transition-transform"></i>
+                            Login untuk Mulai Berjualan
+                        </a>
+                    </div>
+                </div>
+            @endauth
 
             <div class="flex flex-col lg:flex-row gap-8">
 
